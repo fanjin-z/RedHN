@@ -1,7 +1,7 @@
 {
   "name": "redhn",
   "version": "1.0.0",
-  "description": "",
+  "description": "RedHN browser extension built with WXT",
   "homepage": "https://github.com/fanjin-z/RedHN#readme",
   "bugs": {
     "url": "https://github.com/fanjin-z/RedHN/issues"
@@ -12,8 +12,7 @@
   },
   "license": "MIT",
   "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
@@ -21,9 +20,21 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@types/node": "^22.15.17",
+    "eslint": "^9.27.0",
+    "globals": "^15.15.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0",
+    "vitest": "^4.1.5",
     "wxt": "^0.20.26"
   }
 }

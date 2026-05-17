@@ -26,6 +26,11 @@ node_modules/
 # wxt
 .wxt
 .output
+web-ext.config.ts
+
+# test output
+coverage
+.vitest
 
 # Editor
 .vscode/*

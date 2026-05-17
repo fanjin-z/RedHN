@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { existsSync } from 'node:fs';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 const autoImportsModule = './.wxt/eslint-auto-imports.mjs';
 const autoImportsExport = existsSync(autoImportsModule)
@@ -36,4 +37,5 @@ export default tseslint.config(
         },
     },
     ...autoImports,
+    eslintConfigPrettier,
 );

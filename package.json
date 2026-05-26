@@ -33,6 +33,8 @@
     "devDependencies": {
         "@eslint/js": "^9.27.0",
         "@types/node": "^22.15.17",
+        "@types/react": "^19.2.15",
+        "@types/react-dom": "^19.2.3",
         "eslint": "^9.27.0",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^15.15.0",
@@ -42,5 +44,9 @@
         "typescript-eslint": "^8.33.0",
         "vitest": "^4.1.5",
         "wxt": "^0.20.26"
+    },
+    "dependencies": {
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6"
     }
 }

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { sendRedhnMessage } from './api/backgroundClient';
+import type { HnApiItem } from './api/hnApi';
 import type { ParsedComment, ParsedPage, ParsedStory } from './hn/types';
 import {
     applyStoryFilters,
@@ -56,6 +58,9 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [savedStoryIds, setSavedStoryIds] = useState(() => new Set<number>());
     const [sharedStoryId, setSharedStoryId] = useState<number>();
     const [newCommentCount, setNewCommentCount] = useState(0);
+    const [apiItems, setApiItems] = useState<Record<number, HnApiItem | null>>(
+        {},
+    );
     const title = useMemo(
         () => page.post?.title ?? 'Hacker News',
         [page.post?.title],
@@ -64,6 +69,16 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         () => applyStoryFilters(page.stories, filters),
         [filters, page.stories],
     );
+    const enrichedStories = useMemo(
+        () =>
+            visibleStories.map((story) =>
+                enrichStoryWithApiItem(story, apiItems[story.id]),
+            ),
+        [apiItems, visibleStories],
+    );
+    const enrichedPost = page.post
+        ? enrichStoryWithApiItem(page.post, apiItems[page.post.id])
+        : undefined;
     const hiddenStoryCount = page.stories.length - visibleStories.length;
 
     const updatePreferences = (patch: Partial<RedhnPreferences>) => {
@@ -144,6 +159,34 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         setReadState(next);
         void readStateItem.setValue(next);
     }, [page, stateLoaded]);
+
+    useEffect(() => {
+        const ids = page.post
+            ? [page.post.id]
+            : visibleStories.slice(0, 30).map((story) => story.id);
+
+        if (ids.length === 0) {
+            return;
+        }
+
+        let active = true;
+        void sendRedhnMessage({ type: 'redhn:getItems', ids }).then(
+            (response) => {
+                if (!active || !response.ok) {
+                    return;
+                }
+
+                setApiItems((current) => ({
+                    ...current,
+                    ...response.data,
+                }));
+            },
+        );
+
+        return () => {
+            active = false;
+        };
+    }, [page.post, visibleStories]);
 
     if (!enabled) {
         return (
@@ -327,11 +370,11 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                 </button>
                             </div>
                         </div>
-                        {page.kind === 'item' && page.post ? (
+                        {page.kind === 'item' && enrichedPost ? (
                             <PostView
                                 comments={page.comments}
-                                isSaved={savedStoryIds.has(page.post.id)}
-                                isShared={sharedStoryId === page.post.id}
+                                isSaved={savedStoryIds.has(enrichedPost.id)}
+                                isShared={sharedStoryId === enrichedPost.id}
                                 newCommentCount={newCommentCount}
                                 onSave={toggleSavedStory}
                                 onShare={(story) => {
@@ -341,7 +384,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                             setSharedStoryId(story.id);
                                         });
                                 }}
-                                post={page.post}
+                                post={enrichedPost}
                             />
                         ) : (
                             <StoryFeed
@@ -359,7 +402,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                 readState={readState}
                                 savedStoryIds={savedStoryIds}
                                 sharedStoryId={sharedStoryId}
-                                stories={visibleStories}
+                                stories={enrichedStories}
                                 onStoryView={markViewed}
                             />
                         )}
@@ -959,6 +1002,24 @@ function countComments(comments: ParsedComment[]): number {
         (total, comment) => total + 1 + countComments(comment.children),
         0,
     );
+}
+
+function enrichStoryWithApiItem(
+    story: ParsedStory,
+    item: HnApiItem | null | undefined,
+): ParsedStory {
+    if (!item) {
+        return story;
+    }
+
+    return {
+        ...story,
+        title: item.title ?? story.title,
+        url: item.url ?? story.url,
+        author: item.by ?? story.author,
+        score: item.score ?? story.score,
+        commentCount: item.descendants ?? story.commentCount,
+    };
 }
 
 function commentGuideColor(depth: number): string {

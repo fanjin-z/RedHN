@@ -1,4 +1,5 @@
 import { storage } from 'wxt/utils/storage';
+import type { HnApiItem } from '../api/hnApi';
 import { defaultFilters, type RedhnFilters } from './filters';
 import { defaultPreferences, type RedhnPreferences } from './preferences';
 import { defaultReadState, type RedhnReadState } from './readState';
@@ -28,5 +29,20 @@ export const savedStoryIdsItem = storage.defineItem<number[]>(
     'local:redhn.savedStoryIds',
     {
         fallback: [],
+    },
+);
+
+export type RedhnApiCache = Record<
+    string,
+    {
+        item: HnApiItem | null;
+        cachedAt: number;
+    }
+>;
+
+export const apiCacheItem = storage.defineItem<RedhnApiCache>(
+    'local:redhn.apiCache',
+    {
+        fallback: {},
     },
 );

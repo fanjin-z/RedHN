@@ -20,21 +20,23 @@ const story = (overrides: Partial<ParsedStory>): ParsedStory => ({
 
 describe('RedHN state helpers', () => {
     it('normalizes preferences into supported ranges', () => {
-        expect(
-            normalizePreferences({
-                theme: 'dark',
-                fontSize: 99,
-                lineHeight: 0,
-                maxWidth: 200,
-                density: 'compact',
-            }),
-        ).toMatchObject({
+        const preferences = normalizePreferences({
+            theme: 'dark',
+            fontSize: 99,
+            lineHeight: 0,
+            maxWidth: 200,
+            density: 'compact',
+        } as Parameters<typeof normalizePreferences>[0] & {
+            density: string;
+        });
+
+        expect(preferences).toMatchObject({
             theme: 'dark',
             fontSize: 20,
             lineHeight: 1.2,
             maxWidth: 720,
-            density: 'compact',
         });
+        expect(preferences).not.toHaveProperty('density');
     });
 
     it('filters stories by keywords, topics, and domains', () => {

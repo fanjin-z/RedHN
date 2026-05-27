@@ -20,7 +20,6 @@ import {
 import {
     defaultPreferences,
     normalizePreferences,
-    type RedhnDensity,
     type RedhnPreferences,
 } from './state/preferences';
 import {
@@ -350,40 +349,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                             >
                                 Top
                             </a>
-                            <div
-                                className="redhn-density"
-                                role="group"
-                                aria-label="Density"
-                            >
-                                <button
-                                    className={
-                                        preferences.density === 'card'
-                                            ? 'redhn-density__button redhn-density__button--active'
-                                            : 'redhn-density__button'
-                                    }
-                                    onClick={() => {
-                                        updatePreferences({ density: 'card' });
-                                    }}
-                                    type="button"
-                                >
-                                    Card
-                                </button>
-                                <button
-                                    className={
-                                        preferences.density === 'compact'
-                                            ? 'redhn-density__button redhn-density__button--active'
-                                            : 'redhn-density__button'
-                                    }
-                                    onClick={() => {
-                                        updatePreferences({
-                                            density: 'compact',
-                                        });
-                                    }}
-                                    type="button"
-                                >
-                                    Compact
-                                </button>
-                            </div>
                         </div>
                         {page.kind === 'item' && enrichedPost ? (
                             <PostView
@@ -404,7 +369,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                             />
                         ) : (
                             <StoryFeed
-                                density={preferences.density}
                                 hiddenStoryCount={hiddenStoryCount}
                                 onSave={toggleSavedStory}
                                 onShare={(story) => {
@@ -857,7 +821,6 @@ function CommentThread({
 }
 
 type StoryFeedProps = {
-    density: RedhnDensity;
     page: ParsedPage;
     stories: ParsedStory[];
     hiddenStoryCount: number;
@@ -871,7 +834,6 @@ type StoryFeedProps = {
 };
 
 function StoryFeed({
-    density,
     page,
     stories,
     hiddenStoryCount,
@@ -884,10 +846,7 @@ function StoryFeed({
     onHnAction,
 }: StoryFeedProps) {
     return (
-        <section
-            className={`redhn-feed redhn-feed--${density}`}
-            aria-label="Hacker News stories"
-        >
+        <section className="redhn-feed" aria-label="Hacker News stories">
             {hiddenStoryCount > 0 ? (
                 <p className="redhn-feed__muted">
                     {formatNumber(hiddenStoryCount)} muted
@@ -895,7 +854,6 @@ function StoryFeed({
             ) : null}
             {stories.map((story) => (
                 <StoryCard
-                    density={density}
                     isSaved={savedStoryIds.has(story.id)}
                     isShared={sharedStoryId === story.id}
                     isViewed={readState.viewedStoryIds[story.id] !== undefined}
@@ -922,7 +880,6 @@ function StoryFeed({
 }
 
 type StoryCardProps = {
-    density: RedhnDensity;
     story: ParsedStory;
     isSaved: boolean;
     isShared: boolean;
@@ -934,7 +891,6 @@ type StoryCardProps = {
 };
 
 function StoryCard({
-    density,
     story,
     isSaved,
     isShared,
@@ -945,58 +901,81 @@ function StoryCard({
     onHnAction,
 }: StoryCardProps) {
     const sourceLabel = story.domain ?? 'news.ycombinator.com';
+    const commentsHref = story.actions.comments ?? story.hnUrl;
 
     return (
         <article
             className={
-                isViewed
-                    ? `redhn-story redhn-story--${density} redhn-story--viewed`
-                    : `redhn-story redhn-story--${density}`
+                isViewed ? 'redhn-story redhn-story--viewed' : 'redhn-story'
             }
         >
-            <div className="redhn-story__vote" aria-label="Story score">
-                {story.actions.upvote ? (
-                    <HnActionLink
-                        aria-label="Upvote"
-                        className="redhn-icon-button"
-                        href={story.actions.upvote}
-                        onHnAction={onHnAction}
-                    >
-                        ^
-                    </HnActionLink>
-                ) : (
-                    <span className="redhn-icon-button redhn-icon-button--disabled">
-                        ^
-                    </span>
-                )}
-                <span className="redhn-story__score">
-                    {formatNumber(story.score)}
-                </span>
-            </div>
+            <a
+                aria-label={`Open comments for ${story.title}`}
+                className="redhn-story__card-link"
+                href={commentsHref}
+                onClick={() => {
+                    onStoryView(story.id);
+                }}
+            />
             <div className="redhn-story__content">
-                <div className="redhn-story__meta">
-                    <a className="redhn-story__source" href={story.url}>
-                        {sourceLabel}
-                    </a>
-                    {story.author ? (
-                        <span>Posted by {story.author}</span>
-                    ) : null}
-                    {story.age ? <span>{story.age}</span> : null}
-                </div>
-                <h2 className="redhn-story__title">
+                <header className="redhn-story__header">
+                    <div className="redhn-story__meta">
+                        <a className="redhn-story__source" href={story.url}>
+                            {sourceLabel}
+                        </a>
+                        {story.author ? (
+                            <span>Posted by {story.author}</span>
+                        ) : null}
+                        {story.age ? <span>{story.age}</span> : null}
+                    </div>
+                    <details className="redhn-story__menu">
+                        <summary aria-label="More story actions">...</summary>
+                        <div className="redhn-story__menu-panel">
+                            <button
+                                className="redhn-story__menu-item"
+                                onClick={() => {
+                                    onSave(story.id);
+                                }}
+                                type="button"
+                            >
+                                {isSaved ? 'Saved' : 'Save'}
+                            </button>
+                            {story.actions.hide ? (
+                                <HnActionLink
+                                    className="redhn-story__menu-item"
+                                    href={story.actions.hide}
+                                    onHnAction={onHnAction}
+                                >
+                                    Hide
+                                </HnActionLink>
+                            ) : null}
+                        </div>
+                    </details>
+                </header>
+                <h2 className="redhn-story__title">{story.title}</h2>
+                <div className="redhn-story__actions">
+                    {story.actions.upvote ? (
+                        <HnActionLink
+                            aria-label="Upvote"
+                            className="redhn-action redhn-action--vote"
+                            href={story.actions.upvote}
+                            onHnAction={onHnAction}
+                        >
+                            <span aria-hidden="true">^</span>
+                            <span>{formatNumber(story.score)}</span>
+                        </HnActionLink>
+                    ) : (
+                        <span className="redhn-action redhn-action--vote redhn-action--disabled">
+                            <span aria-hidden="true">^</span>
+                            <span>{formatNumber(story.score)}</span>
+                        </span>
+                    )}
                     <a
-                        href={story.url}
+                        className="redhn-action"
+                        href={commentsHref}
                         onClick={() => {
                             onStoryView(story.id);
                         }}
-                    >
-                        {story.title}
-                    </a>
-                </h2>
-                <div className="redhn-story__actions">
-                    <a
-                        className="redhn-action"
-                        href={story.actions.comments ?? story.hnUrl}
                     >
                         <span aria-hidden="true">[]</span>
                         <span>{formatNumber(story.commentCount)}</span>
@@ -1011,29 +990,6 @@ function StoryCard({
                         <span aria-hidden="true">/</span>
                         <span>{isShared ? 'Copied' : 'Share'}</span>
                     </button>
-                    <button
-                        className={
-                            isSaved
-                                ? 'redhn-action redhn-action--active'
-                                : 'redhn-action'
-                        }
-                        onClick={() => {
-                            onSave(story.id);
-                        }}
-                        type="button"
-                    >
-                        <span aria-hidden="true">#</span>
-                        <span>{isSaved ? 'Saved' : 'Save'}</span>
-                    </button>
-                    {story.actions.hide ? (
-                        <HnActionLink
-                            className="redhn-action"
-                            href={story.actions.hide}
-                            onHnAction={onHnAction}
-                        >
-                            Hide
-                        </HnActionLink>
-                    ) : null}
                 </div>
             </div>
         </article>

@@ -1,12 +1,10 @@
 export type RedhnTheme = 'system' | 'light' | 'dark';
-export type RedhnDensity = 'card' | 'compact';
 
 export type RedhnPreferences = {
     theme: RedhnTheme;
     fontSize: number;
     lineHeight: number;
     maxWidth: number;
-    density: RedhnDensity;
 };
 
 export const defaultPreferences: RedhnPreferences = {
@@ -14,15 +12,12 @@ export const defaultPreferences: RedhnPreferences = {
     fontSize: 14,
     lineHeight: 1.45,
     maxWidth: 1280,
-    density: 'card',
 };
 
 export function normalizePreferences(
     preferences: Partial<RedhnPreferences> | undefined,
 ): RedhnPreferences {
     return {
-        ...defaultPreferences,
-        ...preferences,
         fontSize: clamp(
             preferences?.fontSize,
             12,
@@ -41,11 +36,6 @@ export function normalizePreferences(
             1600,
             defaultPreferences.maxWidth,
         ),
-        density:
-            preferences?.density === 'compact' ||
-            preferences?.density === 'card'
-                ? preferences.density
-                : defaultPreferences.density,
         theme:
             preferences?.theme === 'dark' ||
             preferences?.theme === 'light' ||

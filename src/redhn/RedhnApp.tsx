@@ -5,6 +5,11 @@ import {
     type CSSProperties,
     type ReactNode,
 } from 'react';
+import { ArrowFatUpIcon } from '@phosphor-icons/react/dist/csr/ArrowFatUp';
+import { BookmarkSimpleIcon } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
+import { ChatCircleIcon } from '@phosphor-icons/react/dist/csr/ChatCircle';
+import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { ShareFatIcon } from '@phosphor-icons/react/dist/csr/ShareFat';
 import { sendRedhnMessage } from './api/backgroundClient';
 import type { HnApiItem } from './api/hnApi';
 import { performHnAction } from './hn/actions';
@@ -929,7 +934,13 @@ function StoryCard({
                         {story.age ? <span>{story.age}</span> : null}
                     </div>
                     <details className="redhn-story__menu">
-                        <summary aria-label="More story actions">...</summary>
+                        <summary aria-label="More story actions">
+                            <DotsThreeIcon
+                                aria-hidden="true"
+                                className="redhn-story__menu-icon"
+                                weight="bold"
+                            />
+                        </summary>
                         <div className="redhn-story__menu-panel">
                             <button
                                 className="redhn-story__menu-item"
@@ -938,6 +949,11 @@ function StoryCard({
                                 }}
                                 type="button"
                             >
+                                <BookmarkSimpleIcon
+                                    aria-hidden="true"
+                                    className="redhn-story__menu-item-icon"
+                                    weight={isSaved ? 'fill' : 'bold'}
+                                />
                                 {isSaved ? 'Saved' : 'Save'}
                             </button>
                             {story.actions.hide ? (
@@ -953,7 +969,7 @@ function StoryCard({
                     </details>
                 </header>
                 <h2 className="redhn-story__title">{story.title}</h2>
-                <div className="redhn-story__actions">
+                <div className="redhn-story__actions redhn-story__actions--card">
                     {story.actions.upvote ? (
                         <HnActionLink
                             aria-label="Upvote"
@@ -961,12 +977,20 @@ function StoryCard({
                             href={story.actions.upvote}
                             onHnAction={onHnAction}
                         >
-                            <span aria-hidden="true">^</span>
+                            <ArrowFatUpIcon
+                                aria-hidden="true"
+                                className="redhn-action__icon"
+                                weight="bold"
+                            />
                             <span>{formatNumber(story.score)}</span>
                         </HnActionLink>
                     ) : (
                         <span className="redhn-action redhn-action--vote redhn-action--disabled">
-                            <span aria-hidden="true">^</span>
+                            <ArrowFatUpIcon
+                                aria-hidden="true"
+                                className="redhn-action__icon"
+                                weight="bold"
+                            />
                             <span>{formatNumber(story.score)}</span>
                         </span>
                     )}
@@ -977,7 +1001,11 @@ function StoryCard({
                             onStoryView(story.id);
                         }}
                     >
-                        <span aria-hidden="true">[]</span>
+                        <ChatCircleIcon
+                            aria-hidden="true"
+                            className="redhn-action__icon"
+                            weight="bold"
+                        />
                         <span>{formatNumber(story.commentCount)}</span>
                     </a>
                     <button
@@ -987,7 +1015,11 @@ function StoryCard({
                         }}
                         type="button"
                     >
-                        <span aria-hidden="true">/</span>
+                        <ShareFatIcon
+                            aria-hidden="true"
+                            className="redhn-action__icon"
+                            weight="bold"
+                        />
                         <span>{isShared ? 'Copied' : 'Share'}</span>
                     </button>
                 </div>

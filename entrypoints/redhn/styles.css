@@ -603,6 +603,18 @@
     cursor: pointer;
 }
 
+.redhn-story__actions--card .redhn-action {
+    gap: 7px;
+    min-height: 38px;
+    padding: 0 15px;
+}
+
+.redhn-action__icon {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+}
+
 .redhn-action:hover,
 .redhn-story__menu summary:hover,
 .redhn-story__menu-item:hover {
@@ -648,6 +660,11 @@
     list-style: none;
 }
 
+.redhn-story__menu-icon {
+    width: 22px;
+    height: 22px;
+}
+
 .redhn-story__menu summary::-webkit-details-marker {
     display: none;
 }
@@ -668,6 +685,7 @@
 .redhn-story__menu-item {
     display: flex;
     align-items: center;
+    gap: 8px;
     min-height: 36px;
     border: 0;
     border-radius: var(--redhn-radius-md);
@@ -681,6 +699,12 @@
     text-align: left;
     text-decoration: none;
     cursor: pointer;
+}
+
+.redhn-story__menu-item-icon {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
 }
 
 .redhn-feed__more {

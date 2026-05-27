@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useState,
+    type CSSProperties,
+    type ReactNode,
+} from 'react';
 import { sendRedhnMessage } from './api/backgroundClient';
 import type { HnApiItem } from './api/hnApi';
+import { performHnAction } from './hn/actions';
 import type { ParsedComment, ParsedPage, ParsedStory } from './hn/types';
 import {
     applyStoryFilters,
@@ -115,6 +122,14 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
             const next = markStoryViewed(current, storyId, Date.now());
             void readStateItem.setValue(next);
             return next;
+        });
+    };
+
+    const runHnAction = (href: string) => {
+        void performHnAction(href).then((result) => {
+            if (result.kind === 'navigate' || result.kind === 'failed') {
+                window.location.assign(result.url);
+            }
         });
     };
 
@@ -376,6 +391,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                 isSaved={savedStoryIds.has(enrichedPost.id)}
                                 isShared={sharedStoryId === enrichedPost.id}
                                 newCommentCount={newCommentCount}
+                                onHnAction={runHnAction}
                                 onSave={toggleSavedStory}
                                 onShare={(story) => {
                                     void navigator.clipboard
@@ -404,6 +420,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                 sharedStoryId={sharedStoryId}
                                 stories={enrichedStories}
                                 onStoryView={markViewed}
+                                onHnAction={runHnAction}
                             />
                         )}
                     </div>
@@ -543,6 +560,7 @@ type PostViewProps = {
     isSaved: boolean;
     isShared: boolean;
     newCommentCount: number;
+    onHnAction: (href: string) => void;
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
 };
@@ -553,6 +571,7 @@ function PostView({
     isSaved,
     isShared,
     newCommentCount,
+    onHnAction,
     onSave,
     onShare,
 }: PostViewProps) {
@@ -595,10 +614,14 @@ function PostView({
                 ) : null}
                 <div className="redhn-story__actions">
                     {post.actions.upvote ? (
-                        <a className="redhn-action" href={post.actions.upvote}>
+                        <HnActionLink
+                            className="redhn-action"
+                            href={post.actions.upvote}
+                            onHnAction={onHnAction}
+                        >
                             <span aria-hidden="true">^</span>
                             <span>{formatNumber(post.score)}</span>
-                        </a>
+                        </HnActionLink>
                     ) : (
                         <span className="redhn-action">
                             <span aria-hidden="true">^</span>
@@ -637,9 +660,13 @@ function PostView({
                         <span>{isSaved ? 'Saved' : 'Save'}</span>
                     </button>
                     {post.actions.reply ? (
-                        <a className="redhn-action" href={post.actions.reply}>
+                        <HnActionLink
+                            className="redhn-action"
+                            href={post.actions.reply}
+                            onHnAction={onHnAction}
+                        >
                             Reply
-                        </a>
+                        </HnActionLink>
                     ) : null}
                 </div>
             </header>
@@ -688,6 +715,7 @@ function PostView({
                         collapsedCommentIds={collapsedCommentIds}
                         comment={comment}
                         key={comment.id}
+                        onHnAction={onHnAction}
                         onToggle={toggleComment}
                     />
                 ))}
@@ -700,6 +728,7 @@ type CommentThreadProps = {
     comment: ParsedComment;
     collapsedCommentIds: Set<number>;
     collapseDepth?: number;
+    onHnAction: (href: string) => void;
     onToggle: (commentId: number) => void;
 };
 
@@ -707,6 +736,7 @@ function CommentThread({
     comment,
     collapsedCommentIds,
     collapseDepth,
+    onHnAction,
     onToggle,
 }: CommentThreadProps) {
     const collapsed =
@@ -777,20 +807,22 @@ function CommentThread({
                         />
                         <div className="redhn-comment__actions">
                             {comment.actions.upvote ? (
-                                <a
+                                <HnActionLink
                                     className="redhn-action"
                                     href={comment.actions.upvote}
+                                    onHnAction={onHnAction}
                                 >
                                     ^
-                                </a>
+                                </HnActionLink>
                             ) : null}
                             {comment.actions.reply ? (
-                                <a
+                                <HnActionLink
                                     className="redhn-action"
                                     href={comment.actions.reply}
+                                    onHnAction={onHnAction}
                                 >
                                     Reply
-                                </a>
+                                </HnActionLink>
                             ) : null}
                             {comment.actions.parent ? (
                                 <a
@@ -811,6 +843,7 @@ function CommentThread({
                                         }
                                         comment={child}
                                         key={child.id}
+                                        onHnAction={onHnAction}
                                         onToggle={onToggle}
                                     />
                                 ))}
@@ -834,6 +867,7 @@ type StoryFeedProps = {
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
+    onHnAction: (href: string) => void;
 };
 
 function StoryFeed({
@@ -847,6 +881,7 @@ function StoryFeed({
     onSave,
     onShare,
     onStoryView,
+    onHnAction,
 }: StoryFeedProps) {
     return (
         <section
@@ -868,6 +903,7 @@ function StoryFeed({
                     onSave={onSave}
                     onShare={onShare}
                     onStoryView={onStoryView}
+                    onHnAction={onHnAction}
                     story={story}
                 />
             ))}
@@ -894,6 +930,7 @@ type StoryCardProps = {
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
+    onHnAction: (href: string) => void;
 };
 
 function StoryCard({
@@ -905,6 +942,7 @@ function StoryCard({
     onSave,
     onShare,
     onStoryView,
+    onHnAction,
 }: StoryCardProps) {
     const sourceLabel = story.domain ?? 'news.ycombinator.com';
 
@@ -918,13 +956,14 @@ function StoryCard({
         >
             <div className="redhn-story__vote" aria-label="Story score">
                 {story.actions.upvote ? (
-                    <a
+                    <HnActionLink
                         aria-label="Upvote"
                         className="redhn-icon-button"
                         href={story.actions.upvote}
+                        onHnAction={onHnAction}
                     >
                         ^
-                    </a>
+                    </HnActionLink>
                 ) : (
                     <span className="redhn-icon-button redhn-icon-button--disabled">
                         ^
@@ -987,13 +1026,47 @@ function StoryCard({
                         <span>{isSaved ? 'Saved' : 'Save'}</span>
                     </button>
                     {story.actions.hide ? (
-                        <a className="redhn-action" href={story.actions.hide}>
+                        <HnActionLink
+                            className="redhn-action"
+                            href={story.actions.hide}
+                            onHnAction={onHnAction}
+                        >
                             Hide
-                        </a>
+                        </HnActionLink>
                     ) : null}
                 </div>
             </div>
         </article>
+    );
+}
+
+type HnActionLinkProps = {
+    href: string;
+    className: string;
+    children: ReactNode;
+    onHnAction: (href: string) => void;
+    'aria-label'?: string;
+};
+
+function HnActionLink({
+    href,
+    className,
+    children,
+    onHnAction,
+    'aria-label': ariaLabel,
+}: HnActionLinkProps) {
+    return (
+        <a
+            aria-label={ariaLabel}
+            className={className}
+            href={href}
+            onClick={(event) => {
+                event.preventDefault();
+                onHnAction(href);
+            }}
+        >
+            {children}
+        </a>
     );
 }
 

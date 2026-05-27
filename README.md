@@ -1,15 +1,54 @@
 # RedHN
 
-RedHN is a WXT-powered browser extension project with a TypeScript-first setup,
-ESLint 9 flat config, and a basic Vitest smoke test.
+RedHN is a WXT-powered browser extension that renders Hacker News with a
+Reddit-style reading interface. It keeps the loaded HN page as the source of
+truth for speed and logged-in action links, then enriches public metadata with
+the official read-only Hacker News Firebase API.
+
+## Features
+
+- Shadow DOM-isolated React UI on `news.ycombinator.com`.
+- Reddit-style feed cards with compact density mode.
+- Post pages with nested comment guides, per-thread collapse, and collapse by
+  depth.
+- Classic Toggle to restore the original Hacker News page immediately.
+- Storage-backed preferences for theme, font size, line height, max width, and
+  density.
+- Read/viewed story state, saved stories, muted keywords, muted domains, and
+  muted topics.
+- Background-only Hacker News API enrichment for scores/comment counts and item
+  cache.
+- Enhanced fallback for HN actions: safe same-origin vote, hide, and favorite
+  links are fetched with credentials; reply/login/unknown flows navigate to the
+  original HN page.
+
+## Privacy
+
+RedHN stores settings and read state locally with extension storage. It requests
+only `storage` plus host access for the official Hacker News Firebase API:
+`https://hacker-news.firebaseio.com/*`. It does not add analytics, tracking, or
+third-party write endpoints.
 
 ## Project Structure
 
 ```
 entrypoints/
 	background.ts
+	redhn.content.tsx
+	redhn/
+		styles.css
 public/
+src/
+	redhn/
+		api/
+		hn/
+		state/
 tests/
+	fixtures/
+	hn-actions.test.ts
+	hn-api.test.ts
+	hn-parser.test.ts
+	redhn-state.test.ts
 	smoke.test.ts
 eslint.config.mjs
 tsconfig.json
@@ -41,3 +80,9 @@ wxt.config.ts
   `.wxt/tsconfig.json`.
 - Browser startup defaults are configured in `wxt.config.ts`.
 - You can add machine-local startup overrides in `web-ext.config.ts`.
+- The official Hacker News API is read-only. Authenticated write-like actions
+  rely on action links/forms already present in the loaded HN page.
+- Inline commenting is intentionally not implemented yet; reply buttons fall
+  back to HN's original reply flow.
+- If an HN markup change breaks parsing, the Classic Toggle restores the
+  original page without requiring a reload.

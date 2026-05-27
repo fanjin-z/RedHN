@@ -1,5 +1,32 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { ParsedComment, ParsedPage, ParsedStory } from './hn/types';
+import {
+    applyStoryFilters,
+    defaultFilters,
+    normalizeFilters,
+    termsFromInput,
+    termsToInput,
+    type RedhnFilters,
+} from './state/filters';
+import {
+    defaultPreferences,
+    normalizePreferences,
+    type RedhnDensity,
+    type RedhnPreferences,
+} from './state/preferences';
+import {
+    countNewComments,
+    defaultReadState,
+    markPageRead,
+    markStoryViewed,
+    type RedhnReadState,
+} from './state/readState';
+import {
+    filtersItem,
+    preferencesItem,
+    readStateItem,
+    savedStoryIdsItem,
+} from './state/storage';
 
 type RedhnAppProps = {
     page: ParsedPage;
@@ -17,21 +44,106 @@ const navItems = [
     { label: 'Saved', href: 'https://news.ycombinator.com/favorites' },
 ];
 
-type Density = 'card' | 'compact';
-
 export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [enabled, setEnabled] = useState(true);
-    const [density, setDensity] = useState<Density>('card');
+    const [preferencesOpen, setPreferencesOpen] = useState(false);
+    const [preferences, setPreferences] =
+        useState<RedhnPreferences>(defaultPreferences);
+    const [filters, setFilters] = useState<RedhnFilters>(defaultFilters);
+    const [readState, setReadState] =
+        useState<RedhnReadState>(defaultReadState);
+    const [stateLoaded, setStateLoaded] = useState(false);
     const [savedStoryIds, setSavedStoryIds] = useState(() => new Set<number>());
     const [sharedStoryId, setSharedStoryId] = useState<number>();
+    const [newCommentCount, setNewCommentCount] = useState(0);
     const title = useMemo(
         () => page.post?.title ?? 'Hacker News',
         [page.post?.title],
     );
+    const visibleStories = useMemo(
+        () => applyStoryFilters(page.stories, filters),
+        [filters, page.stories],
+    );
+    const hiddenStoryCount = page.stories.length - visibleStories.length;
+
+    const updatePreferences = (patch: Partial<RedhnPreferences>) => {
+        setPreferences((current) => {
+            const next = normalizePreferences({ ...current, ...patch });
+            void preferencesItem.setValue(next);
+            return next;
+        });
+    };
+
+    const updateFilters = (patch: Partial<RedhnFilters>) => {
+        setFilters((current) => {
+            const next = normalizeFilters({ ...current, ...patch });
+            void filtersItem.setValue(next);
+            return next;
+        });
+    };
+
+    const toggleSavedStory = (storyId: number) => {
+        setSavedStoryIds((current) => {
+            const next = new Set(current);
+            if (next.has(storyId)) {
+                next.delete(storyId);
+            } else {
+                next.add(storyId);
+            }
+            void savedStoryIdsItem.setValue(Array.from(next));
+            return next;
+        });
+    };
+
+    const markViewed = (storyId: number) => {
+        setReadState((current) => {
+            const next = markStoryViewed(current, storyId, Date.now());
+            void readStateItem.setValue(next);
+            return next;
+        });
+    };
 
     useEffect(() => {
         onClassicToggle(enabled);
     }, [enabled, onClassicToggle]);
+
+    useEffect(() => {
+        let active = true;
+
+        void Promise.all([
+            preferencesItem.getValue(),
+            filtersItem.getValue(),
+            readStateItem.getValue(),
+            savedStoryIdsItem.getValue(),
+        ]).then(
+            ([storedPreferences, storedFilters, storedReadState, savedIds]) => {
+                if (!active) {
+                    return;
+                }
+
+                setPreferences(normalizePreferences(storedPreferences));
+                setFilters(normalizeFilters(storedFilters));
+                setReadState(storedReadState);
+                setSavedStoryIds(new Set(savedIds));
+                setStateLoaded(true);
+            },
+        );
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!stateLoaded || !page.post) {
+            return;
+        }
+
+        setNewCommentCount(countNewComments(readState, page));
+        const next = markPageRead(readState, page, Date.now());
+        setReadState(next);
+        void readStateItem.setValue(next);
+    }, [page, stateLoaded]);
 
     if (!enabled) {
         return (
@@ -51,7 +163,16 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     }
 
     return (
-        <div className="redhn-shell">
+        <div
+            className={`redhn-shell redhn-shell--${preferences.theme}`}
+            style={
+                {
+                    '--redhn-user-font-size': `${preferences.fontSize}px`,
+                    '--redhn-user-line-height': preferences.lineHeight,
+                    '--redhn-content-width': `${preferences.maxWidth}px`,
+                } as CSSProperties
+            }
+        >
             <header className="redhn-topbar">
                 <a
                     className="redhn-brand"
@@ -80,6 +201,15 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     />
                 </form>
                 <div className="redhn-topbar__actions">
+                    <button
+                        className="redhn-button"
+                        onClick={() => {
+                            setPreferencesOpen((current) => !current);
+                        }}
+                        type="button"
+                    >
+                        Settings
+                    </button>
                     <a
                         className="redhn-button"
                         href="https://news.ycombinator.com/submit"
@@ -98,6 +228,14 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     </label>
                 </div>
             </header>
+            {preferencesOpen ? (
+                <PreferencesPanel
+                    filters={filters}
+                    onFiltersChange={updateFilters}
+                    onPreferencesChange={updatePreferences}
+                    preferences={preferences}
+                />
+            ) : null}
             <div className="redhn-layout">
                 <aside
                     className="redhn-sidebar"
@@ -161,12 +299,12 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                             >
                                 <button
                                     className={
-                                        density === 'card'
+                                        preferences.density === 'card'
                                             ? 'redhn-density__button redhn-density__button--active'
                                             : 'redhn-density__button'
                                     }
                                     onClick={() => {
-                                        setDensity('card');
+                                        updatePreferences({ density: 'card' });
                                     }}
                                     type="button"
                                 >
@@ -174,12 +312,14 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                 </button>
                                 <button
                                     className={
-                                        density === 'compact'
+                                        preferences.density === 'compact'
                                             ? 'redhn-density__button redhn-density__button--active'
                                             : 'redhn-density__button'
                                     }
                                     onClick={() => {
-                                        setDensity('compact');
+                                        updatePreferences({
+                                            density: 'compact',
+                                        });
                                     }}
                                     type="button"
                                 >
@@ -192,17 +332,8 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                 comments={page.comments}
                                 isSaved={savedStoryIds.has(page.post.id)}
                                 isShared={sharedStoryId === page.post.id}
-                                onSave={(storyId) => {
-                                    setSavedStoryIds((current) => {
-                                        const next = new Set(current);
-                                        if (next.has(storyId)) {
-                                            next.delete(storyId);
-                                        } else {
-                                            next.add(storyId);
-                                        }
-                                        return next;
-                                    });
-                                }}
+                                newCommentCount={newCommentCount}
+                                onSave={toggleSavedStory}
                                 onShare={(story) => {
                                     void navigator.clipboard
                                         ?.writeText(story.hnUrl)
@@ -214,18 +345,9 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                             />
                         ) : (
                             <StoryFeed
-                                density={density}
-                                onSave={(storyId) => {
-                                    setSavedStoryIds((current) => {
-                                        const next = new Set(current);
-                                        if (next.has(storyId)) {
-                                            next.delete(storyId);
-                                        } else {
-                                            next.add(storyId);
-                                        }
-                                        return next;
-                                    });
-                                }}
+                                density={preferences.density}
+                                hiddenStoryCount={hiddenStoryCount}
+                                onSave={toggleSavedStory}
                                 onShare={(story) => {
                                     void navigator.clipboard
                                         ?.writeText(story.hnUrl)
@@ -234,8 +356,11 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                                         });
                                 }}
                                 page={page}
+                                readState={readState}
                                 savedStoryIds={savedStoryIds}
                                 sharedStoryId={sharedStoryId}
+                                stories={visibleStories}
+                                onStoryView={markViewed}
                             />
                         )}
                     </div>
@@ -245,11 +370,136 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     );
 }
 
+type PreferencesPanelProps = {
+    preferences: RedhnPreferences;
+    filters: RedhnFilters;
+    onPreferencesChange: (patch: Partial<RedhnPreferences>) => void;
+    onFiltersChange: (patch: Partial<RedhnFilters>) => void;
+};
+
+function PreferencesPanel({
+    preferences,
+    filters,
+    onPreferencesChange,
+    onFiltersChange,
+}: PreferencesPanelProps) {
+    return (
+        <section className="redhn-preferences" aria-label="Preferences">
+            <label className="redhn-field">
+                <span>Theme</span>
+                <select
+                    value={preferences.theme}
+                    onChange={(event) => {
+                        onPreferencesChange({
+                            theme: event.currentTarget
+                                .value as RedhnPreferences['theme'],
+                        });
+                    }}
+                >
+                    <option value="system">System</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </label>
+            <label className="redhn-field">
+                <span>Font</span>
+                <input
+                    max="20"
+                    min="12"
+                    onChange={(event) => {
+                        onPreferencesChange({
+                            fontSize: event.currentTarget.valueAsNumber,
+                        });
+                    }}
+                    type="range"
+                    value={preferences.fontSize}
+                />
+            </label>
+            <label className="redhn-field">
+                <span>Line</span>
+                <input
+                    max="1.9"
+                    min="1.2"
+                    onChange={(event) => {
+                        onPreferencesChange({
+                            lineHeight: event.currentTarget.valueAsNumber,
+                        });
+                    }}
+                    step="0.05"
+                    type="range"
+                    value={preferences.lineHeight}
+                />
+            </label>
+            <label className="redhn-field">
+                <span>Width</span>
+                <input
+                    max="1600"
+                    min="720"
+                    onChange={(event) => {
+                        onPreferencesChange({
+                            maxWidth: event.currentTarget.valueAsNumber,
+                        });
+                    }}
+                    step="40"
+                    type="range"
+                    value={preferences.maxWidth}
+                />
+            </label>
+            <label className="redhn-field redhn-field--wide">
+                <span>Keywords</span>
+                <input
+                    onChange={(event) => {
+                        onFiltersChange({
+                            mutedKeywords: termsFromInput(
+                                event.currentTarget.value,
+                            ),
+                        });
+                    }}
+                    placeholder="ai, crypto, launch"
+                    type="text"
+                    value={termsToInput(filters.mutedKeywords)}
+                />
+            </label>
+            <label className="redhn-field redhn-field--wide">
+                <span>Domains</span>
+                <input
+                    onChange={(event) => {
+                        onFiltersChange({
+                            mutedDomains: termsFromInput(
+                                event.currentTarget.value,
+                            ),
+                        });
+                    }}
+                    placeholder="example.com"
+                    type="text"
+                    value={termsToInput(filters.mutedDomains)}
+                />
+            </label>
+            <label className="redhn-field redhn-field--wide">
+                <span>Topics</span>
+                <input
+                    onChange={(event) => {
+                        onFiltersChange({
+                            mutedTopics: termsFromInput(
+                                event.currentTarget.value,
+                            ),
+                        });
+                    }}
+                    placeholder="ask hn, show hn"
+                    type="text"
+                    value={termsToInput(filters.mutedTopics)}
+                />
+            </label>
+        </section>
+    );
+}
+
 type PostViewProps = {
     post: ParsedStory;
     comments: ParsedComment[];
     isSaved: boolean;
     isShared: boolean;
+    newCommentCount: number;
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
 };
@@ -259,6 +509,7 @@ function PostView({
     comments,
     isSaved,
     isShared,
+    newCommentCount,
     onSave,
     onShare,
 }: PostViewProps) {
@@ -350,7 +601,12 @@ function PostView({
                 </div>
             </header>
             <div className="redhn-comment-tools">
-                <span>{formatNumber(totalComments)} comments</span>
+                <span>
+                    {formatNumber(totalComments)} comments
+                    {newCommentCount > 0
+                        ? ` / ${formatNumber(newCommentCount)} new`
+                        : ''}
+                </span>
                 <div className="redhn-comment-tools__buttons">
                     <button
                         className="redhn-action"
@@ -525,35 +781,50 @@ function CommentThread({
 }
 
 type StoryFeedProps = {
-    density: Density;
+    density: RedhnDensity;
     page: ParsedPage;
+    stories: ParsedStory[];
+    hiddenStoryCount: number;
+    readState: RedhnReadState;
     savedStoryIds: Set<number>;
     sharedStoryId?: number;
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
+    onStoryView: (storyId: number) => void;
 };
 
 function StoryFeed({
     density,
     page,
+    stories,
+    hiddenStoryCount,
+    readState,
     savedStoryIds,
     sharedStoryId,
     onSave,
     onShare,
+    onStoryView,
 }: StoryFeedProps) {
     return (
         <section
             className={`redhn-feed redhn-feed--${density}`}
             aria-label="Hacker News stories"
         >
-            {page.stories.map((story) => (
+            {hiddenStoryCount > 0 ? (
+                <p className="redhn-feed__muted">
+                    {formatNumber(hiddenStoryCount)} muted
+                </p>
+            ) : null}
+            {stories.map((story) => (
                 <StoryCard
                     density={density}
                     isSaved={savedStoryIds.has(story.id)}
                     isShared={sharedStoryId === story.id}
+                    isViewed={readState.viewedStoryIds[story.id] !== undefined}
                     key={story.id}
                     onSave={onSave}
                     onShare={onShare}
+                    onStoryView={onStoryView}
                     story={story}
                 />
             ))}
@@ -572,12 +843,14 @@ function StoryFeed({
 }
 
 type StoryCardProps = {
-    density: Density;
+    density: RedhnDensity;
     story: ParsedStory;
     isSaved: boolean;
     isShared: boolean;
+    isViewed: boolean;
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
+    onStoryView: (storyId: number) => void;
 };
 
 function StoryCard({
@@ -585,13 +858,21 @@ function StoryCard({
     story,
     isSaved,
     isShared,
+    isViewed,
     onSave,
     onShare,
+    onStoryView,
 }: StoryCardProps) {
     const sourceLabel = story.domain ?? 'news.ycombinator.com';
 
     return (
-        <article className={`redhn-story redhn-story--${density}`}>
+        <article
+            className={
+                isViewed
+                    ? `redhn-story redhn-story--${density} redhn-story--viewed`
+                    : `redhn-story redhn-story--${density}`
+            }
+        >
             <div className="redhn-story__vote" aria-label="Story score">
                 {story.actions.upvote ? (
                     <a
@@ -621,7 +902,14 @@ function StoryCard({
                     {story.age ? <span>{story.age}</span> : null}
                 </div>
                 <h2 className="redhn-story__title">
-                    <a href={story.url}>{story.title}</a>
+                    <a
+                        href={story.url}
+                        onClick={() => {
+                            onStoryView(story.id);
+                        }}
+                    >
+                        {story.title}
+                    </a>
                 </h2>
                 <div className="redhn-story__actions">
                     <a

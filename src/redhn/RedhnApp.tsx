@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { ParsedPage, ParsedStory } from './hn/types';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import type { ParsedComment, ParsedPage, ParsedStory } from './hn/types';
 
 type RedhnAppProps = {
     page: ParsedPage;
@@ -188,17 +188,30 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                             </div>
                         </div>
                         {page.kind === 'item' && page.post ? (
-                            <section
-                                className="redhn-surface"
-                                aria-label={title}
-                            >
-                                <h1 className="redhn-page-title">
-                                    {page.post.title}
-                                </h1>
-                                <p className="redhn-page-meta">
-                                    {page.comments.length} top-level comments
-                                </p>
-                            </section>
+                            <PostView
+                                comments={page.comments}
+                                isSaved={savedStoryIds.has(page.post.id)}
+                                isShared={sharedStoryId === page.post.id}
+                                onSave={(storyId) => {
+                                    setSavedStoryIds((current) => {
+                                        const next = new Set(current);
+                                        if (next.has(storyId)) {
+                                            next.delete(storyId);
+                                        } else {
+                                            next.add(storyId);
+                                        }
+                                        return next;
+                                    });
+                                }}
+                                onShare={(story) => {
+                                    void navigator.clipboard
+                                        ?.writeText(story.hnUrl)
+                                        .then(() => {
+                                            setSharedStoryId(story.id);
+                                        });
+                                }}
+                                post={page.post}
+                            />
                         ) : (
                             <StoryFeed
                                 density={density}
@@ -229,6 +242,285 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                 </main>
             </div>
         </div>
+    );
+}
+
+type PostViewProps = {
+    post: ParsedStory;
+    comments: ParsedComment[];
+    isSaved: boolean;
+    isShared: boolean;
+    onSave: (storyId: number) => void;
+    onShare: (story: ParsedStory) => void;
+};
+
+function PostView({
+    post,
+    comments,
+    isSaved,
+    isShared,
+    onSave,
+    onShare,
+}: PostViewProps) {
+    const [collapsedCommentIds, setCollapsedCommentIds] = useState(
+        () => new Set<number>(),
+    );
+    const [collapseDepth, setCollapseDepth] = useState<number>();
+    const totalComments = countComments(comments);
+
+    const toggleComment = (commentId: number) => {
+        setCollapsedCommentIds((current) => {
+            const next = new Set(current);
+            if (next.has(commentId)) {
+                next.delete(commentId);
+            } else {
+                next.add(commentId);
+            }
+            return next;
+        });
+    };
+
+    return (
+        <article className="redhn-post">
+            <header className="redhn-post__header">
+                <div className="redhn-story__meta">
+                    <a className="redhn-story__source" href={post.url}>
+                        {post.domain ?? 'news.ycombinator.com'}
+                    </a>
+                    {post.author ? <span>Posted by {post.author}</span> : null}
+                    {post.age ? <span>{post.age}</span> : null}
+                </div>
+                <h1 className="redhn-post__title">{post.title}</h1>
+                {post.textHtml ? (
+                    <div
+                        className="redhn-post__text"
+                        dangerouslySetInnerHTML={{
+                            __html: sanitizeHnHtml(post.textHtml),
+                        }}
+                    />
+                ) : null}
+                <div className="redhn-story__actions">
+                    {post.actions.upvote ? (
+                        <a className="redhn-action" href={post.actions.upvote}>
+                            <span aria-hidden="true">^</span>
+                            <span>{formatNumber(post.score)}</span>
+                        </a>
+                    ) : (
+                        <span className="redhn-action">
+                            <span aria-hidden="true">^</span>
+                            <span>{formatNumber(post.score)}</span>
+                        </span>
+                    )}
+                    <a
+                        className="redhn-action"
+                        href={post.actions.comments ?? post.hnUrl}
+                    >
+                        <span aria-hidden="true">[]</span>
+                        <span>{formatNumber(post.commentCount)}</span>
+                    </a>
+                    <button
+                        className="redhn-action"
+                        onClick={() => {
+                            onShare(post);
+                        }}
+                        type="button"
+                    >
+                        <span aria-hidden="true">/</span>
+                        <span>{isShared ? 'Copied' : 'Share'}</span>
+                    </button>
+                    <button
+                        className={
+                            isSaved
+                                ? 'redhn-action redhn-action--active'
+                                : 'redhn-action'
+                        }
+                        onClick={() => {
+                            onSave(post.id);
+                        }}
+                        type="button"
+                    >
+                        <span aria-hidden="true">#</span>
+                        <span>{isSaved ? 'Saved' : 'Save'}</span>
+                    </button>
+                    {post.actions.reply ? (
+                        <a className="redhn-action" href={post.actions.reply}>
+                            Reply
+                        </a>
+                    ) : null}
+                </div>
+            </header>
+            <div className="redhn-comment-tools">
+                <span>{formatNumber(totalComments)} comments</span>
+                <div className="redhn-comment-tools__buttons">
+                    <button
+                        className="redhn-action"
+                        onClick={() => {
+                            setCollapseDepth(2);
+                        }}
+                        type="button"
+                    >
+                        Depth 2
+                    </button>
+                    <button
+                        className="redhn-action"
+                        onClick={() => {
+                            setCollapseDepth(4);
+                        }}
+                        type="button"
+                    >
+                        Depth 4
+                    </button>
+                    <button
+                        className="redhn-action"
+                        onClick={() => {
+                            setCollapseDepth(undefined);
+                            setCollapsedCommentIds(new Set());
+                        }}
+                        type="button"
+                    >
+                        Expand
+                    </button>
+                </div>
+            </div>
+            <section className="redhn-comments" aria-label="Comments">
+                {comments.map((comment) => (
+                    <CommentThread
+                        collapseDepth={collapseDepth}
+                        collapsedCommentIds={collapsedCommentIds}
+                        comment={comment}
+                        key={comment.id}
+                        onToggle={toggleComment}
+                    />
+                ))}
+            </section>
+        </article>
+    );
+}
+
+type CommentThreadProps = {
+    comment: ParsedComment;
+    collapsedCommentIds: Set<number>;
+    collapseDepth?: number;
+    onToggle: (commentId: number) => void;
+};
+
+function CommentThread({
+    comment,
+    collapsedCommentIds,
+    collapseDepth,
+    onToggle,
+}: CommentThreadProps) {
+    const collapsed =
+        collapsedCommentIds.has(comment.id) ||
+        (collapseDepth !== undefined && comment.depth >= collapseDepth);
+    const replies = countComments(comment.children);
+
+    return (
+        <article
+            className={
+                collapsed
+                    ? 'redhn-comment redhn-comment--collapsed'
+                    : 'redhn-comment'
+            }
+            style={
+                {
+                    '--redhn-comment-depth': comment.depth,
+                    '--redhn-comment-guide': commentGuideColor(comment.depth),
+                } as CSSProperties
+            }
+        >
+            <button
+                aria-label={collapsed ? 'Expand thread' : 'Collapse thread'}
+                className="redhn-comment__guide"
+                onClick={() => {
+                    onToggle(comment.id);
+                }}
+                type="button"
+            />
+            <div className="redhn-comment__body">
+                <header className="redhn-comment__header">
+                    <span className="redhn-comment__avatar" aria-hidden="true">
+                        {(comment.author ?? '?').slice(0, 1)}
+                    </span>
+                    {comment.author ? (
+                        <a
+                            className="redhn-comment__author"
+                            href={`https://news.ycombinator.com/user?id=${comment.author}`}
+                        >
+                            {comment.author}
+                        </a>
+                    ) : (
+                        <span className="redhn-comment__author">unknown</span>
+                    )}
+                    {comment.age ? <span>{comment.age}</span> : null}
+                    {replies > 0 ? (
+                        <span>{formatNumber(replies)} replies</span>
+                    ) : null}
+                    <button
+                        className="redhn-comment__collapse"
+                        onClick={() => {
+                            onToggle(comment.id);
+                        }}
+                        type="button"
+                    >
+                        {collapsed ? '+' : '-'}
+                    </button>
+                </header>
+                {collapsed ? (
+                    <p className="redhn-comment__summary">{comment.text}</p>
+                ) : (
+                    <>
+                        <div
+                            className="redhn-comment__text"
+                            dangerouslySetInnerHTML={{
+                                __html: sanitizeHnHtml(comment.html),
+                            }}
+                        />
+                        <div className="redhn-comment__actions">
+                            {comment.actions.upvote ? (
+                                <a
+                                    className="redhn-action"
+                                    href={comment.actions.upvote}
+                                >
+                                    ^
+                                </a>
+                            ) : null}
+                            {comment.actions.reply ? (
+                                <a
+                                    className="redhn-action"
+                                    href={comment.actions.reply}
+                                >
+                                    Reply
+                                </a>
+                            ) : null}
+                            {comment.actions.parent ? (
+                                <a
+                                    className="redhn-action"
+                                    href={comment.actions.parent}
+                                >
+                                    Parent
+                                </a>
+                            ) : null}
+                        </div>
+                        {comment.children.length > 0 ? (
+                            <div className="redhn-comment__children">
+                                {comment.children.map((child) => (
+                                    <CommentThread
+                                        collapseDepth={collapseDepth}
+                                        collapsedCommentIds={
+                                            collapsedCommentIds
+                                        }
+                                        comment={child}
+                                        key={child.id}
+                                        onToggle={onToggle}
+                                    />
+                                ))}
+                            </div>
+                        ) : null}
+                    </>
+                )}
+            </div>
+        </article>
     );
 }
 
@@ -372,6 +664,58 @@ function StoryCard({
             </div>
         </article>
     );
+}
+
+function countComments(comments: ParsedComment[]): number {
+    return comments.reduce(
+        (total, comment) => total + 1 + countComments(comment.children),
+        0,
+    );
+}
+
+function commentGuideColor(depth: number): string {
+    const colors = ['#926f66', '#4d7788', '#ad2c00', '#617152', '#6d5b8a'];
+    return colors[depth % colors.length];
+}
+
+function sanitizeHnHtml(html: string): string {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+
+    for (const element of template.content.querySelectorAll('*')) {
+        if (
+            [
+                'script',
+                'style',
+                'iframe',
+                'object',
+                'embed',
+                'link',
+                'meta',
+            ].includes(element.tagName.toLowerCase())
+        ) {
+            element.remove();
+            continue;
+        }
+
+        for (const attribute of Array.from(element.attributes)) {
+            const name = attribute.name.toLowerCase();
+            const value = attribute.value.trim().toLowerCase();
+            if (
+                name.startsWith('on') ||
+                ((name === 'href' || name === 'src') &&
+                    value.startsWith('javascript:'))
+            ) {
+                element.removeAttribute(attribute.name);
+            }
+        }
+
+        if (element.tagName.toLowerCase() === 'a') {
+            element.setAttribute('rel', 'nofollow noopener noreferrer');
+        }
+    }
+
+    return template.innerHTML;
 }
 
 function formatNumber(value: number | undefined): string {

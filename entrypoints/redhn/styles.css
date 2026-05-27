@@ -456,6 +456,192 @@
     padding: 28px 0 0;
 }
 
+.redhn-post {
+    display: grid;
+    gap: 20px;
+    padding: 24px 0 48px;
+}
+
+.redhn-post__header {
+    border-bottom: 1px solid var(--redhn-outline);
+    padding-bottom: 24px;
+}
+
+.redhn-post__title {
+    max-width: 58rem;
+    margin: 10px 0 0;
+    color: var(--redhn-text);
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 36px;
+}
+
+.redhn-post__text {
+    max-width: 52rem;
+    margin-top: 18px;
+    color: var(--redhn-text);
+    font-size: 16px;
+    line-height: 26px;
+}
+
+.redhn-post__text p {
+    margin: 0 0 14px;
+}
+
+.redhn-comment-tools {
+    position: sticky;
+    top: 65px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--redhn-outline);
+    background: color-mix(in srgb, var(--redhn-surface) 94%, transparent);
+    padding: 12px 0;
+    color: var(--redhn-text-muted);
+    font-family: var(--redhn-font-mono);
+    font-size: 12px;
+    backdrop-filter: blur(12px);
+}
+
+.redhn-comment-tools__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.redhn-comments {
+    display: grid;
+    gap: 10px;
+}
+
+.redhn-comment {
+    --redhn-comment-indent: calc(var(--redhn-comment-depth) * 28px);
+    position: relative;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    margin-left: var(--redhn-comment-indent);
+}
+
+.redhn-comment__guide {
+    width: 24px;
+    min-height: 100%;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+}
+
+.redhn-comment__guide::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 100%;
+    min-height: 38px;
+    margin: 0 auto;
+    border-radius: 9999px;
+    background: var(--redhn-comment-guide);
+    opacity: 0.5;
+}
+
+.redhn-comment__guide:hover::before {
+    opacity: 1;
+}
+
+.redhn-comment__body {
+    min-width: 0;
+    padding: 4px 0 10px 8px;
+}
+
+.redhn-comment__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    min-height: 32px;
+    color: var(--redhn-text-muted);
+    font-family: var(--redhn-font-mono);
+    font-size: 12px;
+}
+
+.redhn-comment__avatar {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border-radius: 9999px;
+    background: var(--redhn-surface-muted);
+    color: var(--redhn-text);
+    font-family: var(--redhn-font-mono);
+    font-weight: 900;
+}
+
+.redhn-comment__author {
+    color: var(--redhn-text);
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.redhn-comment__collapse {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 0;
+    border-radius: 9999px;
+    background: var(--redhn-surface-muted);
+    color: var(--redhn-text);
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.redhn-comment__text {
+    max-width: 76rem;
+    color: var(--redhn-text);
+    font-size: 15px;
+    line-height: 24px;
+}
+
+.redhn-comment__text p {
+    margin: 0 0 12px;
+}
+
+.redhn-comment__text a,
+.redhn-post__text a {
+    color: var(--redhn-primary);
+}
+
+.redhn-comment__summary {
+    max-width: 52rem;
+    margin: 4px 0 0;
+    overflow: hidden;
+    color: var(--redhn-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.redhn-comment__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.redhn-comment__children {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.redhn-comment--collapsed .redhn-comment__guide::before {
+    min-height: 32px;
+    opacity: 0.9;
+}
+
 .redhn-classic-bar {
     position: fixed;
     top: 12px;
@@ -512,6 +698,16 @@
     .redhn-density__button {
         flex: 1;
     }
+
+    .redhn-comment-tools {
+        position: static;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .redhn-comment {
+        --redhn-comment-indent: calc(var(--redhn-comment-depth) * 16px);
+    }
 }
 
 @media (max-width: 620px) {
@@ -549,5 +745,19 @@
 
     .redhn-action {
         min-height: 36px;
+    }
+
+    .redhn-post__title {
+        font-size: 22px;
+        line-height: 30px;
+    }
+
+    .redhn-comment {
+        --redhn-comment-indent: calc(var(--redhn-comment-depth) * 10px);
+        grid-template-columns: 18px minmax(0, 1fr);
+    }
+
+    .redhn-comment__guide {
+        width: 18px;
     }
 }

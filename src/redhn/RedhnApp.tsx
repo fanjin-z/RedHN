@@ -6,14 +6,26 @@ import {
     type ReactNode,
 } from 'react';
 import { ArrowFatUpIcon } from '@phosphor-icons/react/dist/csr/ArrowFatUp';
+import { BellIcon } from '@phosphor-icons/react/dist/csr/Bell';
 import { BookmarkSimpleIcon } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
 import { ChatCircleIcon } from '@phosphor-icons/react/dist/csr/ChatCircle';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { GearSixIcon } from '@phosphor-icons/react/dist/csr/GearSix';
+import { MonitorIcon } from '@phosphor-icons/react/dist/csr/Monitor';
+import { PlusSquareIcon } from '@phosphor-icons/react/dist/csr/PlusSquare';
+import { PowerIcon } from '@phosphor-icons/react/dist/csr/Power';
 import { ShareFatIcon } from '@phosphor-icons/react/dist/csr/ShareFat';
+import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
+import { UserCircleIcon } from '@phosphor-icons/react/dist/csr/UserCircle';
 import { sendRedhnMessage } from './api/backgroundClient';
 import type { HnApiItem } from './api/hnApi';
 import { performHnAction } from './hn/actions';
-import type { ParsedComment, ParsedPage, ParsedStory } from './hn/types';
+import type {
+    ParsedComment,
+    ParsedCurrentUser,
+    ParsedPage,
+    ParsedStory,
+} from './hn/types';
 import {
     applyStoryFilters,
     defaultFilters,
@@ -60,6 +72,7 @@ const navItems = [
 export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [enabled, setEnabled] = useState(true);
     const [preferencesOpen, setPreferencesOpen] = useState(false);
+    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const [preferences, setPreferences] =
         useState<RedhnPreferences>(defaultPreferences);
     const [filters, setFilters] = useState<RedhnFilters>(defaultFilters);
@@ -263,31 +276,23 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     />
                 </form>
                 <div className="redhn-topbar__actions">
-                    <button
-                        className="redhn-button"
-                        onClick={() => {
+                    <TopbarActions
+                        currentUser={page.currentUser}
+                        enabled={enabled}
+                        loginUrl={hnLoginUrl(page.sourceUrl)}
+                        menuOpen={accountMenuOpen}
+                        onEnabledChange={setEnabled}
+                        onMenuOpenChange={setAccountMenuOpen}
+                        onPreferencesToggle={() => {
                             setPreferencesOpen((current) => !current);
+                            setAccountMenuOpen(false);
                         }}
-                        type="button"
-                    >
-                        Settings
-                    </button>
-                    <a
-                        className="redhn-button"
-                        href="https://news.ycombinator.com/submit"
-                    >
-                        Create
-                    </a>
-                    <label className="redhn-switch">
-                        <input
-                            checked={enabled}
-                            onChange={(event) => {
-                                setEnabled(event.currentTarget.checked);
-                            }}
-                            type="checkbox"
-                        />
-                        <span>RedHN</span>
-                    </label>
+                        onThemeChange={(theme) => {
+                            updatePreferences({ theme });
+                        }}
+                        preferencesOpen={preferencesOpen}
+                        theme={preferences.theme}
+                    />
                 </div>
             </header>
             {preferencesOpen ? (
@@ -399,6 +404,265 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     );
 }
 
+type TopbarActionsProps = {
+    currentUser?: ParsedCurrentUser;
+    enabled: boolean;
+    loginUrl: string;
+    menuOpen: boolean;
+    preferencesOpen: boolean;
+    theme: RedhnPreferences['theme'];
+    onEnabledChange: (enabled: boolean) => void;
+    onMenuOpenChange: (open: boolean) => void;
+    onPreferencesToggle: () => void;
+    onThemeChange: (theme: RedhnPreferences['theme']) => void;
+};
+
+function TopbarActions({
+    currentUser,
+    enabled,
+    loginUrl,
+    menuOpen,
+    preferencesOpen,
+    theme,
+    onEnabledChange,
+    onMenuOpenChange,
+    onPreferencesToggle,
+    onThemeChange,
+}: TopbarActionsProps) {
+    const menuId = 'redhn-account-menu';
+    const userThreadsUrl = currentUser
+        ? `https://news.ycombinator.com/threads?id=${encodeURIComponent(
+              currentUser.id,
+          )}`
+        : undefined;
+
+    return (
+        <>
+            {currentUser ? (
+                <>
+                    <a
+                        aria-label="Open discussion threads"
+                        className="redhn-icon-button"
+                        href={userThreadsUrl}
+                        title="Threads"
+                    >
+                        <ChatCircleIcon aria-hidden="true" weight="bold" />
+                    </a>
+                    <a
+                        className="redhn-create-button"
+                        href="https://news.ycombinator.com/submit"
+                    >
+                        <PlusSquareIcon aria-hidden="true" weight="bold" />
+                        <span>Create</span>
+                    </a>
+                    <button
+                        aria-label="Notifications"
+                        className="redhn-icon-button"
+                        title="Notifications"
+                        type="button"
+                    >
+                        <BellIcon aria-hidden="true" weight="bold" />
+                    </button>
+                    <button
+                        aria-controls={menuId}
+                        aria-expanded={menuOpen}
+                        aria-label="Open profile menu"
+                        className="redhn-avatar-button"
+                        onClick={() => {
+                            onMenuOpenChange(!menuOpen);
+                        }}
+                        type="button"
+                    >
+                        <UserAvatar userId={currentUser.id} />
+                    </button>
+                </>
+            ) : (
+                <>
+                    <a className="redhn-auth-button" href={loginUrl}>
+                        Sign Up
+                    </a>
+                    <a
+                        className="redhn-auth-button redhn-auth-button--primary"
+                        href={loginUrl}
+                    >
+                        Log In
+                    </a>
+                    <button
+                        aria-controls={menuId}
+                        aria-expanded={menuOpen}
+                        aria-label="Open RedHN menu"
+                        className="redhn-icon-button"
+                        onClick={() => {
+                            onMenuOpenChange(!menuOpen);
+                        }}
+                        type="button"
+                    >
+                        <DotsThreeIcon aria-hidden="true" weight="bold" />
+                    </button>
+                </>
+            )}
+            {menuOpen ? (
+                <AccountMenu
+                    currentUser={currentUser}
+                    enabled={enabled}
+                    id={menuId}
+                    onEnabledChange={onEnabledChange}
+                    onPreferencesToggle={onPreferencesToggle}
+                    onThemeChange={onThemeChange}
+                    preferencesOpen={preferencesOpen}
+                    theme={theme}
+                />
+            ) : null}
+        </>
+    );
+}
+
+type AccountMenuProps = {
+    currentUser?: ParsedCurrentUser;
+    enabled: boolean;
+    id: string;
+    preferencesOpen: boolean;
+    theme: RedhnPreferences['theme'];
+    onEnabledChange: (enabled: boolean) => void;
+    onPreferencesToggle: () => void;
+    onThemeChange: (theme: RedhnPreferences['theme']) => void;
+};
+
+function AccountMenu({
+    currentUser,
+    enabled,
+    id,
+    preferencesOpen,
+    theme,
+    onEnabledChange,
+    onPreferencesToggle,
+    onThemeChange,
+}: AccountMenuProps) {
+    return (
+        <div
+            aria-label={currentUser ? 'Profile menu' : 'RedHN menu'}
+            className="redhn-account-menu"
+            id={id}
+            role="menu"
+        >
+            {currentUser ? (
+                <a
+                    className="redhn-account-menu__profile"
+                    href={currentUser.profileUrl}
+                    role="menuitem"
+                >
+                    <UserAvatar userId={currentUser.id} />
+                    <span>
+                        <strong>View Profile</strong>
+                        <span>u/{currentUser.id}</span>
+                    </span>
+                </a>
+            ) : null}
+            <MenuRow icon={<MonitorIcon weight="bold" />} label="Display Mode">
+                <select
+                    aria-label="Display mode"
+                    value={theme}
+                    onChange={(event) => {
+                        onThemeChange(
+                            event.currentTarget
+                                .value as RedhnPreferences['theme'],
+                        );
+                    }}
+                >
+                    <option value="system">System</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </MenuRow>
+            <MenuRow icon={<PowerIcon weight="bold" />} label="RedHN View">
+                <label className="redhn-menu-switch">
+                    <input
+                        checked={enabled}
+                        onChange={(event) => {
+                            onEnabledChange(event.currentTarget.checked);
+                        }}
+                        type="checkbox"
+                    />
+                    <span aria-hidden="true" />
+                </label>
+            </MenuRow>
+            <button
+                className="redhn-account-menu__item"
+                onClick={onPreferencesToggle}
+                role="menuitem"
+                type="button"
+            >
+                <GearSixIcon aria-hidden="true" weight="bold" />
+                <span>{preferencesOpen ? 'Hide Settings' : 'Settings'}</span>
+            </button>
+            <div className="redhn-account-menu__separator" role="separator" />
+            <a
+                className="redhn-account-menu__item"
+                href="https://news.ycombinator.com/newsguidelines.html"
+                role="menuitem"
+            >
+                <span className="redhn-menu-letter" aria-hidden="true">
+                    G
+                </span>
+                <span>Guidelines</span>
+            </a>
+            <a
+                className="redhn-account-menu__item"
+                href="https://news.ycombinator.com/newsfaq.html"
+                role="menuitem"
+            >
+                <span className="redhn-menu-letter" aria-hidden="true">
+                    ?
+                </span>
+                <span>FAQ</span>
+            </a>
+            {currentUser?.logoutUrl ? (
+                <>
+                    <div
+                        className="redhn-account-menu__separator"
+                        role="separator"
+                    />
+                    <a
+                        className="redhn-account-menu__item"
+                        href={currentUser.logoutUrl}
+                        role="menuitem"
+                    >
+                        <SignOutIcon aria-hidden="true" weight="bold" />
+                        <span>Log Out</span>
+                    </a>
+                </>
+            ) : null}
+        </div>
+    );
+}
+
+type MenuRowProps = {
+    children: ReactNode;
+    icon: ReactNode;
+    label: string;
+};
+
+function MenuRow({ children, icon, label }: MenuRowProps) {
+    return (
+        <div className="redhn-account-menu__item redhn-account-menu__item--control">
+            <span className="redhn-account-menu__icon" aria-hidden="true">
+                {icon}
+            </span>
+            <span>{label}</span>
+            {children}
+        </div>
+    );
+}
+
+function UserAvatar({ userId }: { userId: string }) {
+    return (
+        <span className="redhn-avatar" aria-hidden="true">
+            <UserCircleIcon weight="fill" />
+            <span>{userInitials(userId)}</span>
+        </span>
+    );
+}
+
 type PreferencesPanelProps = {
     preferences: RedhnPreferences;
     filters: RedhnFilters;
@@ -414,22 +678,6 @@ function PreferencesPanel({
 }: PreferencesPanelProps) {
     return (
         <section className="redhn-preferences" aria-label="Preferences">
-            <label className="redhn-field">
-                <span>Theme</span>
-                <select
-                    value={preferences.theme}
-                    onChange={(event) => {
-                        onPreferencesChange({
-                            theme: event.currentTarget
-                                .value as RedhnPreferences['theme'],
-                        });
-                    }}
-                >
-                    <option value="system">System</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                </select>
-            </label>
             <label className="redhn-field">
                 <span>Font</span>
                 <input
@@ -1063,6 +1311,39 @@ function countComments(comments: ParsedComment[]): number {
         (total, comment) => total + 1 + countComments(comment.children),
         0,
     );
+}
+
+function hnLoginUrl(sourceUrl: string): string {
+    let goto = 'news';
+
+    try {
+        const url = new URL(sourceUrl);
+        const path = url.pathname.replace(/^\/+/, '');
+        goto = `${path || 'news'}${url.search}`;
+    } catch {
+        goto = sourceUrl.replace(/^https:\/\/news\.ycombinator\.com\/?/, '');
+    }
+
+    return `https://news.ycombinator.com/login?goto=${encodeURIComponent(
+        goto || 'news',
+    )}`;
+}
+
+function userInitials(userId: string): string {
+    const parts = userId
+        .split(/[^a-z0-9]+/i)
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    if (parts.length === 0) {
+        return '?';
+    }
+
+    return parts
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase();
 }
 
 function enrichStoryWithApiItem(

@@ -94,4 +94,53 @@ describe('HN DOM parser', () => {
         ).toBe(456);
         expect(parseItemIdFromUrl('news')).toBeUndefined();
     });
+
+    it('parses the logged-in HN user from the page top bar', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <span class="pagetop">
+                        <a href="news">Hacker News</a>
+                        <a id="me" href="user?id=daanyal">daanyal</a>
+                        <a id="logout" href="logout?auth=abc&amp;goto=news">logout</a>
+                    </span>
+                    <table class="itemlist"></table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/news',
+            789,
+        );
+
+        expect(page.currentUser).toEqual({
+            id: 'daanyal',
+            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+            logoutUrl: 'https://news.ycombinator.com/logout?auth=abc&goto=news',
+        });
+    });
+
+    it('leaves currentUser empty for logged-out HN pages', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <span class="pagetop">
+                        <a href="news">Hacker News</a>
+                        <a href="login?goto=news">login</a>
+                    </span>
+                    <table class="itemlist"></table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/news',
+            789,
+        );
+
+        expect(page.currentUser).toBeUndefined();
+    });
 });

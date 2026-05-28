@@ -43,10 +43,17 @@ export type ParsedPagination = {
     more?: string;
 };
 
+export type ParsedCurrentUser = {
+    id: string;
+    profileUrl: string;
+    logoutUrl?: string;
+};
+
 export type ParsedPage = {
     kind: ParsedPageKind;
     sourceUrl: string;
     title?: string;
+    currentUser?: ParsedCurrentUser;
     stories: ParsedStory[];
     post?: ParsedStory;
     comments: ParsedComment[];

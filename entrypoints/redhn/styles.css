@@ -282,10 +282,276 @@
 }
 
 .redhn-topbar__actions {
+    position: relative;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.redhn-auth-button,
+.redhn-create-button,
+.redhn-icon-button,
+.redhn-avatar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    font-family: var(--redhn-font-sans);
+    font-size: var(--redhn-type-ui-size);
+    font-weight: 800;
+    line-height: var(--redhn-type-ui-line-height);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.redhn-auth-button {
+    min-height: 40px;
+    border-radius: 9999px;
+    background: color-mix(
+        in srgb,
+        var(--redhn-surface-muted) 82%,
+        var(--redhn-text) 8%
+    );
+    color: var(--redhn-text);
+    padding: 0 18px;
+}
+
+.redhn-auth-button--primary {
+    background: var(--redhn-primary-hot);
+    color: #ffffff;
+}
+
+.redhn-create-button {
+    gap: 8px;
+    min-height: 40px;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--redhn-text);
+    padding: 0 10px;
+}
+
+.redhn-icon-button,
+.redhn-avatar-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--redhn-text);
+    padding: 0;
+}
+
+.redhn-icon-button svg,
+.redhn-create-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.redhn-auth-button:hover,
+.redhn-create-button:hover,
+.redhn-icon-button:hover,
+.redhn-avatar-button:hover {
+    background: color-mix(
+        in srgb,
+        var(--redhn-surface-muted) 72%,
+        var(--redhn-text) 10%
+    );
+}
+
+.redhn-auth-button--primary:hover {
+    background: color-mix(in srgb, var(--redhn-primary-hot) 88%, #000000 12%);
+}
+
+.redhn-avatar {
+    position: relative;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    overflow: hidden;
+    border: 2px solid color-mix(in srgb, var(--redhn-surface-card), #ffffff 60%);
+    border-radius: 9999px;
+    background:
+        radial-gradient(circle at 50% 35%, #ffffff 0 26%, transparent 27%),
+        linear-gradient(135deg, #ff4500, #4d7788);
+    color: #ffffff;
+    box-shadow: 0 0 0 1px var(--redhn-outline);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.redhn-avatar svg {
+    position: absolute;
+    inset: -5px;
+    width: 46px;
+    height: 46px;
+    color: rgb(255 255 255 / 42%);
+}
+
+.redhn-avatar span {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 9999px;
+    background: rgb(7 17 19 / 64%);
+}
+
+.redhn-avatar::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 1px;
+    width: 9px;
+    height: 9px;
+    border: 2px solid var(--redhn-surface-card);
+    border-radius: 9999px;
+    background: #00a816;
+}
+
+.redhn-account-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    z-index: 20;
+    display: grid;
+    width: min(360px, calc(100vw - 24px));
+    overflow: hidden;
+    border: 1px solid var(--redhn-outline);
+    border-radius: var(--redhn-radius-lg);
+    background: var(--redhn-surface-card);
+    box-shadow: var(--redhn-shadow);
+    padding: 8px 0;
+}
+
+.redhn-account-menu__profile,
+.redhn-account-menu__item {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
     gap: 12px;
+    align-items: center;
+    min-height: 56px;
+    border: 0;
+    background: transparent;
+    color: var(--redhn-text);
+    font-family: var(--redhn-font-sans);
+    font-size: var(--redhn-type-ui-size);
+    font-weight: 700;
+    line-height: var(--redhn-type-ui-line-height);
+    padding: 8px 18px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.redhn-account-menu__profile:hover,
+.redhn-account-menu__item:hover {
+    background: var(--redhn-surface-muted);
+}
+
+.redhn-account-menu__profile > span:last-child {
+    display: grid;
+    min-width: 0;
+}
+
+.redhn-account-menu__profile strong {
+    font-size: calc(var(--redhn-type-ui-size) * 1.05);
+}
+
+.redhn-account-menu__profile span span {
+    overflow: hidden;
+    color: var(--redhn-text-muted);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.redhn-account-menu__item > svg,
+.redhn-account-menu__icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.redhn-account-menu__item--control {
+    grid-template-columns: 44px minmax(0, 1fr) max-content;
+    cursor: default;
+}
+
+.redhn-account-menu__item--control:hover {
+    background: transparent;
+}
+
+.redhn-account-menu__item--control select {
+    min-height: 34px;
+    border: 1px solid var(--redhn-outline);
+    border-radius: 9999px;
+    background: var(--redhn-surface-muted);
+    color: var(--redhn-text);
+    font: inherit;
+    font-weight: 700;
+    padding: 0 28px 0 12px;
+}
+
+.redhn-account-menu__separator {
+    height: 1px;
+    margin: 8px 0;
+    background: var(--redhn-outline);
+}
+
+.redhn-menu-letter {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 9999px;
+    background: var(--redhn-surface-muted);
+    color: var(--redhn-text);
+    font-weight: 900;
+}
+
+.redhn-menu-switch {
+    position: relative;
+    display: inline-flex;
+    width: 42px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.redhn-menu-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.redhn-menu-switch span {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: var(--redhn-outline-strong);
+}
+
+.redhn-menu-switch span::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #ffffff;
+    transition: transform 150ms ease;
+}
+
+.redhn-menu-switch input:checked + span {
+    background: var(--redhn-primary-hot);
+}
+
+.redhn-menu-switch input:checked + span::after {
+    transform: translateX(18px);
 }
 
 .redhn-button,
@@ -948,7 +1214,12 @@
 
 @media (max-width: 900px) {
     .redhn-topbar {
-        grid-template-columns: 1fr;
+        grid-template-columns: auto minmax(0, 1fr) max-content;
+        gap: 12px;
+    }
+
+    .redhn-brand__submark {
+        display: none;
     }
 
     .redhn-layout {
@@ -993,9 +1264,56 @@
         padding-left: 12px;
     }
 
-    .redhn-brand__submark,
     .redhn-sidebar__footer {
         display: none;
+    }
+
+    .redhn-topbar {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .redhn-search {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .redhn-topbar__actions {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .redhn-brand {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .redhn-brand > span:not(.redhn-brand__mark) {
+        display: none;
+    }
+
+    .redhn-auth-button {
+        min-height: 36px;
+        padding: 0 14px;
+    }
+
+    .redhn-create-button span {
+        display: none;
+    }
+
+    .redhn-icon-button,
+    .redhn-avatar-button {
+        width: 36px;
+        height: 36px;
+    }
+
+    .redhn-account-menu {
+        right: -2px;
+    }
+
+    .redhn-account-menu__profile,
+    .redhn-account-menu__item {
+        padding-right: 14px;
+        padding-left: 14px;
     }
 
     .redhn-nav {

@@ -1,5 +1,6 @@
 import type {
     ParsedComment,
+    ParsedCurrentUser,
     ParsedPage,
     ParsedPagination,
     ParsedStory,
@@ -22,6 +23,7 @@ export function parseHnPage(
         kind: post ? 'item' : stories.length > 0 ? 'feed' : 'unknown',
         sourceUrl,
         title: text(document.querySelector('title')),
+        currentUser: parseCurrentUser(document, sourceUrl),
         stories: post ? [] : stories,
         post,
         comments,
@@ -207,6 +209,32 @@ function parsePagination(
 ): ParsedPagination {
     return {
         more: href(findLink(document, 'More'), sourceUrl),
+    };
+}
+
+function parseCurrentUser(
+    document: Document,
+    sourceUrl: string,
+): ParsedCurrentUser | undefined {
+    const userLink =
+        document.querySelector<HTMLAnchorElement>('.pagetop a#me') ??
+        document.querySelector<HTMLAnchorElement>('a#me');
+    const id = text(userLink);
+
+    if (!id || !userLink) {
+        return undefined;
+    }
+
+    return {
+        id,
+        profileUrl:
+            href(userLink, sourceUrl) ??
+            absoluteUrl(`user?id=${encodeURIComponent(id)}`, sourceUrl),
+        logoutUrl: href(
+            document.querySelector<HTMLAnchorElement>('.pagetop a#logout') ??
+                document.querySelector<HTMLAnchorElement>('a#logout'),
+            sourceUrl,
+        ),
     };
 }
 

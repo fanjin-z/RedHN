@@ -1154,6 +1154,7 @@ function StoryCard({
 }: StoryCardProps) {
     const sourceLabel = story.domain ?? 'news.ycombinator.com';
     const commentsHref = story.actions.comments ?? story.hnUrl;
+    const creditAuthor = story.author ?? 'unknown';
 
     return (
         <article
@@ -1171,14 +1172,38 @@ function StoryCard({
             />
             <div className="redhn-story__content">
                 <header className="redhn-story__header">
-                    <div className="redhn-story__meta">
-                        <a className="redhn-story__source" href={story.url}>
-                            {sourceLabel}
-                        </a>
+                    <div className="redhn-story__credit">
+                        <span
+                            className="redhn-story__avatar"
+                            aria-hidden="true"
+                        >
+                            {userInitials(creditAuthor)}
+                        </span>
                         {story.author ? (
-                            <span>Posted by {story.author}</span>
+                            <a
+                                className="redhn-story__author"
+                                href={`https://news.ycombinator.com/user?id=${encodeURIComponent(
+                                    story.author,
+                                )}`}
+                            >
+                                u/{story.author}
+                            </a>
+                        ) : (
+                            <span className="redhn-story__author">
+                                u/{creditAuthor}
+                            </span>
+                        )}
+                        {story.age ? (
+                            <>
+                                <span
+                                    className="redhn-story__credit-dot"
+                                    aria-hidden="true"
+                                >
+                                    •
+                                </span>
+                                <span>{story.age}</span>
+                            </>
                         ) : null}
-                        {story.age ? <span>{story.age}</span> : null}
                     </div>
                     <details className="redhn-story__menu">
                         <summary aria-label="More story actions">
@@ -1216,6 +1241,13 @@ function StoryCard({
                     </details>
                 </header>
                 <h2 className="redhn-story__title">{story.title}</h2>
+                <a
+                    className="redhn-story__source-link"
+                    href={story.url}
+                    title={story.url}
+                >
+                    {story.url || sourceLabel}
+                </a>
                 <div className="redhn-story__actions redhn-story__actions--card">
                     {story.actions.upvote ? (
                         <HnActionLink

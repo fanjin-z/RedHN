@@ -200,6 +200,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
+    .redhn-shell--system .redhn-brand {
+        color: #ffffff;
+    }
+
     .redhn-shell--system {
         --redhn-surface: #071113;
         --redhn-surface-card: #0e1b1f;
@@ -219,66 +223,94 @@
     top: 0;
     z-index: 10;
     display: grid;
-    grid-template-columns: var(--redhn-sidebar-width) minmax(16rem, 48rem) 1fr;
-    gap: 24px;
+    grid-template-columns: max-content minmax(18rem, 1fr) max-content;
+    gap: 20px;
     align-items: center;
-    min-height: 64px;
+    min-height: 56px;
     border-bottom: 1px solid var(--redhn-outline);
-    background: color-mix(in srgb, var(--redhn-surface-card) 92%, transparent);
-    padding: 8px 20px;
+    background: color-mix(in srgb, var(--redhn-surface-card) 96%, transparent);
+    padding: 6px 24px;
     backdrop-filter: blur(12px);
 }
 
 .redhn-brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
     text-decoration: none;
-    color: var(--redhn-primary);
+    color: var(--redhn-primary-hot);
     font-family: var(--redhn-font-sans);
-    font-size: 20px;
-    font-weight: 800;
-    line-height: 24px;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    white-space: nowrap;
 }
 
-.redhn-brand__mark {
-    display: grid;
-    width: 32px;
-    height: 32px;
-    place-items: center;
-    border-radius: 9999px;
-    background: var(--redhn-primary-hot);
+.redhn-shell--dark .redhn-brand {
     color: #ffffff;
-    font-weight: 800;
-}
-
-.redhn-brand__submark {
-    color: var(--redhn-text);
 }
 
 .redhn-search {
     position: relative;
     display: flex;
     align-items: center;
+    justify-self: center;
+    width: 100%;
+    max-width: 54rem;
+    min-width: 0;
+    min-height: 42px;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background:
+        linear-gradient(var(--redhn-surface-card), var(--redhn-surface-card))
+            padding-box,
+        linear-gradient(90deg, #ff4500, #ffb000) border-box;
+    box-shadow: 0 0 18px rgb(255 69 0 / 8%);
 }
 
-.redhn-search__icon {
+.redhn-search__hn-mark {
     position: absolute;
-    left: 16px;
-    color: var(--redhn-text-muted);
-    font-family: var(--redhn-font-mono);
-    font-weight: 700;
+    left: 12px;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 2px solid #ffffff;
+    border-radius: 3px;
+    background: var(--redhn-hn-orange);
+    color: #ffffff;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .redhn-search input {
+    position: relative;
     width: 100%;
-    min-height: 42px;
-    border: 1px solid var(--redhn-outline);
+    min-width: 0;
+    min-height: 38px;
+    border: 0;
     border-radius: 9999px;
-    background: var(--redhn-surface-muted);
+    background: transparent;
     color: var(--redhn-text);
-    font: inherit;
-    padding: 0 16px 0 42px;
+    font-family: var(--redhn-font-sans);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+    outline: 0;
+    padding: 0 64px;
+}
+
+.redhn-search input::placeholder {
+    color: var(--redhn-text-muted);
+    opacity: 0.82;
+    text-align: center;
+}
+
+.redhn-search:focus-within {
+    box-shadow: 0 0 0 3px rgb(255 69 0 / 18%);
 }
 
 .redhn-topbar__actions {
@@ -287,7 +319,7 @@
     justify-content: flex-end;
     align-items: center;
     gap: 8px;
-    min-width: 0;
+    min-width: max-content;
 }
 
 .redhn-auth-button,
@@ -303,6 +335,7 @@
     font-weight: 800;
     line-height: var(--redhn-type-ui-line-height);
     text-decoration: none;
+    white-space: nowrap;
     cursor: pointer;
 }
 
@@ -1218,10 +1251,6 @@
         gap: 12px;
     }
 
-    .redhn-brand__submark {
-        display: none;
-    }
-
     .redhn-layout {
         grid-template-columns: 1fr;
     }
@@ -1285,10 +1314,7 @@
     .redhn-brand {
         grid-column: 1;
         grid-row: 1;
-    }
-
-    .redhn-brand > span:not(.redhn-brand__mark) {
-        display: none;
+        font-size: 28px;
     }
 
     .redhn-auth-button {

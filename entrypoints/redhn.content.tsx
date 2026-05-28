@@ -19,7 +19,21 @@ function createVisibilityStyle(): HTMLStyleElement {
 
 function setOriginalPageHidden(style: HTMLStyleElement, hidden: boolean): void {
     style.textContent = hidden
-        ? 'body > :not(redhn-root) { display: none !important; }'
+        ? `
+            html,
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            redhn-root {
+                display: block !important;
+            }
+
+            body > :not(redhn-root) {
+                display: none !important;
+            }
+        `
         : '';
 }
 

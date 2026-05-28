@@ -250,12 +250,11 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         >
             <header className="redhn-topbar">
                 <a
+                    aria-label="Hacker News home"
                     className="redhn-brand"
                     href="https://news.ycombinator.com/news"
                 >
-                    <span className="redhn-brand__mark">R</span>
-                    <span>RedHN</span>
-                    <span className="redhn-brand__submark">Hacker News</span>
+                    Hacker News
                 </a>
                 <form
                     className="redhn-search"
@@ -265,13 +264,13 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     <label className="redhn-sr-only" htmlFor="redhn-search">
                         Search Hacker News
                     </label>
-                    <span aria-hidden="true" className="redhn-search__icon">
-                        /
+                    <span aria-hidden="true" className="redhn-search__hn-mark">
+                        Y
                     </span>
                     <input
                         id="redhn-search"
                         name="q"
-                        placeholder="Search Hacker News"
+                        placeholder="Find anything"
                         type="search"
                     />
                 </form>

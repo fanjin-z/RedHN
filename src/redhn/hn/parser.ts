@@ -235,7 +235,7 @@ function parsePagination(
     sourceUrl: string,
 ): ParsedPagination {
     return {
-        more: href(findLink(document, 'More'), sourceUrl),
+        more: href(findPaginationMoreLink(document), sourceUrl),
     };
 }
 
@@ -469,6 +469,17 @@ function findLinkByExactText(
     return Array.from(links).find(
         (link) =>
             link.textContent?.trim().toLowerCase() === label.toLowerCase(),
+    );
+}
+
+function findPaginationMoreLink(document: Document): HTMLAnchorElement | null {
+    return (
+        document.querySelector<HTMLAnchorElement>('a.morelink[rel="next"]') ??
+        document.querySelector<HTMLAnchorElement>('a.morelink') ??
+        Array.from(document.querySelectorAll<HTMLAnchorElement>('a')).find(
+            (link) => text(link).toLowerCase() === 'more',
+        ) ??
+        null
     );
 }
 

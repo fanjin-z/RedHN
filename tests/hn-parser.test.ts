@@ -88,6 +88,46 @@ describe('HN DOM parser', () => {
         );
     });
 
+    it('parses HN morelink pagination instead of story links containing more', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="itemlist">
+                        <tr class="athing" id="1004">
+                            <td class="title"><span class="rank">1.</span></td>
+                            <td class="votelinks"></td>
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="https://example.com/more-news">Tell HN: More news from a project</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"></td>
+                            <td class="subtext">
+                                by <a class="hnuser" href="user?id=dev_jane">dev_jane</a>
+                                <span class="age"><a href="item?id=1004">1 hour ago</a></span>
+                                <a href="item?id=1004">4 comments</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"></td>
+                            <td class="title">
+                                <a href="?p=2" class="morelink" rel="next">More</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(document, 'https://news.ycombinator.com/news');
+
+        expect(page.pagination.more).toBe(
+            'https://news.ycombinator.com/news?p=2',
+        );
+    });
+
     it('parses an item page into a post and nested comment tree', () => {
         const page = parseHnPage(
             fixture('item.html'),

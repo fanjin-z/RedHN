@@ -32,10 +32,12 @@ type ProfilePageProps = {
     readState: RedhnReadState;
     savedStoryIds: Set<number>;
     sharedStoryId?: number;
+    pendingVoteStoryIds: Set<number>;
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
+    onVote: (story: ParsedStory) => void;
 };
 
 const profileTabs: Array<{
@@ -61,10 +63,12 @@ export function ProfilePage({
     readState,
     savedStoryIds,
     sharedStoryId,
+    pendingVoteStoryIds,
     onSave,
     onShare,
     onStoryView,
     onHnAction,
+    onVote,
 }: ProfilePageProps) {
     return (
         <section className="redhn-profile" aria-label={`${profile.id} profile`}>
@@ -108,7 +112,9 @@ export function ProfilePage({
                             onSave={onSave}
                             onShare={onShare}
                             onStoryView={onStoryView}
+                            onVote={onVote}
                             page={page}
+                            pendingVoteStoryIds={pendingVoteStoryIds}
                             readState={readState}
                             savedStoryIds={savedStoryIds}
                             sharedStoryId={sharedStoryId}
@@ -132,7 +138,9 @@ export function ProfilePage({
                             onSave={onSave}
                             onShare={onShare}
                             onStoryView={onStoryView}
+                            onVote={onVote}
                             page={page}
+                            pendingVoteStoryIds={pendingVoteStoryIds}
                             readState={readState}
                             savedStoryIds={savedStoryIds}
                             sharedStoryId={sharedStoryId}

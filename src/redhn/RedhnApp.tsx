@@ -5,6 +5,12 @@ import { AppShell, AuthShell, ClassicBar } from './components/AppShell';
 import { StoryFeed } from './components/StoryFeed';
 import { performHnAction } from './hn/actions';
 import type { ParsedPage, ParsedStory } from './hn/types';
+import {
+    applyOptimisticStoryVote,
+    createOptimisticStoryVote,
+    getStoryVoteHref,
+    type OptimisticStoryVote,
+} from './hn/votes';
 import { AuthPage } from './pages/AuthPage';
 import { PostPage } from './pages/PostPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -43,6 +49,10 @@ type RedhnAppProps = {
     onClassicToggle: (enabled: boolean) => void;
 };
 
+type StoryVoteOverride = OptimisticStoryVote & {
+    pending: boolean;
+};
+
 export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [enabled, setEnabled] = useState(true);
     const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -56,6 +66,9 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [savedStoryIds, setSavedStoryIds] = useState(() => new Set<number>());
     const [sharedStoryId, setSharedStoryId] = useState<number>();
     const [newCommentCount, setNewCommentCount] = useState(0);
+    const [storyVoteOverrides, setStoryVoteOverrides] = useState<
+        Record<number, StoryVoteOverride>
+    >({});
     const [apiItems, setApiItems] = useState<Record<number, HnApiItem | null>>(
         {},
     );
@@ -72,10 +85,17 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     );
     const enrichedStories = useMemo(
         () =>
-            visibleStories.map((story) =>
-                enrichStoryWithApiItem(story, apiItems[story.id]),
-            ),
-        [apiItems, visibleStories],
+            visibleStories.map((story) => {
+                const enrichedStory = enrichStoryWithApiItem(
+                    story,
+                    apiItems[story.id],
+                );
+                const voteOverride = storyVoteOverrides[story.id];
+                return voteOverride
+                    ? applyOptimisticStoryVote(enrichedStory, voteOverride)
+                    : enrichedStory;
+            }),
+        [apiItems, storyVoteOverrides, visibleStories],
     );
     const enrichedPost = page.post
         ? enrichStoryWithApiItem(page.post, apiItems[page.post.id])
@@ -101,6 +121,15 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         apiUser === undefined ||
         profileOverviewItemIds.some((id) => !(id in apiItems));
     const hiddenStoryCount = page.stories.length - visibleStories.length;
+    const pendingVoteStoryIds = useMemo(
+        () =>
+            new Set(
+                Object.entries(storyVoteOverrides)
+                    .filter(([, vote]) => vote.pending)
+                    .map(([storyId]) => Number(storyId)),
+            ),
+        [storyVoteOverrides],
+    );
 
     const updatePreferences = (patch: Partial<RedhnPreferences>) => {
         setPreferences((current) => {
@@ -150,6 +179,59 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
             if (result.kind === 'navigate' || result.kind === 'failed') {
                 window.location.assign(result.url);
             }
+        });
+    };
+
+    const runStoryVote = (story: ParsedStory) => {
+        const vote = createOptimisticStoryVote(story);
+        const href = vote?.href ?? getStoryVoteHref(story);
+
+        if (!href) {
+            return;
+        }
+
+        if (!vote) {
+            runHnAction(href);
+            return;
+        }
+
+        setStoryVoteOverrides((current) => ({
+            ...current,
+            [story.id]: {
+                ...vote,
+                pending: true,
+            },
+        }));
+
+        void performHnAction(href).then((result) => {
+            if (result.kind === 'performed') {
+                setStoryVoteOverrides((current) => {
+                    const currentVote = current[story.id];
+                    if (!currentVote || currentVote.href !== href) {
+                        return current;
+                    }
+
+                    return {
+                        ...current,
+                        [story.id]: {
+                            ...currentVote,
+                            pending: false,
+                        },
+                    };
+                });
+                return;
+            }
+
+            setStoryVoteOverrides((current) => {
+                if (current[story.id]?.href !== href) {
+                    return current;
+                }
+
+                const next = { ...current };
+                delete next[story.id];
+                return next;
+            });
+            window.location.assign(result.url);
         });
     };
 
@@ -322,8 +404,10 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     onSave={toggleSavedStory}
                     onShare={shareStory}
                     onStoryView={markViewed}
+                    onVote={runStoryVote}
                     overviewItems={profileOverviewItems}
                     overviewLoading={profileOverviewLoading}
+                    pendingVoteStoryIds={pendingVoteStoryIds}
                     page={page}
                     profile={enrichedProfile}
                     readState={readState}
@@ -353,7 +437,9 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     onSave={toggleSavedStory}
                     onShare={shareStory}
                     onStoryView={markViewed}
+                    onVote={runStoryVote}
                     page={page}
+                    pendingVoteStoryIds={pendingVoteStoryIds}
                     readState={readState}
                     savedStoryIds={savedStoryIds}
                     sharedStoryId={sharedStoryId}

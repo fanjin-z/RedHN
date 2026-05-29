@@ -15,8 +15,8 @@ export function enrichStoryWithApiItem(
         title: item.title ?? story.title,
         url: item.url ?? story.url,
         author: item.by ?? story.author,
-        score: item.score ?? story.score,
-        commentCount: item.descendants ?? story.commentCount,
+        score: story.score ?? item.score,
+        commentCount: story.commentCount ?? item.descendants,
     };
 }
 

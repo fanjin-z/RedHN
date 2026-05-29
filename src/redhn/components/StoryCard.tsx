@@ -13,10 +13,12 @@ type StoryCardProps = {
     isSaved: boolean;
     isShared: boolean;
     isViewed: boolean;
+    isVotePending: boolean;
     onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
+    onVote: (story: ParsedStory) => void;
 };
 
 export function StoryCard({
@@ -24,10 +26,12 @@ export function StoryCard({
     isSaved,
     isShared,
     isViewed,
+    isVotePending,
     onSave,
     onShare,
     onStoryView,
     onHnAction,
+    onVote,
 }: StoryCardProps) {
     const sourceLabel = story.domain ?? 'news.ycombinator.com';
     const commentsHref = story.actions.comments ?? story.hnUrl;
@@ -129,15 +133,19 @@ export function StoryCard({
                 </a>
                 <div className="redhn-story__actions redhn-story__actions--card">
                     {voteHref ? (
-                        <HnActionLink
+                        <button
                             aria-label={isUpvoted ? 'Remove upvote' : 'Upvote'}
+                            aria-pressed={isUpvoted}
                             className={
                                 isUpvoted
                                     ? 'redhn-action redhn-action--vote redhn-action--active'
                                     : 'redhn-action redhn-action--vote'
                             }
-                            href={voteHref}
-                            onHnAction={onHnAction}
+                            disabled={isVotePending}
+                            onClick={() => {
+                                onVote(story);
+                            }}
+                            type="button"
                         >
                             <ArrowFatUpIcon
                                 aria-hidden="true"
@@ -145,7 +153,7 @@ export function StoryCard({
                                 weight={isUpvoted ? 'fill' : 'bold'}
                             />
                             <span>{formatNumber(story.score)}</span>
-                        </HnActionLink>
+                        </button>
                     ) : (
                         <span className="redhn-action redhn-action--vote redhn-action--disabled">
                             <ArrowFatUpIcon

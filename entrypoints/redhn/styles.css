@@ -1516,6 +1516,11 @@
     cursor: default;
 }
 
+.redhn-action:disabled {
+    cursor: progress;
+    opacity: 0.72;
+}
+
 .redhn-action--vote {
     color: var(--redhn-text);
 }

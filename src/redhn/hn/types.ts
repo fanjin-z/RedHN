@@ -1,6 +1,8 @@
-export type ParsedPageKind = 'feed' | 'item' | 'profile' | 'unknown';
+export type ParsedPageKind = 'feed' | 'item' | 'profile' | 'auth' | 'unknown';
 
 export type ParsedProfileTab = 'overview' | 'posts' | 'comments' | 'favorites';
+
+export type ParsedAuthMode = 'login' | 'signup';
 
 export type HnActionMap = {
     upvote?: string;
@@ -67,6 +69,23 @@ export type ParsedProfile = {
     };
 };
 
+export type ParsedAuthForm = {
+    action: string;
+    method: string;
+    usernameName: string;
+    passwordName: string;
+    submitLabel?: string;
+    hiddenFields: Record<string, string>;
+};
+
+export type ParsedAuthPage = {
+    initialMode: ParsedAuthMode;
+    login: ParsedAuthForm;
+    signup?: ParsedAuthForm;
+    forgotUrl?: string;
+    gotoUrl: string;
+};
+
 export type ParsedPage = {
     kind: ParsedPageKind;
     sourceUrl: string;
@@ -75,6 +94,7 @@ export type ParsedPage = {
     stories: ParsedStory[];
     post?: ParsedStory;
     profile?: ParsedProfile;
+    auth?: ParsedAuthPage;
     comments: ParsedComment[];
     pagination: ParsedPagination;
     capturedAt: number;

@@ -1,4 +1,6 @@
 import type {
+    ParsedAuthForm,
+    ParsedAuthPage,
     ParsedComment,
     ParsedCurrentUser,
     ParsedPage,
@@ -18,25 +20,29 @@ export function parseHnPage(
     const stories = parseStories(document, sourceUrl);
     const comments = parseComments(document, sourceUrl);
     const profile = parseProfile(document, sourceUrl);
+    const auth = parseAuthPage(document, sourceUrl);
     const post =
-        !profile && isItemPage(sourceUrl, document)
+        !profile && !auth && isItemPage(sourceUrl, document)
             ? enhancePostFromItemPage(document, stories[0], sourceUrl)
             : undefined;
 
     return {
         kind: profile
             ? 'profile'
-            : post
-              ? 'item'
-              : stories.length > 0
-                ? 'feed'
-                : 'unknown',
+            : auth
+              ? 'auth'
+              : post
+                ? 'item'
+                : stories.length > 0
+                  ? 'feed'
+                  : 'unknown',
         sourceUrl,
         title: text(document.querySelector('title')),
         currentUser: parseCurrentUser(document, sourceUrl),
         stories: post ? [] : stories,
         post,
         profile,
+        auth,
         comments,
         pagination: parsePagination(document, sourceUrl),
         capturedAt,
@@ -47,7 +53,8 @@ export function isRedhnSupportedPage(page: ParsedPage): boolean {
     return (
         (page.kind === 'feed' && page.stories.length > 0) ||
         (page.kind === 'item' && page.post !== undefined) ||
-        (page.kind === 'profile' && page.profile !== undefined)
+        (page.kind === 'profile' && page.profile !== undefined) ||
+        (page.kind === 'auth' && page.auth !== undefined)
     );
 }
 
@@ -255,6 +262,79 @@ function parseCurrentUser(
             sourceUrl,
         ),
     };
+}
+
+function parseAuthPage(
+    document: Document,
+    sourceUrl: string,
+): ParsedAuthPage | undefined {
+    const url = safeUrl(sourceUrl, HN_ORIGIN);
+    if (url?.pathname !== '/login') {
+        return undefined;
+    }
+
+    const forms = Array.from(document.querySelectorAll('form'))
+        .map((form) => parseAuthForm(form, sourceUrl))
+        .filter((form): form is ParsedAuthForm => form !== undefined);
+    const signup = forms.find((form) => form.hiddenFields.creating === 't');
+    const login = forms.find((form) => form.hiddenFields.creating !== 't');
+
+    if (!login) {
+        return undefined;
+    }
+
+    const goto =
+        login.hiddenFields.goto ??
+        signup?.hiddenFields.goto ??
+        url.searchParams.get('goto') ??
+        'news';
+
+    return {
+        initialMode: url.hash === '#signup' ? 'signup' : 'login',
+        login,
+        signup,
+        forgotUrl: href(findLink(document, 'Forgot your password?'), sourceUrl),
+        gotoUrl: absoluteUrl(goto || 'news', sourceUrl),
+    };
+}
+
+function parseAuthForm(
+    form: HTMLFormElement,
+    sourceUrl: string,
+): ParsedAuthForm | undefined {
+    const usernameInput = form.querySelector<HTMLInputElement>(
+        'input[name]:not([type="hidden"]):not([type="password"])',
+    );
+    const passwordInput = form.querySelector<HTMLInputElement>(
+        'input[type="password"][name]',
+    );
+    const submit = form.querySelector<HTMLInputElement>('input[type="submit"]');
+
+    if (!usernameInput || !passwordInput) {
+        return undefined;
+    }
+
+    return {
+        action: absoluteUrl(
+            form.getAttribute('action') || sourceUrl,
+            sourceUrl,
+        ),
+        method: (form.getAttribute('method') || 'get').toLowerCase(),
+        usernameName: usernameInput.name,
+        passwordName: passwordInput.name,
+        submitLabel: submit?.value || undefined,
+        hiddenFields: parseHiddenFields(form),
+    };
+}
+
+function parseHiddenFields(form: HTMLFormElement): Record<string, string> {
+    return Object.fromEntries(
+        Array.from(
+            form.querySelectorAll<HTMLInputElement>('input[type="hidden"]'),
+        )
+            .filter((input) => input.name)
+            .map((input) => [input.name, input.value]),
+    );
 }
 
 function parseProfile(

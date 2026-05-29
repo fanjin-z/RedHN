@@ -262,7 +262,7 @@ describe('HN DOM parser', () => {
         expect(isRedhnSupportedPage(page)).toBe(true);
     });
 
-    it('does not support login-like pages for RedHN rendering', () => {
+    it('parses login pages for RedHN auth rendering', () => {
         const document = parseHTML(`
             <html>
                 <head><title>Login | Hacker News</title></head>
@@ -271,8 +271,18 @@ describe('HN DOM parser', () => {
                         <a href="news">Hacker News</a>
                     </span>
                     <form method="post" action="login">
+                        <input type="hidden" name="goto" value="xxx" />
                         <input name="acct" />
                         <input name="pw" type="password" />
+                        <input type="submit" value="login" />
+                    </form>
+                    <a href="forgot">Forgot your password?</a>
+                    <form method="post" action="login">
+                        <input type="hidden" name="goto" value="xxx" />
+                        <input type="hidden" name="creating" value="t" />
+                        <input name="acct" />
+                        <input name="pw" type="password" />
+                        <input type="submit" value="create account" />
                     </form>
                 </body>
             </html>
@@ -280,11 +290,32 @@ describe('HN DOM parser', () => {
 
         const page = parseHnPage(
             document,
-            'https://news.ycombinator.com/login',
+            'https://news.ycombinator.com/login?goto=xxx#signup',
         );
 
-        expect(page.kind).toBe('unknown');
-        expect(isRedhnSupportedPage(page)).toBe(false);
+        expect(page.kind).toBe('auth');
+        expect(page.auth).toMatchObject({
+            initialMode: 'signup',
+            forgotUrl: 'https://news.ycombinator.com/forgot',
+            gotoUrl: 'https://news.ycombinator.com/xxx',
+            login: {
+                action: 'https://news.ycombinator.com/login',
+                method: 'post',
+                usernameName: 'acct',
+                passwordName: 'pw',
+                submitLabel: 'login',
+                hiddenFields: { goto: 'xxx' },
+            },
+            signup: {
+                action: 'https://news.ycombinator.com/login',
+                method: 'post',
+                usernameName: 'acct',
+                passwordName: 'pw',
+                submitLabel: 'create account',
+                hiddenFields: { goto: 'xxx', creating: 't' },
+            },
+        });
+        expect(isRedhnSupportedPage(page)).toBe(true);
     });
 
     it('does not support FAQ or guidelines-like pages for RedHN rendering', () => {

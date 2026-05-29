@@ -17,10 +17,14 @@ import { PowerIcon } from '@phosphor-icons/react/dist/csr/Power';
 import { ShareFatIcon } from '@phosphor-icons/react/dist/csr/ShareFat';
 import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
 import { UserCircleIcon } from '@phosphor-icons/react/dist/csr/UserCircle';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { sendRedhnMessage } from './api/backgroundClient';
 import type { HnApiItem, HnApiUser } from './api/hnApi';
 import { performHnAction } from './hn/actions';
 import type {
+    ParsedAuthForm,
+    ParsedAuthMode,
+    ParsedAuthPage,
     ParsedComment,
     ParsedCurrentUser,
     ParsedPage,
@@ -128,6 +132,11 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         apiUser === undefined ||
         profileOverviewItemIds.some((id) => !(id in apiItems));
     const hiddenStoryCount = page.stories.length - visibleStories.length;
+    const shellStyle = {
+        '--redhn-user-font-size': `${preferences.fontSize}px`,
+        '--redhn-user-line-height': preferences.lineHeight,
+        '--redhn-content-width': `${preferences.maxWidth}px`,
+    } as CSSProperties;
 
     const updatePreferences = (patch: Partial<RedhnPreferences>) => {
         setPreferences((current) => {
@@ -320,16 +329,21 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         );
     }
 
+    if (page.kind === 'auth' && page.auth) {
+        return (
+            <div
+                className={`redhn-shell redhn-shell--${preferences.theme}`}
+                style={shellStyle}
+            >
+                <AuthPage auth={page.auth} />
+            </div>
+        );
+    }
+
     return (
         <div
             className={`redhn-shell redhn-shell--${preferences.theme}`}
-            style={
-                {
-                    '--redhn-user-font-size': `${preferences.fontSize}px`,
-                    '--redhn-user-line-height': preferences.lineHeight,
-                    '--redhn-content-width': `${preferences.maxWidth}px`,
-                } as CSSProperties
-            }
+            style={shellStyle}
         >
             <header className="redhn-topbar">
                 <a
@@ -361,7 +375,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     <TopbarActions
                         currentUser={page.currentUser}
                         enabled={enabled}
-                        loginUrl={hnLoginUrl(page.sourceUrl)}
+                        loginUrl={hnLoginUrl(page.sourceUrl, 'login')}
                         menuOpen={accountMenuOpen}
                         onEnabledChange={setEnabled}
                         onMenuOpenChange={setAccountMenuOpen}
@@ -373,6 +387,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                             updatePreferences({ theme });
                         }}
                         preferencesOpen={preferencesOpen}
+                        signupUrl={hnLoginUrl(page.sourceUrl, 'signup')}
                         theme={preferences.theme}
                     />
                 </div>
@@ -514,12 +529,173 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     );
 }
 
+function AuthPage({ auth }: { auth: ParsedAuthPage }) {
+    const [mode, setMode] = useState<ParsedAuthMode>(auth.initialMode);
+    const activeMode = mode === 'signup' && auth.signup ? 'signup' : 'login';
+    const activeForm =
+        activeMode === 'signup' && auth.signup ? auth.signup : auth.login;
+
+    return (
+        <main className="redhn-auth-page" aria-label="Hacker News login">
+            <a
+                aria-label="Hacker News home"
+                className="redhn-auth-page__brand"
+                href="https://news.ycombinator.com/news"
+            >
+                Hacker News
+            </a>
+            <section className="redhn-auth-card" aria-label="Authentication">
+                <a
+                    aria-label="Close"
+                    className="redhn-auth-card__close"
+                    href={auth.gotoUrl}
+                >
+                    <XIcon aria-hidden="true" weight="bold" />
+                </a>
+                <div className="redhn-auth-card__inner">
+                    <header className="redhn-auth-card__header">
+                        <h1>
+                            {activeMode === 'signup' ? 'Sign Up' : 'Log In'}
+                        </h1>
+                        <p>Continue with your Hacker News account.</p>
+                    </header>
+                    {auth.signup ? (
+                        <div
+                            className="redhn-auth-tabs"
+                            role="tablist"
+                            aria-label="Authentication mode"
+                        >
+                            <button
+                                aria-selected={activeMode === 'login'}
+                                className={
+                                    activeMode === 'login'
+                                        ? 'redhn-auth-tabs__item redhn-auth-tabs__item--active'
+                                        : 'redhn-auth-tabs__item'
+                                }
+                                onClick={() => {
+                                    setMode('login');
+                                }}
+                                role="tab"
+                                type="button"
+                            >
+                                Log In
+                            </button>
+                            <button
+                                aria-selected={activeMode === 'signup'}
+                                className={
+                                    activeMode === 'signup'
+                                        ? 'redhn-auth-tabs__item redhn-auth-tabs__item--active'
+                                        : 'redhn-auth-tabs__item'
+                                }
+                                onClick={() => {
+                                    setMode('signup');
+                                }}
+                                role="tab"
+                                type="button"
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+                    ) : null}
+                    <AuthForm
+                        forgotUrl={auth.forgotUrl}
+                        form={activeForm}
+                        mode={activeMode}
+                        onModeChange={setMode}
+                        signupAvailable={auth.signup !== undefined}
+                    />
+                </div>
+            </section>
+        </main>
+    );
+}
+
+type AuthFormProps = {
+    forgotUrl?: string;
+    form: ParsedAuthForm;
+    mode: ParsedAuthMode;
+    signupAvailable: boolean;
+    onModeChange: (mode: ParsedAuthMode) => void;
+};
+
+function AuthForm({
+    forgotUrl,
+    form,
+    mode,
+    signupAvailable,
+    onModeChange,
+}: AuthFormProps) {
+    return (
+        <form
+            action={form.action}
+            className="redhn-auth-form"
+            method={form.method}
+        >
+            {Object.entries(form.hiddenFields).map(([name, value]) => (
+                <input key={name} name={name} type="hidden" value={value} />
+            ))}
+            <label className="redhn-auth-field">
+                <span>Username</span>
+                <input
+                    autoCapitalize="off"
+                    autoComplete="username"
+                    autoCorrect="off"
+                    autoFocus
+                    name={form.usernameName}
+                    placeholder="Username *"
+                    required
+                    spellCheck={false}
+                    type="text"
+                />
+            </label>
+            <label className="redhn-auth-field">
+                <span>Password</span>
+                <input
+                    autoComplete={
+                        mode === 'signup' ? 'new-password' : 'current-password'
+                    }
+                    name={form.passwordName}
+                    placeholder="Password *"
+                    required
+                    type="password"
+                />
+            </label>
+            {mode === 'login' && forgotUrl ? (
+                <a className="redhn-auth-form__link" href={forgotUrl}>
+                    Forgot password?
+                </a>
+            ) : null}
+            <button className="redhn-auth-submit" type="submit">
+                {mode === 'signup' ? 'Create Account' : 'Log In'}
+            </button>
+            {signupAvailable ? (
+                <p className="redhn-auth-switch">
+                    {mode === 'signup'
+                        ? 'Already have an account?'
+                        : 'New to Hacker News?'}
+                    <button
+                        onClick={() => {
+                            onModeChange(
+                                mode === 'signup' ? 'login' : 'signup',
+                            );
+                        }}
+                        type="button"
+                    >
+                        {mode === 'signup' ? 'Log In' : 'Sign Up'}
+                    </button>
+                </p>
+            ) : null}
+        </form>
+    );
+}
+
 type TopbarActionsProps = {
     currentUser?: ParsedCurrentUser;
     enabled: boolean;
     loginUrl: string;
     menuOpen: boolean;
     preferencesOpen: boolean;
+    signupUrl: string;
     theme: RedhnPreferences['theme'];
     onEnabledChange: (enabled: boolean) => void;
     onMenuOpenChange: (open: boolean) => void;
@@ -533,6 +709,7 @@ function TopbarActions({
     loginUrl,
     menuOpen,
     preferencesOpen,
+    signupUrl,
     theme,
     onEnabledChange,
     onMenuOpenChange,
@@ -588,7 +765,7 @@ function TopbarActions({
                 </>
             ) : (
                 <>
-                    <a className="redhn-auth-button" href={loginUrl}>
+                    <a className="redhn-auth-button" href={signupUrl}>
                         Sign Up
                     </a>
                     <a
@@ -1793,7 +1970,7 @@ function countComments(comments: ParsedComment[]): number {
     );
 }
 
-function hnLoginUrl(sourceUrl: string): string {
+function hnLoginUrl(sourceUrl: string, mode: ParsedAuthMode): string {
     let goto = 'news';
 
     try {
@@ -1806,7 +1983,7 @@ function hnLoginUrl(sourceUrl: string): string {
 
     return `https://news.ycombinator.com/login?goto=${encodeURIComponent(
         goto || 'news',
-    )}`;
+    )}#${mode}`;
 }
 
 function userInitials(userId: string): string {

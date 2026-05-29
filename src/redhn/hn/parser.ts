@@ -32,6 +32,13 @@ export function parseHnPage(
     };
 }
 
+export function isRedhnSupportedPage(page: ParsedPage): boolean {
+    return (
+        (page.kind === 'feed' && page.stories.length > 0) ||
+        (page.kind === 'item' && page.post !== undefined)
+    );
+}
+
 export function parseStories(
     document: Document,
     sourceUrl = document.location?.href ?? HN_ORIGIN,

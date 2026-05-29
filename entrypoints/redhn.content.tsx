@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import RedhnApp from '../src/redhn/RedhnApp';
-import { parseHnPage } from '../src/redhn/hn/parser';
+import { isRedhnSupportedPage, parseHnPage } from '../src/redhn/hn/parser';
 import './redhn/styles.css';
 
 type MountedApp = {
@@ -41,6 +41,12 @@ export default defineContentScript({
     matches: ['https://news.ycombinator.com/*'],
     cssInjectionMode: 'ui',
     async main(ctx) {
+        const page = parseHnPage(document, window.location.href);
+
+        if (!isRedhnSupportedPage(page)) {
+            return;
+        }
+
         const ui = await createShadowRootUi<MountedApp>(ctx, {
             name: 'redhn-root',
             position: 'inline',
@@ -52,7 +58,6 @@ export default defineContentScript({
                 mountPoint.id = 'redhn-app';
                 container.append(mountPoint);
 
-                const page = parseHnPage(document, window.location.href);
                 const visibilityStyle = createVisibilityStyle();
                 setOriginalPageHidden(visibilityStyle, true);
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseHTML } from 'linkedom';
 import {
     flattenComments,
+    isRedhnSupportedPage,
     parseHnPage,
     parseItemIdFromUrl,
 } from '../src/redhn/hn/parser';
@@ -85,6 +86,89 @@ describe('HN DOM parser', () => {
         expect(
             flattenComments(page.comments).map((comment) => comment.id),
         ).toEqual([3001, 3002]);
+    });
+
+    it('supports parsed feed and item pages for RedHN rendering', () => {
+        const feedPage = parseHnPage(
+            fixture('feed.html'),
+            'https://news.ycombinator.com/news',
+        );
+        const itemPage = parseHnPage(
+            fixture('item.html'),
+            'https://news.ycombinator.com/item?id=2001',
+        );
+
+        expect(isRedhnSupportedPage(feedPage)).toBe(true);
+        expect(isRedhnSupportedPage(itemPage)).toBe(true);
+    });
+
+    it('does not support login-like pages for RedHN rendering', () => {
+        const document = parseHTML(`
+            <html>
+                <head><title>Login | Hacker News</title></head>
+                <body>
+                    <span class="pagetop">
+                        <a href="news">Hacker News</a>
+                    </span>
+                    <form method="post" action="login">
+                        <input name="acct" />
+                        <input name="pw" type="password" />
+                    </form>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/login',
+        );
+
+        expect(page.kind).toBe('unknown');
+        expect(isRedhnSupportedPage(page)).toBe(false);
+    });
+
+    it('does not support FAQ or guidelines-like pages for RedHN rendering', () => {
+        const document = parseHTML(`
+            <html>
+                <head><title>Hacker News FAQ</title></head>
+                <body>
+                    <span class="pagetop">
+                        <a href="news">Hacker News</a>
+                    </span>
+                    <table>
+                        <tr><td class="title">Frequently Asked Questions</td></tr>
+                        <tr><td>Answers about Hacker News.</td></tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/newsfaq.html',
+        );
+
+        expect(page.kind).toBe('unknown');
+        expect(isRedhnSupportedPage(page)).toBe(false);
+    });
+
+    it('does not support empty non-story pages for RedHN rendering', () => {
+        const document = parseHTML(`
+            <html>
+                <head><title>Hacker News</title></head>
+                <body>
+                    <span class="pagetop">
+                        <a href="news">Hacker News</a>
+                    </span>
+                    <table class="itemlist"></table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(document, 'https://news.ycombinator.com/news');
+
+        expect(page.kind).toBe('unknown');
+        expect(isRedhnSupportedPage(page)).toBe(false);
     });
 
     it('extracts item ids from HN URLs', () => {

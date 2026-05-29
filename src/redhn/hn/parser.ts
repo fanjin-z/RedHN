@@ -165,6 +165,7 @@ function parseStoryRow(
         commentCount: parseCommentCount(text(commentsLink)),
         actions: {
             upvote: href(row.querySelector('.votelinks a'), sourceUrl),
+            unvote: href(findLink(subtext, 'unvote'), sourceUrl),
             hide: href(findLink(subtext, 'hide'), sourceUrl),
             comments: href(commentsLink, sourceUrl) ?? hnUrl,
         },

@@ -32,6 +32,8 @@ export function StoryCard({
     const sourceLabel = story.domain ?? 'news.ycombinator.com';
     const commentsHref = story.actions.comments ?? story.hnUrl;
     const creditAuthor = story.author ?? 'unknown';
+    const isUpvoted = Boolean(story.actions.unvote);
+    const voteHref = story.actions.unvote ?? story.actions.upvote;
 
     return (
         <article
@@ -126,17 +128,21 @@ export function StoryCard({
                     {story.url || sourceLabel}
                 </a>
                 <div className="redhn-story__actions redhn-story__actions--card">
-                    {story.actions.upvote ? (
+                    {voteHref ? (
                         <HnActionLink
-                            aria-label="Upvote"
-                            className="redhn-action redhn-action--vote"
-                            href={story.actions.upvote}
+                            aria-label={isUpvoted ? 'Remove upvote' : 'Upvote'}
+                            className={
+                                isUpvoted
+                                    ? 'redhn-action redhn-action--vote redhn-action--active'
+                                    : 'redhn-action redhn-action--vote'
+                            }
+                            href={voteHref}
                             onHnAction={onHnAction}
                         >
                             <ArrowFatUpIcon
                                 aria-hidden="true"
                                 className="redhn-action__icon"
-                                weight="bold"
+                                weight={isUpvoted ? 'fill' : 'bold'}
                             />
                             <span>{formatNumber(story.score)}</span>
                         </HnActionLink>

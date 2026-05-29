@@ -1,12 +1,24 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { BellIcon } from '@phosphor-icons/react/dist/csr/Bell';
+import { BriefcaseIcon } from '@phosphor-icons/react/dist/csr/Briefcase';
+import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
+import { CaretUpIcon } from '@phosphor-icons/react/dist/csr/CaretUp';
 import { ChatCircleIcon } from '@phosphor-icons/react/dist/csr/ChatCircle';
+import { ChatCircleTextIcon } from '@phosphor-icons/react/dist/csr/ChatCircleText';
+import { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText';
+import { FlameIcon } from '@phosphor-icons/react/dist/csr/Flame';
 import { GearSixIcon } from '@phosphor-icons/react/dist/csr/GearSix';
+import { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
+import { MegaphoneIcon } from '@phosphor-icons/react/dist/csr/Megaphone';
 import { MonitorIcon } from '@phosphor-icons/react/dist/csr/Monitor';
+import { NewspaperIcon } from '@phosphor-icons/react/dist/csr/Newspaper';
 import { PlusSquareIcon } from '@phosphor-icons/react/dist/csr/PlusSquare';
 import { PowerIcon } from '@phosphor-icons/react/dist/csr/Power';
+import { QuestionIcon } from '@phosphor-icons/react/dist/csr/Question';
 import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
+import { TrendUpIcon } from '@phosphor-icons/react/dist/csr/TrendUp';
 import type { ParsedCurrentUser } from '../hn/types';
 import {
     termsFromInput,
@@ -34,16 +46,18 @@ type AppShellProps = {
     onPreferencesToggle: () => void;
 };
 
-const navItems = [
-    { label: 'Home', href: 'https://news.ycombinator.com/news' },
-    { label: 'Popular', href: 'https://news.ycombinator.com/best' },
-    { label: 'Top', href: 'https://news.ycombinator.com/front' },
-    { label: 'New', href: 'https://news.ycombinator.com/newest' },
-    { label: 'Ask HN', href: 'https://news.ycombinator.com/ask' },
-    { label: 'Show HN', href: 'https://news.ycombinator.com/show' },
-    { label: 'Jobs', href: 'https://news.ycombinator.com/jobs' },
-    { label: 'Saved', href: 'https://news.ycombinator.com/favorites' },
-];
+type SidebarItem = {
+    label: string;
+    href: string;
+    icon: ReactNode;
+    active?: boolean;
+};
+
+type SidebarSection = {
+    title?: string;
+    expanded?: boolean;
+    items: SidebarItem[];
+};
 
 export function ClassicBar({
     onEnabledChange,
@@ -99,6 +113,8 @@ export function AppShell({
     onPreferencesChange,
     onPreferencesToggle,
 }: AppShellProps) {
+    const sidebarSections = buildSidebarSections(sourceUrl);
+
     return (
         <div
             className={`redhn-shell redhn-shell--${preferences.theme}`}
@@ -161,31 +177,15 @@ export function AppShell({
                     className="redhn-sidebar"
                     aria-label="Hacker News navigation"
                 >
-                    <nav className="redhn-nav">
-                        {navItems.map((item) => (
-                            <a
-                                className="redhn-nav__item"
-                                href={item.href}
-                                key={item.href}
-                            >
-                                <span
-                                    className="redhn-nav__icon"
-                                    aria-hidden="true"
-                                >
-                                    {item.label.slice(0, 1)}
-                                </span>
-                                <span>{item.label}</span>
-                            </a>
+                    <nav className="redhn-nav" aria-label="Primary">
+                        {sidebarSections.map((section, index) => (
+                            <SidebarSectionNav
+                                key={section.title ?? 'main'}
+                                section={section}
+                                showDivider={index > 0}
+                            />
                         ))}
                     </nav>
-                    <div className="redhn-sidebar__footer">
-                        <a href="https://news.ycombinator.com/newsguidelines.html">
-                            Guidelines
-                        </a>
-                        <a href="https://news.ycombinator.com/newsfaq.html">
-                            FAQ
-                        </a>
-                    </div>
                 </aside>
                 <main className="redhn-main" aria-label={title}>
                     <div className="redhn-main__inner">{children}</div>
@@ -193,6 +193,142 @@ export function AppShell({
             </div>
         </div>
     );
+}
+
+function SidebarSectionNav({
+    section,
+    showDivider,
+}: {
+    section: SidebarSection;
+    showDivider: boolean;
+}) {
+    return (
+        <section
+            className={
+                showDivider
+                    ? 'redhn-nav__section redhn-nav__section--divided'
+                    : 'redhn-nav__section'
+            }
+        >
+            {section.title ? (
+                <div className="redhn-nav__section-header">
+                    <span>{section.title}</span>
+                    {section.expanded === false ? (
+                        <CaretDownIcon aria-hidden="true" weight="bold" />
+                    ) : (
+                        <CaretUpIcon aria-hidden="true" weight="bold" />
+                    )}
+                </div>
+            ) : null}
+            <div className="redhn-nav__section-items">
+                {section.items.map((item) => (
+                    <a
+                        className={
+                            item.active
+                                ? 'redhn-nav__item redhn-nav__item--active'
+                                : 'redhn-nav__item'
+                        }
+                        href={item.href}
+                        key={item.href}
+                    >
+                        <span className="redhn-nav__icon" aria-hidden="true">
+                            {item.icon}
+                        </span>
+                        <span className="redhn-nav__label">{item.label}</span>
+                    </a>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function buildSidebarSections(sourceUrl: string): SidebarSection[] {
+    return [
+        {
+            items: [
+                {
+                    label: 'Top Stories',
+                    href: 'https://news.ycombinator.com/news',
+                    icon: <NewspaperIcon weight="fill" />,
+                    active: isActivePath(sourceUrl, '/news'),
+                },
+                {
+                    label: 'Best',
+                    href: 'https://news.ycombinator.com/best',
+                    icon: <TrendUpIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/best'),
+                },
+                {
+                    label: 'New',
+                    href: 'https://news.ycombinator.com/newest',
+                    icon: <ClockIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/newest'),
+                },
+                {
+                    label: 'Front Page',
+                    href: 'https://news.ycombinator.com/front',
+                    icon: <FlameIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/front'),
+                },
+                {
+                    label: 'New Comments',
+                    href: 'https://news.ycombinator.com/newcomments',
+                    icon: <ChatCircleTextIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/newcomments'),
+                },
+            ],
+        },
+        {
+            title: 'HN Sections',
+            expanded: true,
+            items: [
+                {
+                    label: 'Ask HN',
+                    href: 'https://news.ycombinator.com/ask',
+                    icon: <QuestionIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/ask'),
+                },
+                {
+                    label: 'Show HN',
+                    href: 'https://news.ycombinator.com/show',
+                    icon: <MegaphoneIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/show'),
+                },
+                {
+                    label: 'Jobs',
+                    href: 'https://news.ycombinator.com/jobs',
+                    icon: <BriefcaseIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/jobs'),
+                },
+            ],
+        },
+        {
+            title: 'Help',
+            expanded: true,
+            items: [
+                {
+                    label: 'Guidelines',
+                    href: 'https://news.ycombinator.com/newsguidelines.html',
+                    icon: <FileTextIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/newsguidelines.html'),
+                },
+                {
+                    label: 'FAQ',
+                    href: 'https://news.ycombinator.com/newsfaq.html',
+                    icon: <InfoIcon weight="bold" />,
+                    active: isActivePath(sourceUrl, '/newsfaq.html'),
+                },
+            ],
+        },
+    ];
+}
+
+function isActivePath(sourceUrl: string, path: string): boolean {
+    try {
+        return new URL(sourceUrl).pathname === path;
+    } catch {
+        return false;
+    }
 }
 
 type TopbarActionsProps = {

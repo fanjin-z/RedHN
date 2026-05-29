@@ -6,6 +6,7 @@ export type ParsedAuthMode = 'login' | 'signup';
 
 export type HnActionMap = {
     upvote?: string;
+    unvote?: string;
     downvote?: string;
     hide?: string;
     favorite?: string;

@@ -51,6 +51,43 @@ describe('HN DOM parser', () => {
         });
     });
 
+    it('parses already-upvoted stories with an unvote action', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="itemlist">
+                        <tr class="athing" id="1003">
+                            <td class="title"><span class="rank">1.</span></td>
+                            <td class="votelinks"></td>
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="https://example.com/voted">Already voted</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"></td>
+                            <td class="subtext">
+                                <span class="score" id="score_1003">12 points</span>
+                                by <a class="hnuser" href="user?id=dev_jane">dev_jane</a>
+                                <span class="age"><a href="item?id=1003">1 hour ago</a></span>
+                                <a href="vote?id=1003&amp;how=un&amp;goto=news">unvote</a>
+                                <a href="item?id=1003">4 comments</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(document, 'https://news.ycombinator.com/news');
+
+        expect(page.stories[0].actions.upvote).toBeUndefined();
+        expect(page.stories[0].actions.unvote).toBe(
+            'https://news.ycombinator.com/vote?id=1003&how=un&goto=news',
+        );
+    });
+
     it('parses an item page into a post and nested comment tree', () => {
         const page = parseHnPage(
             fixture('item.html'),

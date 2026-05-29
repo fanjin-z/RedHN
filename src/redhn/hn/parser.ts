@@ -3,6 +3,8 @@ import type {
     ParsedCurrentUser,
     ParsedPage,
     ParsedPagination,
+    ParsedProfile,
+    ParsedProfileTab,
     ParsedStory,
 } from './types';
 
@@ -15,17 +17,26 @@ export function parseHnPage(
 ): ParsedPage {
     const stories = parseStories(document, sourceUrl);
     const comments = parseComments(document, sourceUrl);
-    const post = isItemPage(sourceUrl, document)
-        ? enhancePostFromItemPage(document, stories[0], sourceUrl)
-        : undefined;
+    const profile = parseProfile(document, sourceUrl);
+    const post =
+        !profile && isItemPage(sourceUrl, document)
+            ? enhancePostFromItemPage(document, stories[0], sourceUrl)
+            : undefined;
 
     return {
-        kind: post ? 'item' : stories.length > 0 ? 'feed' : 'unknown',
+        kind: profile
+            ? 'profile'
+            : post
+              ? 'item'
+              : stories.length > 0
+                ? 'feed'
+                : 'unknown',
         sourceUrl,
         title: text(document.querySelector('title')),
         currentUser: parseCurrentUser(document, sourceUrl),
         stories: post ? [] : stories,
         post,
+        profile,
         comments,
         pagination: parsePagination(document, sourceUrl),
         capturedAt,
@@ -35,7 +46,8 @@ export function parseHnPage(
 export function isRedhnSupportedPage(page: ParsedPage): boolean {
     return (
         (page.kind === 'feed' && page.stories.length > 0) ||
-        (page.kind === 'item' && page.post !== undefined)
+        (page.kind === 'item' && page.post !== undefined) ||
+        (page.kind === 'profile' && page.profile !== undefined)
     );
 }
 
@@ -242,6 +254,80 @@ function parseCurrentUser(
                 document.querySelector<HTMLAnchorElement>('a#logout'),
             sourceUrl,
         ),
+    };
+}
+
+function parseProfile(
+    document: Document,
+    sourceUrl: string,
+): ParsedProfile | undefined {
+    const route = parseProfileRoute(sourceUrl);
+    if (!route) {
+        return undefined;
+    }
+
+    const rows = Array.from(document.querySelectorAll('tr'));
+    const userRow = findProfileRow(rows, 'user');
+    const createdRow = findProfileRow(rows, 'created');
+    const karmaRow = findProfileRow(rows, 'karma');
+    const aboutRow = findProfileRow(rows, 'about');
+    const userCell = userRow?.children.item(1);
+    const createdCell = createdRow?.children.item(1);
+    const karmaCell = karmaRow?.children.item(1);
+    const aboutCell = aboutRow?.children.item(1) as HTMLElement | null;
+    const id = text(userCell?.querySelector('.hnuser')) || route.id;
+
+    return {
+        id,
+        tab: route.tab,
+        createdAt: toNumber(userCell?.getAttribute('timestamp')),
+        created: text(createdCell) || undefined,
+        karma: toNumber(text(karmaCell)),
+        about: text(aboutCell) || undefined,
+        aboutHtml: aboutCell?.innerHTML.trim() || undefined,
+        links: profileLinks(id, sourceUrl),
+    };
+}
+
+function parseProfileRoute(
+    sourceUrl: string,
+): { id: string; tab: ParsedProfileTab } | undefined {
+    const url = safeUrl(sourceUrl, HN_ORIGIN);
+    if (!url) {
+        return undefined;
+    }
+
+    const id = url.searchParams.get('id')?.trim();
+    if (!id) {
+        return undefined;
+    }
+
+    const tabByPath: Record<string, ParsedProfileTab | undefined> = {
+        '/user': 'overview',
+        '/submitted': 'posts',
+        '/threads': 'comments',
+        '/favorites': 'favorites',
+    };
+    const tab = tabByPath[url.pathname];
+
+    return tab ? { id, tab } : undefined;
+}
+
+function findProfileRow(rows: Element[], label: string): Element | undefined {
+    return rows.find((row) => {
+        const firstCell = row.children.item(0);
+        return text(firstCell).replace(/:$/, '').toLowerCase() === label;
+    });
+}
+
+function profileLinks(id: string, sourceUrl: string): ParsedProfile['links'] {
+    const encodedId = encodeURIComponent(id);
+
+    return {
+        profile: absoluteUrl(`user?id=${encodedId}`, sourceUrl),
+        submitted: absoluteUrl(`submitted?id=${encodedId}`, sourceUrl),
+        comments: absoluteUrl(`threads?id=${encodedId}`, sourceUrl),
+        favorites: absoluteUrl(`favorites?id=${encodedId}`, sourceUrl),
     };
 }
 

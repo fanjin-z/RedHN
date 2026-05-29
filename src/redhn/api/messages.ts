@@ -1,8 +1,9 @@
-import type { HnApiItem, HnApiUpdates } from './hnApi';
+import type { HnApiItem, HnApiUpdates, HnApiUser } from './hnApi';
 
 export type RedhnBackgroundRequest =
     | { type: 'redhn:getItem'; id: number }
     | { type: 'redhn:getItems'; ids: number[] }
+    | { type: 'redhn:getUser'; id: string }
     | { type: 'redhn:getUpdates' };
 
 export type RedhnBackgroundResponse<T> =
@@ -14,9 +15,11 @@ export type RedhnBackgroundData<TRequest extends RedhnBackgroundRequest> =
         ? HnApiItem | null
         : TRequest extends { type: 'redhn:getItems' }
           ? Record<number, HnApiItem | null>
-          : TRequest extends { type: 'redhn:getUpdates' }
-            ? HnApiUpdates
-            : never;
+          : TRequest extends { type: 'redhn:getUser' }
+            ? HnApiUser | null
+            : TRequest extends { type: 'redhn:getUpdates' }
+              ? HnApiUpdates
+              : never;
 
 export function isRedhnBackgroundRequest(
     value: unknown,
@@ -37,6 +40,10 @@ export function isRedhnBackgroundRequest(
                 (id) => typeof id === 'number' && Number.isInteger(id),
             )
         );
+    }
+
+    if (request.type === 'redhn:getUser') {
+        return typeof request.id === 'string' && request.id.trim().length > 0;
     }
 
     return request.type === 'redhn:getUpdates';

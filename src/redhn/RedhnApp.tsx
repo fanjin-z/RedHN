@@ -18,12 +18,13 @@ import { ShareFatIcon } from '@phosphor-icons/react/dist/csr/ShareFat';
 import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
 import { UserCircleIcon } from '@phosphor-icons/react/dist/csr/UserCircle';
 import { sendRedhnMessage } from './api/backgroundClient';
-import type { HnApiItem } from './api/hnApi';
+import type { HnApiItem, HnApiUser } from './api/hnApi';
 import { performHnAction } from './hn/actions';
 import type {
     ParsedComment,
     ParsedCurrentUser,
     ParsedPage,
+    ParsedProfile,
     ParsedStory,
 } from './hn/types';
 import {
@@ -85,9 +86,12 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [apiItems, setApiItems] = useState<Record<number, HnApiItem | null>>(
         {},
     );
+    const [apiUser, setApiUser] = useState<HnApiUser | null>();
     const title = useMemo(
-        () => page.post?.title ?? 'Hacker News',
-        [page.post?.title],
+        () =>
+            page.post?.title ??
+            (page.profile ? `${page.profile.id} | Hacker News` : 'Hacker News'),
+        [page.post?.title, page.profile],
     );
     const visibleStories = useMemo(
         () => applyStoryFilters(page.stories, filters),
@@ -103,6 +107,26 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const enrichedPost = page.post
         ? enrichStoryWithApiItem(page.post, apiItems[page.post.id])
         : undefined;
+    const enrichedProfile = page.profile
+        ? enrichProfileWithApiUser(page.profile, apiUser)
+        : undefined;
+    const profileOverviewItemIds = useMemo(
+        () =>
+            page.profile && apiUser?.submitted
+                ? apiUser.submitted.slice(0, 30)
+                : [],
+        [apiUser?.submitted, page.profile],
+    );
+    const profileOverviewItems = useMemo(
+        () =>
+            profileOverviewItemIds
+                .map((id) => apiItems[id])
+                .filter(isVisibleApiItem),
+        [apiItems, profileOverviewItemIds],
+    );
+    const profileOverviewLoading =
+        apiUser === undefined ||
+        profileOverviewItemIds.some((id) => !(id in apiItems));
     const hiddenStoryCount = page.stories.length - visibleStories.length;
 
     const updatePreferences = (patch: Partial<RedhnPreferences>) => {
@@ -220,6 +244,65 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         };
     }, [page.post, visibleStories]);
 
+    useEffect(() => {
+        if (!page.profile) {
+            setApiUser(undefined);
+            return;
+        }
+
+        let active = true;
+        setApiUser(undefined);
+        void sendRedhnMessage({
+            type: 'redhn:getUser',
+            id: page.profile.id,
+        }).then((response) => {
+            if (!active) {
+                return;
+            }
+
+            setApiUser(response.ok ? response.data : null);
+        });
+
+        return () => {
+            active = false;
+        };
+    }, [page.profile]);
+
+    useEffect(() => {
+        if (profileOverviewItemIds.length === 0) {
+            return;
+        }
+
+        let active = true;
+        void sendRedhnMessage({
+            type: 'redhn:getItems',
+            ids: profileOverviewItemIds,
+        }).then((response) => {
+            if (!active) {
+                return;
+            }
+
+            if (!response.ok) {
+                setApiItems((current) => ({
+                    ...current,
+                    ...Object.fromEntries(
+                        profileOverviewItemIds.map((id) => [id, null]),
+                    ),
+                }));
+                return;
+            }
+
+            setApiItems((current) => ({
+                ...current,
+                ...response.data,
+            }));
+        });
+
+        return () => {
+            active = false;
+        };
+    }, [profileOverviewItemIds]);
+
     if (!enabled) {
         return (
             <div className="redhn-classic-bar">
@@ -335,31 +418,59 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                 </aside>
                 <main className="redhn-main" aria-label={title}>
                     <div className="redhn-main__inner">
-                        <div
-                            className="redhn-tabs"
-                            role="navigation"
-                            aria-label="Sort"
-                        >
-                            <a
-                                className="redhn-tabs__item redhn-tabs__item--active"
-                                href="https://news.ycombinator.com/news"
+                        {page.kind === 'profile' && enrichedProfile ? (
+                            <ProfileView
+                                apiUser={apiUser}
+                                comments={page.comments}
+                                hiddenStoryCount={hiddenStoryCount}
+                                onHnAction={runHnAction}
+                                onSave={toggleSavedStory}
+                                onShare={(story) => {
+                                    void navigator.clipboard
+                                        ?.writeText(story.hnUrl)
+                                        .then(() => {
+                                            setSharedStoryId(story.id);
+                                        });
+                                }}
+                                onStoryView={markViewed}
+                                overviewItems={profileOverviewItems}
+                                overviewLoading={profileOverviewLoading}
+                                page={page}
+                                profile={enrichedProfile}
+                                readState={readState}
+                                savedStoryIds={savedStoryIds}
+                                sharedStoryId={sharedStoryId}
+                                stories={enrichedStories}
+                            />
+                        ) : (
+                            <div
+                                className="redhn-tabs"
+                                role="navigation"
+                                aria-label="Sort"
                             >
-                                Best
-                            </a>
-                            <a
-                                className="redhn-tabs__item"
-                                href="https://news.ycombinator.com/newest"
-                            >
-                                New
-                            </a>
-                            <a
-                                className="redhn-tabs__item"
-                                href="https://news.ycombinator.com/best"
-                            >
-                                Top
-                            </a>
-                        </div>
-                        {page.kind === 'item' && enrichedPost ? (
+                                <a
+                                    className="redhn-tabs__item redhn-tabs__item--active"
+                                    href="https://news.ycombinator.com/news"
+                                >
+                                    Best
+                                </a>
+                                <a
+                                    className="redhn-tabs__item"
+                                    href="https://news.ycombinator.com/newest"
+                                >
+                                    New
+                                </a>
+                                <a
+                                    className="redhn-tabs__item"
+                                    href="https://news.ycombinator.com/best"
+                                >
+                                    Top
+                                </a>
+                            </div>
+                        )}
+                        {page.kind === 'profile' &&
+                        enrichedProfile ? null : page.kind === 'item' &&
+                          enrichedPost ? (
                             <PostView
                                 comments={page.comments}
                                 isSaved={savedStoryIds.has(enrichedPost.id)}
@@ -767,6 +878,344 @@ function PreferencesPanel({
                 />
             </label>
         </section>
+    );
+}
+
+type ProfileViewProps = {
+    profile: ParsedProfile;
+    page: ParsedPage;
+    apiUser: HnApiUser | null | undefined;
+    overviewItems: HnApiItem[];
+    overviewLoading: boolean;
+    stories: ParsedStory[];
+    comments: ParsedComment[];
+    hiddenStoryCount: number;
+    readState: RedhnReadState;
+    savedStoryIds: Set<number>;
+    sharedStoryId?: number;
+    onSave: (storyId: number) => void;
+    onShare: (story: ParsedStory) => void;
+    onStoryView: (storyId: number) => void;
+    onHnAction: (href: string) => void;
+};
+
+const profileTabs: Array<{
+    tab: ParsedProfile['tab'];
+    label: string;
+    link: keyof ParsedProfile['links'];
+}> = [
+    { tab: 'overview', label: 'Overview', link: 'profile' },
+    { tab: 'posts', label: 'Posts', link: 'submitted' },
+    { tab: 'comments', label: 'Comments', link: 'comments' },
+    { tab: 'favorites', label: 'Favorites', link: 'favorites' },
+];
+
+function ProfileView({
+    profile,
+    page,
+    apiUser,
+    overviewItems,
+    overviewLoading,
+    stories,
+    comments,
+    hiddenStoryCount,
+    readState,
+    savedStoryIds,
+    sharedStoryId,
+    onSave,
+    onShare,
+    onStoryView,
+    onHnAction,
+}: ProfileViewProps) {
+    return (
+        <section className="redhn-profile" aria-label={`${profile.id} profile`}>
+            <div className="redhn-profile__main">
+                <header className="redhn-profile-hero">
+                    <div className="redhn-profile-hero__avatar">
+                        {userInitials(profile.id)}
+                    </div>
+                    <div>
+                        <h1>{profile.id}</h1>
+                        <p>u/{profile.id}</p>
+                    </div>
+                </header>
+                <nav className="redhn-profile-tabs" aria-label="Profile">
+                    {profileTabs.map((item) => (
+                        <a
+                            className={
+                                profile.tab === item.tab
+                                    ? 'redhn-profile-tabs__item redhn-profile-tabs__item--active'
+                                    : 'redhn-profile-tabs__item'
+                            }
+                            href={profile.links[item.link]}
+                            key={item.tab}
+                        >
+                            {item.label}
+                        </a>
+                    ))}
+                </nav>
+                {profile.tab === 'overview' ? (
+                    <ProfileOverviewFeed
+                        items={overviewItems}
+                        loading={overviewLoading}
+                        profile={profile}
+                    />
+                ) : null}
+                {profile.tab === 'posts' ? (
+                    stories.length > 0 || page.pagination.more ? (
+                        <StoryFeed
+                            hiddenStoryCount={hiddenStoryCount}
+                            onHnAction={onHnAction}
+                            onSave={onSave}
+                            onShare={onShare}
+                            onStoryView={onStoryView}
+                            page={page}
+                            readState={readState}
+                            savedStoryIds={savedStoryIds}
+                            sharedStoryId={sharedStoryId}
+                            stories={stories}
+                        />
+                    ) : (
+                        <ProfileEmptyState title="No posts yet" />
+                    )
+                ) : null}
+                {profile.tab === 'comments' ? (
+                    <ProfileCommentsList
+                        comments={comments}
+                        onHnAction={onHnAction}
+                    />
+                ) : null}
+                {profile.tab === 'favorites' ? (
+                    stories.length > 0 || page.pagination.more ? (
+                        <StoryFeed
+                            hiddenStoryCount={hiddenStoryCount}
+                            onHnAction={onHnAction}
+                            onSave={onSave}
+                            onShare={onShare}
+                            onStoryView={onStoryView}
+                            page={page}
+                            readState={readState}
+                            savedStoryIds={savedStoryIds}
+                            sharedStoryId={sharedStoryId}
+                            stories={stories}
+                        />
+                    ) : (
+                        <ProfileEmptyState title="No visible favorites" />
+                    )
+                ) : null}
+            </div>
+            <ProfileSummaryCard apiUser={apiUser} profile={profile} />
+        </section>
+    );
+}
+
+function ProfileSummaryCard({
+    profile,
+    apiUser,
+}: {
+    profile: ParsedProfile;
+    apiUser: HnApiUser | null | undefined;
+}) {
+    return (
+        <aside className="redhn-profile-card" aria-label="Profile details">
+            <div className="redhn-profile-card__header">
+                <UserAvatar userId={profile.id} />
+                <div>
+                    <strong>{profile.id}</strong>
+                    <span>u/{profile.id}</span>
+                </div>
+            </div>
+            <dl className="redhn-profile-stats">
+                <div>
+                    <dt>Karma</dt>
+                    <dd>{formatNumber(profile.karma)}</dd>
+                </div>
+                <div>
+                    <dt>Contributions</dt>
+                    <dd>{formatNumber(apiUser?.submitted?.length)}</dd>
+                </div>
+                <div>
+                    <dt>Joined</dt>
+                    <dd>{formatProfileDate(profile)}</dd>
+                </div>
+            </dl>
+            {profile.aboutHtml ? (
+                <div
+                    className="redhn-profile-card__about"
+                    dangerouslySetInnerHTML={{
+                        __html: sanitizeHnHtml(profile.aboutHtml),
+                    }}
+                />
+            ) : null}
+        </aside>
+    );
+}
+
+function ProfileOverviewFeed({
+    profile,
+    items,
+    loading,
+}: {
+    profile: ParsedProfile;
+    items: HnApiItem[];
+    loading: boolean;
+}) {
+    if (loading) {
+        return <ProfileEmptyState title="Loading activity" />;
+    }
+
+    if (items.length === 0) {
+        return <ProfileEmptyState title="No recent activity" />;
+    }
+
+    return (
+        <div className="redhn-profile-feed">
+            {items.map((item) => (
+                <ProfileActivityCard
+                    item={item}
+                    key={item.id}
+                    profile={profile}
+                />
+            ))}
+        </div>
+    );
+}
+
+function ProfileActivityCard({
+    item,
+    profile,
+}: {
+    item: HnApiItem;
+    profile: ParsedProfile;
+}) {
+    const isComment = item.type === 'comment';
+    const title = isComment ? 'Comment' : (item.title ?? 'Untitled');
+    const itemUrl = hnItemUrl(item.id);
+    const itemType = item.type ?? 'item';
+
+    return (
+        <article className="redhn-profile-activity">
+            <header className="redhn-story__credit">
+                <span className="redhn-story__avatar" aria-hidden="true">
+                    {userInitials(item.by ?? profile.id)}
+                </span>
+                <a
+                    className="redhn-story__author"
+                    href={`https://news.ycombinator.com/user?id=${encodeURIComponent(
+                        item.by ?? profile.id,
+                    )}`}
+                >
+                    u/{item.by ?? profile.id}
+                </a>
+                <span className="redhn-story__credit-dot" aria-hidden="true">
+                    •
+                </span>
+                <span>{itemType}</span>
+                {item.time ? (
+                    <>
+                        <span
+                            className="redhn-story__credit-dot"
+                            aria-hidden="true"
+                        >
+                            •
+                        </span>
+                        <span>{formatUnixDate(item.time)}</span>
+                    </>
+                ) : null}
+            </header>
+            <h2 className="redhn-profile-activity__title">
+                <a href={itemUrl}>{title}</a>
+            </h2>
+            {isComment && item.text ? (
+                <div
+                    className="redhn-profile-activity__text"
+                    dangerouslySetInnerHTML={{
+                        __html: sanitizeHnHtml(item.text),
+                    }}
+                />
+            ) : null}
+            {!isComment && item.url ? (
+                <a
+                    className="redhn-story__source-link"
+                    href={item.url}
+                    title={item.url}
+                >
+                    {item.url}
+                </a>
+            ) : null}
+            <div className="redhn-story__actions redhn-story__actions--card">
+                {item.score !== undefined ? (
+                    <span className="redhn-action redhn-action--vote redhn-action--disabled">
+                        <ArrowFatUpIcon
+                            aria-hidden="true"
+                            className="redhn-action__icon"
+                            weight="bold"
+                        />
+                        <span>{formatNumber(item.score)}</span>
+                    </span>
+                ) : null}
+                <a className="redhn-action" href={itemUrl}>
+                    <ChatCircleIcon
+                        aria-hidden="true"
+                        className="redhn-action__icon"
+                        weight="bold"
+                    />
+                    <span>
+                        {isComment ? 'Thread' : formatNumber(item.descendants)}
+                    </span>
+                </a>
+            </div>
+        </article>
+    );
+}
+
+function ProfileCommentsList({
+    comments,
+    onHnAction,
+}: {
+    comments: ParsedComment[];
+    onHnAction: (href: string) => void;
+}) {
+    const [collapsedCommentIds, setCollapsedCommentIds] = useState(
+        () => new Set<number>(),
+    );
+
+    const toggleComment = (commentId: number) => {
+        setCollapsedCommentIds((current) => {
+            const next = new Set(current);
+            if (next.has(commentId)) {
+                next.delete(commentId);
+            } else {
+                next.add(commentId);
+            }
+            return next;
+        });
+    };
+
+    if (comments.length === 0) {
+        return <ProfileEmptyState title="No comments yet" />;
+    }
+
+    return (
+        <section className="redhn-comments redhn-profile-comments">
+            {comments.map((comment) => (
+                <CommentThread
+                    collapsedCommentIds={collapsedCommentIds}
+                    comment={comment}
+                    key={comment.id}
+                    onHnAction={onHnAction}
+                    onToggle={toggleComment}
+                />
+            ))}
+        </section>
+    );
+}
+
+function ProfileEmptyState({ title }: { title: string }) {
+    return (
+        <div className="redhn-profile-empty">
+            <p>{title}</p>
+        </div>
     );
 }
 
@@ -1395,6 +1844,29 @@ function enrichStoryWithApiItem(
     };
 }
 
+function enrichProfileWithApiUser(
+    profile: ParsedProfile,
+    user: HnApiUser | null | undefined,
+): ParsedProfile {
+    if (!user) {
+        return profile;
+    }
+
+    return {
+        ...profile,
+        createdAt: user.created ?? profile.createdAt,
+        karma: user.karma ?? profile.karma,
+        about: user.about ? textFromHtml(user.about) : profile.about,
+        aboutHtml: user.about ?? profile.aboutHtml,
+    };
+}
+
+function isVisibleApiItem(
+    item: HnApiItem | null | undefined,
+): item is HnApiItem {
+    return item !== null && item !== undefined && !item.deleted && !item.dead;
+}
+
 function commentGuideColor(depth: number): string {
     const colors = ['#926f66', '#4d7788', '#ad2c00', '#617152', '#6d5b8a'];
     return colors[depth % colors.length];
@@ -1444,4 +1916,28 @@ function formatNumber(value: number | undefined): string {
     return value === undefined
         ? '-'
         : new Intl.NumberFormat('en-US').format(value);
+}
+
+function formatProfileDate(profile: ParsedProfile): string {
+    return profile.createdAt
+        ? formatUnixDate(profile.createdAt)
+        : (profile.created ?? '-');
+}
+
+function formatUnixDate(value: number): string {
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(value * 1000));
+}
+
+function hnItemUrl(id: number): string {
+    return `https://news.ycombinator.com/item?id=${id}`;
+}
+
+function textFromHtml(html: string): string {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    return template.content.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 }

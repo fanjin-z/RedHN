@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     fetchHnItem,
     fetchHnItems,
+    fetchHnUser,
     fetchHnUpdates,
 } from '../src/redhn/api/hnApi';
 import { isRedhnBackgroundRequest } from '../src/redhn/api/messages';
@@ -47,6 +48,26 @@ describe('HN API client', () => {
             fetchHnUpdates(async () => response({}, false, 500)),
         ).rejects.toThrow('500');
     });
+
+    it('fetches one user from the official API shape', async () => {
+        const user = await fetchHnUser('PinkG', async (url) => {
+            expect(url).toBe(
+                'https://hacker-news.firebaseio.com/v0/user/PinkG.json',
+            );
+            return response({
+                id: 'PinkG',
+                created: 1780065601,
+                karma: 55,
+                submitted: [48323683],
+            });
+        });
+
+        expect(user).toMatchObject({
+            id: 'PinkG',
+            karma: 55,
+            submitted: [48323683],
+        });
+    });
 });
 
 describe('background message guards', () => {
@@ -61,7 +82,13 @@ describe('background message guards', () => {
             true,
         );
         expect(
+            isRedhnBackgroundRequest({ type: 'redhn:getUser', id: 'PinkG' }),
+        ).toBe(true);
+        expect(
             isRedhnBackgroundRequest({ type: 'redhn:getItem', id: '1' }),
+        ).toBe(false);
+        expect(
+            isRedhnBackgroundRequest({ type: 'redhn:getUser', id: '' }),
         ).toBe(false);
         expect(
             isRedhnBackgroundRequest({ type: 'redhn:writeVote', id: 1 }),

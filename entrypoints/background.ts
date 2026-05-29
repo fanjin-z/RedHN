@@ -1,6 +1,7 @@
 import {
     fetchHnItem,
     fetchHnItems,
+    fetchHnUser,
     fetchHnUpdates,
 } from '../src/redhn/api/hnApi';
 import {
@@ -8,7 +9,7 @@ import {
     type RedhnBackgroundRequest,
     type RedhnBackgroundResponse,
 } from '../src/redhn/api/messages';
-import { apiCacheItem } from '../src/redhn/state/storage';
+import { apiCacheItem, userCacheItem } from '../src/redhn/state/storage';
 
 function registerRuntimeHooks(): void {
     browser.runtime.onInstalled.addListener(() => {
@@ -39,6 +40,11 @@ async function handleRedhnRequest(
 
         if (request.type === 'redhn:getItems') {
             const data = await getCachedItems(request.ids);
+            return { ok: true, data };
+        }
+
+        if (request.type === 'redhn:getUser') {
+            const data = await getCachedUser(request.id);
             return { ok: true, data };
         }
 
@@ -105,4 +111,22 @@ async function getCachedItems(ids: number[]) {
         ...freshEntries,
         ...fetchedEntries,
     };
+}
+
+async function getCachedUser(id: string) {
+    const cached = await userCacheItem.getValue();
+    const cachedEntry = cached[id];
+    if (cachedEntry && Date.now() - cachedEntry.cachedAt < 5 * 60 * 1000) {
+        return cachedEntry.user;
+    }
+
+    const user = await fetchHnUser(id);
+    await userCacheItem.setValue({
+        ...cached,
+        [id]: {
+            user,
+            cachedAt: Date.now(),
+        },
+    });
+    return user;
 }

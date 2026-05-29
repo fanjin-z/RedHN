@@ -1,4 +1,6 @@
-export type ParsedPageKind = 'feed' | 'item' | 'unknown';
+export type ParsedPageKind = 'feed' | 'item' | 'profile' | 'unknown';
+
+export type ParsedProfileTab = 'overview' | 'posts' | 'comments' | 'favorites';
 
 export type HnActionMap = {
     upvote?: string;
@@ -49,6 +51,22 @@ export type ParsedCurrentUser = {
     logoutUrl?: string;
 };
 
+export type ParsedProfile = {
+    id: string;
+    tab: ParsedProfileTab;
+    createdAt?: number;
+    created?: string;
+    karma?: number;
+    about?: string;
+    aboutHtml?: string;
+    links: {
+        profile: string;
+        submitted: string;
+        comments: string;
+        favorites: string;
+    };
+};
+
 export type ParsedPage = {
     kind: ParsedPageKind;
     sourceUrl: string;
@@ -56,6 +74,7 @@ export type ParsedPage = {
     currentUser?: ParsedCurrentUser;
     stories: ParsedStory[];
     post?: ParsedStory;
+    profile?: ParsedProfile;
     comments: ParsedComment[];
     pagination: ParsedPagination;
     capturedAt: number;

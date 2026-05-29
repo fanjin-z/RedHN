@@ -23,6 +23,14 @@ export type HnApiUpdates = {
     profiles: string[];
 };
 
+export type HnApiUser = {
+    id: string;
+    created?: number;
+    karma?: number;
+    about?: string;
+    submitted?: number[];
+};
+
 export async function fetchHnItem(
     id: number,
     fetcher: typeof fetch = fetch,
@@ -44,6 +52,16 @@ export async function fetchHnItems(
         ),
     );
     return Object.fromEntries(entries);
+}
+
+export async function fetchHnUser(
+    id: string,
+    fetcher: typeof fetch = fetch,
+): Promise<HnApiUser | null> {
+    return fetchJson<HnApiUser | null>(
+        `${HN_API_BASE}/user/${encodeURIComponent(id)}.json`,
+        fetcher,
+    );
 }
 
 export async function fetchHnUpdates(

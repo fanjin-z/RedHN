@@ -102,6 +102,166 @@ describe('HN DOM parser', () => {
         expect(isRedhnSupportedPage(itemPage)).toBe(true);
     });
 
+    it('parses HN user profile fields', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table>
+                        <tr class="athing">
+                            <td valign="top">user:</td>
+                            <td timestamp="1780065601">
+                                <a href="user?id=PinkG" class="hnuser">PinkG</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">created:</td>
+                            <td><span class="age">48 minutes ago</span></td>
+                        </tr>
+                        <tr><td valign="top">karma:</td><td>55</td></tr>
+                        <tr><td valign="top">about:</td><td>Building things.</td></tr>
+                        <tr><td></td><td><a href="submitted?id=PinkG">submissions</a></td></tr>
+                        <tr><td></td><td><a href="threads?id=PinkG">comments</a></td></tr>
+                        <tr><td></td><td><a href="favorites?id=PinkG">favorites</a></td></tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/user?id=PinkG',
+        );
+
+        expect(page.kind).toBe('profile');
+        expect(page.profile).toMatchObject({
+            id: 'PinkG',
+            tab: 'overview',
+            createdAt: 1780065601,
+            created: '48 minutes ago',
+            karma: 55,
+            about: 'Building things.',
+            aboutHtml: 'Building things.',
+        });
+        expect(page.profile?.links.comments).toBe(
+            'https://news.ycombinator.com/threads?id=PinkG',
+        );
+        expect(isRedhnSupportedPage(page)).toBe(true);
+    });
+
+    it('parses submitted profile pages as profile posts', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table>
+                        <tr class="athing submission" id="48323683">
+                            <td align="right" class="title"><span class="rank">1.</span></td>
+                            <td class="votelinks"><a href="vote?id=48323683&amp;how=up">up</a></td>
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="https://openpath.quest/post">I Am Retiring from Tech</a>
+                                    <span class="sitebit comhead"> (<span class="sitestr">openpath.quest</span>)</span>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"></td>
+                            <td class="subtext">
+                                <span class="score">150 points</span>
+                                by <a href="user?id=PinkG" class="hnuser">PinkG</a>
+                                <span class="age"><a href="item?id=48323683">47 minutes ago</a></span>
+                                | <a href="item?id=48323683">72 comments</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/submitted?id=PinkG',
+        );
+
+        expect(page.kind).toBe('profile');
+        expect(page.profile).toMatchObject({ id: 'PinkG', tab: 'posts' });
+        expect(page.stories).toHaveLength(1);
+        expect(page.stories[0]).toMatchObject({
+            id: 48323683,
+            title: 'I Am Retiring from Tech',
+            author: 'PinkG',
+            score: 150,
+            commentCount: 72,
+        });
+        expect(isRedhnSupportedPage(page)).toBe(true);
+    });
+
+    it('parses threads profile pages as profile comments, not item pages', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <tr class="athing comtr" id="39667625">
+                        <td>
+                            <table>
+                                <tr>
+                                    <td class="ind" indent="0"><img src="s.gif" width="0" /></td>
+                                    <td class="votelinks"><a href="vote?id=39667625&amp;how=up">up</a></td>
+                                    <td class="default">
+                                        <span class="comhead">
+                                            <a href="user?id=PinkG" class="hnuser">PinkG</a>
+                                            <span class="age"><a href="item?id=39667625">on May 29, 2026</a></span>
+                                            | <a href="item?id=39662907">parent</a>
+                                        </span>
+                                        <div class="comment">
+                                            <div class="commtext">A profile comment.</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/threads?id=PinkG',
+        );
+
+        expect(page.kind).toBe('profile');
+        expect(page.profile).toMatchObject({ id: 'PinkG', tab: 'comments' });
+        expect(page.post).toBeUndefined();
+        expect(page.comments).toHaveLength(1);
+        expect(page.comments[0]).toMatchObject({
+            id: 39667625,
+            author: 'PinkG',
+            text: 'A profile comment.',
+        });
+        expect(isRedhnSupportedPage(page)).toBe(true);
+    });
+
+    it('supports empty favorites profile pages', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table id="hnmain">
+                        <tr id="bigbox"><td></td></tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/favorites?id=PinkG',
+        );
+
+        expect(page.kind).toBe('profile');
+        expect(page.profile).toMatchObject({ id: 'PinkG', tab: 'favorites' });
+        expect(page.stories).toHaveLength(0);
+        expect(isRedhnSupportedPage(page)).toBe(true);
+    });
+
     it('does not support login-like pages for RedHN rendering', () => {
         const document = parseHTML(`
             <html>

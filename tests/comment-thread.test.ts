@@ -9,6 +9,7 @@ import {
     countHiddenReplies,
     nextRevealDepth,
 } from '../src/redhn/components/CommentThread';
+import type { HnReplyResult } from '../src/redhn/hn/actions';
 import type { ParsedComment } from '../src/redhn/hn/types';
 
 function comment(
@@ -39,8 +40,12 @@ function chain(depth: number, maxDepth: number): ParsedComment {
 function renderThread(
     root: ParsedComment,
     options: {
+        activeReplyCommentId?: number;
         collapsedCommentIds?: Set<number>;
         expandedDeepThreadDepths?: Record<number, number>;
+        onReplyCancel?: () => void;
+        onReplyOpen?: (commentId: number) => void;
+        onSubmitReply?: (href: string, text: string) => Promise<HnReplyResult>;
         onRevealMore?: (commentId: number, depthLimit: number) => void;
     } = {},
 ): string {
@@ -48,10 +53,14 @@ function renderThread(
 
     return renderToStaticMarkup(
         createElement(CommentThread, {
+            activeReplyCommentId: options.activeReplyCommentId,
             collapsedCommentIds: options.collapsedCommentIds ?? new Set(),
             comment: root,
             expandedDeepThreadDepths: options.expandedDeepThreadDepths,
             onHnAction: () => undefined,
+            onReplyCancel: options.onReplyCancel,
+            onReplyOpen: options.onReplyOpen,
+            onSubmitReply: options.onSubmitReply,
             onRevealMore: options.onRevealMore ?? (() => undefined),
             onToggle: () => undefined,
         }),
@@ -139,6 +148,29 @@ describe('comment thread depth reveal', () => {
         expect(html).not.toContain('Award');
         expect(html).not.toContain('user101');
         expect(html).not.toContain('View 2 more replies');
+    });
+
+    it('renders only HN-backed comment actions', () => {
+        const root = {
+            ...comment(1, 0),
+            actions: {
+                reply: 'https://news.ycombinator.com/reply?id=1',
+                upvote: 'https://news.ycombinator.com/vote?id=1&how=up',
+            },
+        };
+        const html = renderThread(root, {
+            onReplyOpen: () => undefined,
+            onSubmitReply: async () => ({
+                kind: 'submitted',
+                url: 'https://news.ycombinator.com/item?id=1',
+            }),
+        });
+
+        expect(html).toContain('Upvote comment');
+        expect(html).toContain('Reply');
+        expect(html).not.toContain('Downvote comment');
+        expect(html).not.toContain('Award');
+        expect(html).not.toContain('Share');
     });
 
     it('connector line and collapse icon call the same toggle handler', async () => {

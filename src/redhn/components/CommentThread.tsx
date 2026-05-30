@@ -1,11 +1,8 @@
 import {
-    ArrowFatDownIcon,
     ArrowFatUpIcon,
     ChatCircleIcon,
-    MedalIcon,
     MinusCircleIcon,
     PlusCircleIcon,
-    ShareFatIcon,
 } from '@phosphor-icons/react';
 import type { HnReplyResult } from '../hn/actions';
 import type { ParsedComment } from '../hn/types';
@@ -48,7 +45,6 @@ export function CommentThread({
     const collapsed = collapsedCommentIds.has(comment.id);
     const replies = countComments(comment.children);
     const author = comment.author ?? 'unknown';
-    const hnCommentUrl = `https://news.ycombinator.com/item?id=${comment.id}`;
     const replyHref = comment.actions.reply;
     const childDepthLimit =
         expandedDeepThreadDepths[comment.id] ?? visibleDepthLimit;
@@ -183,17 +179,6 @@ export function CommentThread({
                                         />
                                     </HnActionLink>
                                 ) : null}
-                                <button
-                                    aria-label="Downvote comment"
-                                    className="redhn-comment-action redhn-comment-action--muted"
-                                    disabled
-                                    type="button"
-                                >
-                                    <ArrowFatDownIcon
-                                        aria-hidden="true"
-                                        weight="bold"
-                                    />
-                                </button>
                                 {replyHref && onReplyOpen && onSubmitReply ? (
                                     <button
                                         className="redhn-comment-action"
@@ -209,27 +194,6 @@ export function CommentThread({
                                         <span>Reply</span>
                                     </button>
                                 ) : null}
-                                <button
-                                    className="redhn-comment-action redhn-comment-action--muted"
-                                    disabled
-                                    type="button"
-                                >
-                                    <MedalIcon
-                                        aria-hidden="true"
-                                        weight="bold"
-                                    />
-                                    <span>Award</span>
-                                </button>
-                                <a
-                                    className="redhn-comment-action"
-                                    href={hnCommentUrl}
-                                >
-                                    <ShareFatIcon
-                                        aria-hidden="true"
-                                        weight="bold"
-                                    />
-                                    <span>Share</span>
-                                </a>
                             </div>
                         </>
                     ) : null}

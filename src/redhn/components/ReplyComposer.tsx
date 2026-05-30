@@ -70,6 +70,7 @@ export const ReplyComposer = forwardRef<
             <label className="redhn-sr-only">{label}</label>
             <textarea
                 autoFocus={autoFocus}
+                className="auto-grow"
                 onChange={(event) => {
                     setText(event.target.value);
                     setError(undefined);
@@ -80,7 +81,7 @@ export const ReplyComposer = forwardRef<
                 }}
                 placeholder={placeholder}
                 ref={ref}
-                rows={expanded ? 4 : 1}
+                rows={expanded ? 2 : 1}
                 value={text}
             />
             {expanded ? (

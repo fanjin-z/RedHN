@@ -2118,21 +2118,6 @@
     color: var(--redhn-text);
 }
 
-.redhn-comment-action:disabled,
-.redhn-comment-action--muted {
-    color: var(--redhn-text-muted);
-}
-
-.redhn-comment-action:disabled {
-    cursor: default;
-    opacity: 0.82;
-}
-
-.redhn-comment-action:disabled:hover {
-    background: transparent;
-    color: var(--redhn-text-muted);
-}
-
 .redhn-comment__children {
     position: relative;
     display: grid;
@@ -2300,7 +2285,7 @@
 
 .redhn-reply-composer textarea {
     width: 100%;
-    min-height: 48px;
+    min-height: 34px;
     resize: vertical;
     border: 1px solid var(--redhn-outline-strong);
     border-radius: 9999px;
@@ -2309,9 +2294,14 @@
     font-family: var(--redhn-font-sans);
     font-size: calc(var(--redhn-type-body-size) * 1.071429);
     font-weight: 500;
-    line-height: var(--redhn-type-body-line-height);
+    line-height: 1.5;
     outline: 0;
-    padding: 12px 18px;
+    padding: 6px 14px;
+}
+
+.redhn-reply-composer textarea.auto-grow {
+    field-sizing: content;
+    resize: none;
 }
 
 .redhn-reply-composer textarea:focus {

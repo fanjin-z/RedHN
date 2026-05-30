@@ -39,7 +39,7 @@ export function sanitizeHnHtml(html: string): string {
 }
 
 export function textFromHtml(html: string): string {
-    const template = document.createElement('template');
-    template.innerHTML = html;
-    return template.content.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    return container.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 }

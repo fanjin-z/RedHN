@@ -4,12 +4,15 @@ export type ParsedProfileTab = 'overview' | 'posts' | 'comments' | 'favorites';
 
 export type ParsedAuthMode = 'login' | 'signup';
 
+export type HnItemType = 'job' | 'story' | 'comment' | 'poll' | 'pollopt';
+
 export type HnActionMap = {
     upvote?: string;
     unvote?: string;
     downvote?: string;
     hide?: string;
     favorite?: string;
+    unfavorite?: string;
     reply?: string;
     comments?: string;
     parent?: string;
@@ -19,6 +22,7 @@ export type HnActionMap = {
 
 export type ParsedStory = {
     id: number;
+    type?: HnItemType;
     rank?: number;
     title: string;
     url: string;

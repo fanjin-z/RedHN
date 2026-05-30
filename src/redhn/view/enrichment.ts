@@ -12,11 +12,14 @@ export function enrichStoryWithApiItem(
 
     return {
         ...story,
+        type: story.type ?? item.type,
         title: item.title ?? story.title,
         url: item.url ?? story.url,
         author: item.by ?? story.author,
         score: story.score ?? item.score,
         commentCount: story.commentCount ?? item.descendants,
+        textHtml: story.textHtml ?? item.text,
+        text: story.text ?? (item.text ? textFromHtml(item.text) : undefined),
     };
 }
 

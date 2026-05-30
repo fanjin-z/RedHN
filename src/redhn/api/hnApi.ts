@@ -1,9 +1,11 @@
+import type { HnItemType } from '../hn/types';
+
 const HN_API_BASE = 'https://hacker-news.firebaseio.com/v0';
 
 export type HnApiItem = {
     id: number;
     deleted?: boolean;
-    type?: 'job' | 'story' | 'comment' | 'poll' | 'pollopt';
+    type?: HnItemType;
     by?: string;
     time?: number;
     text?: string;

@@ -33,7 +33,7 @@ export async function performHnAction(
             redirect: 'follow',
         });
 
-        if (!response.ok || response.url.includes('/login')) {
+        if (!response.ok || (await isLoginResponse(response))) {
             return { kind: 'navigate', url: url.href };
         }
 
@@ -47,6 +47,24 @@ export async function performHnAction(
                     ? error.message
                     : 'Unknown HN action error',
         };
+    }
+}
+
+async function isLoginResponse(response: Response): Promise<boolean> {
+    if (response.url.includes('/login')) {
+        return true;
+    }
+
+    try {
+        const html = await response.clone().text();
+        const normalized = html.toLowerCase();
+        return (
+            normalized.includes('please log in') &&
+            normalized.includes('name="acct"') &&
+            normalized.includes('name="pw"')
+        );
+    } catch {
+        return false;
     }
 }
 

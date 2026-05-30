@@ -168,6 +168,194 @@ describe('HN DOM parser', () => {
         ).toEqual([3001, 3002]);
     });
 
+    it('parses HN un-favorite item page actions with non-breaking hyphens', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="fatitem">
+                        <tr class="athing" id="2002">
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="item?id=2002">Ask HN: Saved?</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="subtext">
+                                <span class="score">5 points</span>
+                                by <a class="hnuser" href="user?id=pg">pg</a>
+                                <span class="age">
+                                    <a href="item?id=2002">1 hour ago</a>
+                                </span>
+                                <a href="fave?id=2002&amp;un=t&amp;auth=abc">un‑favorite</a>
+                                <a href="item?id=2002">3 comments</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2002',
+        );
+
+        expect(page.post?.actions.favorite).toBeUndefined();
+        expect(page.post?.actions.unfavorite).toBe(
+            'https://news.ycombinator.com/fave?id=2002&un=t&auth=abc',
+        );
+    });
+
+    it('uses the fave un flag as favorited state even if the label changes', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="fatitem">
+                        <tr class="athing" id="2006">
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="item?id=2006">Ask HN: flagged?</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="subtext">
+                                by <a class="hnuser" href="user?id=pg">pg</a>
+                                <a href="fave?id=2006&amp;un=t&amp;auth=flag">favorite</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2006',
+        );
+
+        expect(page.post?.actions.favorite).toBeUndefined();
+        expect(page.post?.actions.unfavorite).toBe(
+            'https://news.ycombinator.com/fave?id=2006&un=t&auth=flag',
+        );
+    });
+
+    it('parses compact unfavorite item page labels as favorited state', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="fatitem">
+                        <tr class="athing" id="2003">
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="item?id=2003">Ask HN: Favorited?</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="subtext">
+                                by <a class="hnuser" href="user?id=pg">pg</a>
+                                <a href="fave?id=2003&amp;auth=def">unfavorite</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2003',
+        );
+
+        expect(page.post?.actions.favorite).toBeUndefined();
+        expect(page.post?.actions.unfavorite).toBe(
+            'https://news.ycombinator.com/fave?id=2003&auth=def',
+        );
+    });
+
+    it('ignores unrelated favorite text without a fave action link', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="fatitem">
+                        <tr class="athing" id="2004">
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="item?id=2004">Ask HN: favorite editors?</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="subtext">
+                                by <a class="hnuser" href="user?id=pg">pg</a>
+                                <a href="item?id=2004">favorite comments</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="toptext">
+                                This story says favorite a lot.
+                            </td>
+                        </tr>
+                    </table>
+                    <table class="comment-tree">
+                        <tr class="athing comtr" id="3004">
+                            <td class="default">
+                                <span class="comhead">
+                                    <a class="hnuser" href="user?id=commenter">commenter</a>
+                                </span>
+                                <div class="comment">
+                                    <span class="commtext">favorite</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2004',
+        );
+
+        expect(page.post?.actions.favorite).toBeUndefined();
+        expect(page.post?.actions.unfavorite).toBeUndefined();
+    });
+
+    it('reads favorite state from the top story subtext instead of global page subtext', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <div class="subtext">
+                        <a href="fave?id=9999&amp;auth=wrong">favorite</a>
+                    </div>
+                    <table class="fatitem">
+                        <tr class="athing" id="2005">
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="item?id=2005">Ask HN: scoped state?</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="subtext">
+                                by <a class="hnuser" href="user?id=pg">pg</a>
+                                <a href="fave?id=2005&amp;auth=right">un-favorite</a>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2005',
+        );
+
+        expect(page.post?.actions.favorite).toBeUndefined();
+        expect(page.post?.actions.unfavorite).toBe(
+            'https://news.ycombinator.com/fave?id=2005&auth=right',
+        );
+    });
+
     it('supports parsed feed and item pages for RedHN rendering', () => {
         const feedPage = parseHnPage(
             fixture('feed.html'),

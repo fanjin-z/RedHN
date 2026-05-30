@@ -4,6 +4,12 @@ import type { HnApiItem, HnApiUser } from './api/hnApi';
 import { AppShell, AuthShell, ClassicBar } from './components/AppShell';
 import { StoryFeed } from './components/StoryFeed';
 import { performHnAction } from './hn/actions';
+import {
+    applyOptimisticStoryFavorite,
+    createOptimisticStoryFavorite,
+    getStoryFavoriteHref,
+    type OptimisticStoryFavorite,
+} from './hn/favorites';
 import type { ParsedPage, ParsedStory } from './hn/types';
 import {
     applyOptimisticStoryVote,
@@ -53,6 +59,10 @@ type StoryVoteOverride = OptimisticStoryVote & {
     pending: boolean;
 };
 
+type StoryFavoriteOverride = OptimisticStoryFavorite & {
+    pending: boolean;
+};
+
 export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [enabled, setEnabled] = useState(true);
     const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -68,6 +78,9 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [newCommentCount, setNewCommentCount] = useState(0);
     const [storyVoteOverrides, setStoryVoteOverrides] = useState<
         Record<number, StoryVoteOverride>
+    >({});
+    const [storyFavoriteOverrides, setStoryFavoriteOverrides] = useState<
+        Record<number, StoryFavoriteOverride>
     >({});
     const [apiItems, setApiItems] = useState<Record<number, HnApiItem | null>>(
         {},
@@ -98,7 +111,19 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         [apiItems, storyVoteOverrides, visibleStories],
     );
     const enrichedPost = page.post
-        ? enrichStoryWithApiItem(page.post, apiItems[page.post.id])
+        ? (() => {
+              const enrichedStory = enrichStoryWithApiItem(
+                  page.post,
+                  apiItems[page.post.id],
+              );
+              const favoriteOverride = storyFavoriteOverrides[page.post.id];
+              return favoriteOverride
+                  ? applyOptimisticStoryFavorite(
+                        enrichedStory,
+                        favoriteOverride,
+                    )
+                  : enrichedStory;
+          })()
         : undefined;
     const enrichedProfile = page.profile
         ? enrichProfileWithApiUser(page.profile, apiUser)
@@ -129,6 +154,15 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     .map(([storyId]) => Number(storyId)),
             ),
         [storyVoteOverrides],
+    );
+    const pendingFavoriteStoryIds = useMemo(
+        () =>
+            new Set(
+                Object.entries(storyFavoriteOverrides)
+                    .filter(([, favorite]) => favorite.pending)
+                    .map(([storyId]) => Number(storyId)),
+            ),
+        [storyFavoriteOverrides],
     );
 
     const updatePreferences = (patch: Partial<RedhnPreferences>) => {
@@ -223,6 +257,59 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
             }
 
             setStoryVoteOverrides((current) => {
+                if (current[story.id]?.href !== href) {
+                    return current;
+                }
+
+                const next = { ...current };
+                delete next[story.id];
+                return next;
+            });
+            window.location.assign(result.url);
+        });
+    };
+
+    const runStoryFavorite = (story: ParsedStory) => {
+        const favorite = createOptimisticStoryFavorite(story);
+        const href = favorite?.href ?? getStoryFavoriteHref(story);
+
+        if (!href) {
+            return;
+        }
+
+        if (!favorite) {
+            runHnAction(href);
+            return;
+        }
+
+        setStoryFavoriteOverrides((current) => ({
+            ...current,
+            [story.id]: {
+                ...favorite,
+                pending: true,
+            },
+        }));
+
+        void performHnAction(href).then((result) => {
+            if (result.kind === 'performed') {
+                setStoryFavoriteOverrides((current) => {
+                    const currentFavorite = current[story.id];
+                    if (!currentFavorite || currentFavorite.href !== href) {
+                        return current;
+                    }
+
+                    return {
+                        ...current,
+                        [story.id]: {
+                            ...currentFavorite,
+                            pending: false,
+                        },
+                    };
+                });
+                return;
+            }
+
+            setStoryFavoriteOverrides((current) => {
                 if (current[story.id]?.href !== href) {
                     return current;
                 }
@@ -420,11 +507,13 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                   'item' && enrichedPost ? (
                 <PostPage
                     comments={page.comments}
-                    isSaved={savedStoryIds.has(enrichedPost.id)}
+                    isFavoritePending={pendingFavoriteStoryIds.has(
+                        enrichedPost.id,
+                    )}
                     isShared={sharedStoryId === enrichedPost.id}
                     newCommentCount={newCommentCount}
+                    onFavorite={runStoryFavorite}
                     onHnAction={runHnAction}
-                    onSave={toggleSavedStory}
                     onShare={shareStory}
                     post={enrichedPost}
                 />

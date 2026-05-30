@@ -8,6 +8,7 @@ import type {
     ParsedProfile,
     ParsedProfileTab,
     ParsedStory,
+    HnActionMap,
 } from './types';
 
 const HN_ORIGIN = 'https://news.ycombinator.com';
@@ -213,7 +214,8 @@ function enhancePostFromItemPage(
     }
 
     const textCell = document.querySelector<HTMLElement>('.toptext');
-    const subtext = document.querySelector('.subtext');
+    const subtext = findStorySubtext(document, story.id);
+    const favoriteActions = parseFavoriteActions(subtext, sourceUrl);
 
     return {
         ...story,
@@ -221,7 +223,7 @@ function enhancePostFromItemPage(
         text: text(textCell) || undefined,
         actions: {
             ...story.actions,
-            favorite: href(findLink(subtext, 'favorite'), sourceUrl),
+            ...favoriteActions,
             hide:
                 href(findLink(subtext, 'hide'), sourceUrl) ??
                 story.actions.hide,
@@ -463,13 +465,83 @@ function findLink(
 }
 
 function findLinkByExactText(
-    links: NodeListOf<HTMLAnchorElement>,
+    links: ArrayLike<HTMLAnchorElement>,
     label: string,
 ): HTMLAnchorElement | undefined {
     return Array.from(links).find(
         (link) =>
             link.textContent?.trim().toLowerCase() === label.toLowerCase(),
     );
+}
+
+function findFavoriteLink(
+    links: HTMLAnchorElement[],
+    favorited: boolean,
+    sourceUrl: string,
+): HTMLAnchorElement | undefined {
+    return links.find((link) => {
+        if (favorited && favoriteLinkHasUnflag(link, sourceUrl)) {
+            return true;
+        }
+
+        const label = normalizeFavoriteLabel(text(link));
+        return (
+            label === (favorited ? 'unfavorite' : 'favorite') &&
+            (favorited || !favoriteLinkHasUnflag(link, sourceUrl))
+        );
+    });
+}
+
+function parseFavoriteActions(
+    root: ParentNode | null | undefined,
+    sourceUrl: string,
+): Pick<HnActionMap, 'favorite' | 'unfavorite'> {
+    const links = Array.from(
+        root?.querySelectorAll<HTMLAnchorElement>('a') ?? [],
+    ).filter((link) => linkPath(link, sourceUrl) === '/fave');
+    const unfavorite = href(
+        findFavoriteLink(links, true, sourceUrl),
+        sourceUrl,
+    );
+
+    if (unfavorite) {
+        return { favorite: undefined, unfavorite };
+    }
+
+    return {
+        favorite: href(findFavoriteLink(links, false, sourceUrl), sourceUrl),
+        unfavorite: undefined,
+    };
+}
+
+function normalizeFavoriteLabel(value: string): string {
+    return value.toLowerCase().replace(/[\s_\-\u2010-\u2015\u2212]+/g, '');
+}
+
+function favoriteLinkHasUnflag(
+    link: HTMLAnchorElement,
+    sourceUrl: string,
+): boolean {
+    const value = link.getAttribute('href');
+    return safeUrl(value ?? '', sourceUrl)?.searchParams.get('un') === 't';
+}
+
+function findStorySubtext(
+    document: Document,
+    storyId: number,
+): Element | undefined {
+    const storyRow = document.querySelector(
+        `tr.athing[id="${storyId}"]:not(.comtr)`,
+    );
+    return storyRow?.nextElementSibling?.querySelector('.subtext') ?? undefined;
+}
+
+function linkPath(
+    link: HTMLAnchorElement,
+    sourceUrl: string,
+): string | undefined {
+    const value = link.getAttribute('href');
+    return value ? safeUrl(value, sourceUrl)?.pathname : undefined;
 }
 
 function findPaginationMoreLink(document: Document): HTMLAnchorElement | null {

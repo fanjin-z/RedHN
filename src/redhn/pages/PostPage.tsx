@@ -1,4 +1,11 @@
 import { useState } from 'react';
+import {
+    ArrowFatUpIcon,
+    BookmarkSimpleIcon,
+    ChatCircleIcon,
+    DotsThreeIcon,
+    ShareFatIcon,
+} from '@phosphor-icons/react';
 import type { ParsedComment, ParsedStory } from '../hn/types';
 import { CommentThread, countComments } from '../components/CommentThread';
 import { HnActionLink } from '../components/HnActionLink';
@@ -6,26 +13,27 @@ import { ReplyComposer } from '../components/ReplyComposer';
 import { submitHnReply, type HnReplyResult } from '../hn/actions';
 import { formatNumber } from '../view/format';
 import { sanitizeHnHtml } from '../view/html';
+import { userInitials } from '../components/UserAvatar';
 
 type PostPageProps = {
     post: ParsedStory;
     comments: ParsedComment[];
-    isSaved: boolean;
+    isFavoritePending: boolean;
     isShared: boolean;
     newCommentCount: number;
+    onFavorite: (story: ParsedStory) => void;
     onHnAction: (href: string) => void;
-    onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
 };
 
 export function PostPage({
     post,
     comments,
-    isSaved,
+    isFavoritePending,
     isShared,
     newCommentCount,
+    onFavorite,
     onHnAction,
-    onSave,
     onShare,
 }: PostPageProps) {
     const [collapsedCommentIds, setCollapsedCommentIds] = useState(
@@ -38,6 +46,14 @@ export function PostPage({
     >({});
     const totalComments = countComments(comments);
     const postReplyHref = post.actions.reply;
+    const author = post.author ?? 'unknown';
+    const isUpvoted = Boolean(post.actions.unvote);
+    const voteHref = post.actions.unvote ?? post.actions.upvote;
+    const isFavorited = Boolean(post.actions.unfavorite);
+    const favoriteHref = post.actions.unfavorite ?? post.actions.favorite;
+    const postUrl = linkPreviewUrl(post);
+    const postUrlLabel = postUrl ? displayUrl(postUrl) : undefined;
+    const commentsHref = post.actions.comments ?? post.hnUrl;
 
     const toggleComment = (commentId: number) => {
         setCollapsedCommentIds((current) => {
@@ -76,14 +92,75 @@ export function PostPage({
     return (
         <article className="redhn-post">
             <header className="redhn-post__header">
-                <div className="redhn-story__meta">
-                    <a className="redhn-story__source" href={post.url}>
-                        {post.domain ?? 'news.ycombinator.com'}
-                    </a>
-                    {post.author ? <span>Posted by {post.author}</span> : null}
-                    {post.age ? <span>{post.age}</span> : null}
+                <div className="redhn-post__credit">
+                    <span className="redhn-story__avatar" aria-hidden="true">
+                        {userInitials(author)}
+                    </span>
+                    {post.author ? (
+                        <a
+                            className="redhn-story__author"
+                            href={`https://news.ycombinator.com/user?id=${encodeURIComponent(
+                                post.author,
+                            )}`}
+                        >
+                            u/{post.author}
+                        </a>
+                    ) : (
+                        <span className="redhn-story__author">u/{author}</span>
+                    )}
+                    {post.age ? (
+                        <>
+                            <span
+                                className="redhn-story__credit-dot"
+                                aria-hidden="true"
+                            >
+                                •
+                            </span>
+                            <span>{post.age}</span>
+                        </>
+                    ) : null}
+                    <details className="redhn-post__menu redhn-story__menu">
+                        <summary aria-label="More post actions">
+                            <DotsThreeIcon
+                                aria-hidden="true"
+                                className="redhn-story__menu-icon"
+                                weight="bold"
+                            />
+                        </summary>
+                        <div className="redhn-story__menu-panel">
+                            {post.actions.hide ? (
+                                <HnActionLink
+                                    className="redhn-story__menu-item"
+                                    href={post.actions.hide}
+                                    onHnAction={onHnAction}
+                                >
+                                    Hide
+                                </HnActionLink>
+                            ) : null}
+                            <a
+                                className="redhn-story__menu-item"
+                                href={post.hnUrl}
+                            >
+                                Open on HN
+                            </a>
+                        </div>
+                    </details>
                 </div>
                 <h1 className="redhn-post__title">{post.title}</h1>
+                {postUrl && postUrlLabel ? (
+                    <div className="redhn-post__link-preview">
+                        <a
+                            className="redhn-post__url"
+                            href={postUrl}
+                            title={postUrl}
+                        >
+                            {postUrlLabel}
+                        </a>
+                        <a className="redhn-post__open" href={postUrl}>
+                            Open
+                        </a>
+                    </div>
+                ) : null}
                 {post.textHtml ? (
                     <div
                         className="redhn-post__text"
@@ -93,26 +170,40 @@ export function PostPage({
                     />
                 ) : null}
                 <div className="redhn-story__actions">
-                    {post.actions.upvote ? (
+                    {voteHref ? (
                         <HnActionLink
-                            className="redhn-action"
-                            href={post.actions.upvote}
+                            aria-label={isUpvoted ? 'Remove upvote' : 'Upvote'}
+                            className={
+                                isUpvoted
+                                    ? 'redhn-action redhn-action--vote redhn-action--active'
+                                    : 'redhn-action redhn-action--vote'
+                            }
+                            href={voteHref}
                             onHnAction={onHnAction}
                         >
-                            <span aria-hidden="true">^</span>
+                            <ArrowFatUpIcon
+                                aria-hidden="true"
+                                className="redhn-action__icon"
+                                weight={isUpvoted ? 'fill' : 'bold'}
+                            />
                             <span>{formatNumber(post.score)}</span>
                         </HnActionLink>
                     ) : (
-                        <span className="redhn-action">
-                            <span aria-hidden="true">^</span>
+                        <span className="redhn-action redhn-action--vote redhn-action--disabled">
+                            <ArrowFatUpIcon
+                                aria-hidden="true"
+                                className="redhn-action__icon"
+                                weight="bold"
+                            />
                             <span>{formatNumber(post.score)}</span>
                         </span>
                     )}
-                    <a
-                        className="redhn-action"
-                        href={post.actions.comments ?? post.hnUrl}
-                    >
-                        <span aria-hidden="true">[]</span>
+                    <a className="redhn-action" href={commentsHref}>
+                        <ChatCircleIcon
+                            aria-hidden="true"
+                            className="redhn-action__icon"
+                            weight="bold"
+                        />
                         <span>{formatNumber(post.commentCount)}</span>
                     </a>
                     <button
@@ -122,22 +213,31 @@ export function PostPage({
                         }}
                         type="button"
                     >
-                        <span aria-hidden="true">/</span>
+                        <ShareFatIcon
+                            aria-hidden="true"
+                            className="redhn-action__icon"
+                            weight="bold"
+                        />
                         <span>{isShared ? 'Copied' : 'Share'}</span>
                     </button>
                     <button
                         className={
-                            isSaved
+                            isFavorited
                                 ? 'redhn-action redhn-action--active'
                                 : 'redhn-action'
                         }
+                        disabled={!favoriteHref || isFavoritePending}
                         onClick={() => {
-                            onSave(post.id);
+                            onFavorite(post);
                         }}
                         type="button"
                     >
-                        <span aria-hidden="true">#</span>
-                        <span>{isSaved ? 'Saved' : 'Save'}</span>
+                        <BookmarkSimpleIcon
+                            aria-hidden="true"
+                            className="redhn-action__icon"
+                            weight={isFavorited ? 'fill' : 'bold'}
+                        />
+                        <span>{isFavorited ? 'Un-favorite' : 'Favorite'}</span>
                     </button>
                 </div>
                 {postReplyHref ? (
@@ -208,4 +308,21 @@ export function PostPage({
             </section>
         </article>
     );
+}
+
+function linkPreviewUrl(post: ParsedStory): string | undefined {
+    if (post.url && post.url !== post.hnUrl) {
+        return post.url;
+    }
+
+    return post.type === 'comment' ? post.hnUrl : undefined;
+}
+
+function displayUrl(value: string): string {
+    try {
+        const url = new URL(value);
+        return url.hostname.replace(/^www\./, '') || value;
+    } catch {
+        return value;
+    }
 }

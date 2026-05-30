@@ -11,6 +11,7 @@ const response = (url: string, ok = true): Response =>
 const htmlResponse = (url: string, html: string, ok = true): Response =>
     ({
         ok,
+        clone: () => htmlResponse(url, html, ok),
         text: async () => html,
         url,
     }) as Response;
@@ -30,6 +31,23 @@ describe('HN action fallback', () => {
 
         expect(result.kind).toBe('performed');
         expect(calls[0]).toMatchObject({ credentials: 'include' });
+    });
+
+    it('fetches favorite actions with credentials', async () => {
+        const calls: Array<{ url: string; init?: RequestInit }> = [];
+        const result = await performHnAction('fave?id=1&auth=x', {
+            baseUrl: 'https://news.ycombinator.com/item?id=1',
+            fetcher: async (url, init) => {
+                calls.push({ url: String(url), init });
+                return response('https://news.ycombinator.com/item?id=1');
+            },
+        });
+
+        expect(result.kind).toBe('performed');
+        expect(calls[0]).toMatchObject({
+            init: { credentials: 'include' },
+            url: 'https://news.ycombinator.com/fave?id=1&auth=x',
+        });
     });
 
     it('navigates for reply forms and external URLs', async () => {
@@ -60,6 +78,28 @@ describe('HN action fallback', () => {
                     response('https://news.ycombinator.com/login'),
             }),
         ).resolves.toMatchObject({ kind: 'navigate' });
+    });
+
+    it('falls back to navigation when favorite actions return an inline login page', async () => {
+        await expect(
+            performHnAction('fave?id=1&auth=x', {
+                baseUrl: 'https://news.ycombinator.com/item?id=1',
+                fetcher: async () =>
+                    htmlResponse(
+                        'https://news.ycombinator.com/fave?id=1&auth=x',
+                        `
+                            Please log in.
+                            <form action="fave" method="post">
+                                <input name="acct">
+                                <input name="pw" type="password">
+                            </form>
+                        `,
+                    ),
+            }),
+        ).resolves.toMatchObject({
+            kind: 'navigate',
+            url: 'https://news.ycombinator.com/fave?id=1&auth=x',
+        });
     });
 
     it('submits inline replies through the HN reply form', async () => {

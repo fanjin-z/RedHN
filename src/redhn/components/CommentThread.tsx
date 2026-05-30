@@ -45,7 +45,7 @@ export function CommentThread({
     onSubmitReply,
     onToggle,
 }: CommentThreadProps) {
-    const repliesCollapsed = collapsedCommentIds.has(comment.id);
+    const collapsed = collapsedCommentIds.has(comment.id);
     const replies = countComments(comment.children);
     const author = comment.author ?? 'unknown';
     const hnCommentUrl = `https://news.ycombinator.com/item?id=${comment.id}`;
@@ -64,59 +64,60 @@ export function CommentThread({
         hasReplyBranch
             ? 'redhn-comment--has-replies'
             : 'redhn-comment--terminal',
-        repliesCollapsed ? 'redhn-comment--replies-collapsed' : undefined,
+        collapsed ? 'redhn-comment--collapsed' : undefined,
     ]
         .filter(Boolean)
         .join(' ');
 
-    const toggleReplies = () => {
-        if (hasReplyBranch) {
-            onToggle(comment.id);
-        }
+    const toggleComment = () => {
+        onToggle(comment.id);
     };
 
     return (
         <article className={commentClassName}>
             <div className="redhn-comment__row">
                 <div className="redhn-comment__rail">
-                    <span className="redhn-comment__avatar" aria-hidden="true">
-                        {userInitials(author)}
-                    </span>
-                    {hasReplyBranch ? (
+                    {collapsed ? (
+                        <button
+                            aria-label="Expand comment"
+                            aria-expanded="false"
+                            className="redhn-comment__collapsed-toggle"
+                            onClick={toggleComment}
+                            type="button"
+                        >
+                            <PlusCircleIcon aria-hidden="true" weight="bold" />
+                        </button>
+                    ) : (
+                        <button
+                            aria-label="Collapse comment"
+                            aria-expanded="true"
+                            className="redhn-comment__avatar redhn-comment__avatar-button"
+                            onClick={toggleComment}
+                            type="button"
+                        >
+                            {userInitials(author)}
+                        </button>
+                    )}
+                    {hasReplyBranch && !collapsed ? (
                         <>
                             <button
-                                aria-label={
-                                    repliesCollapsed
-                                        ? 'Expand replies'
-                                        : 'Collapse replies'
-                                }
-                                aria-expanded={!repliesCollapsed}
+                                aria-label="Collapse comment"
+                                aria-expanded="true"
                                 className="redhn-comment__threadline"
-                                onClick={toggleReplies}
+                                onClick={toggleComment}
                                 type="button"
                             />
                             <button
-                                aria-label={
-                                    repliesCollapsed
-                                        ? 'Expand replies'
-                                        : 'Collapse replies'
-                                }
-                                aria-expanded={!repliesCollapsed}
+                                aria-label="Collapse comment"
+                                aria-expanded="true"
                                 className="redhn-comment__collapse"
-                                onClick={toggleReplies}
+                                onClick={toggleComment}
                                 type="button"
                             >
-                                {repliesCollapsed ? (
-                                    <PlusCircleIcon
-                                        aria-hidden="true"
-                                        weight="bold"
-                                    />
-                                ) : (
-                                    <MinusCircleIcon
-                                        aria-hidden="true"
-                                        weight="bold"
-                                    />
-                                )}
+                                <MinusCircleIcon
+                                    aria-hidden="true"
+                                    weight="bold"
+                                />
                             </button>
                         </>
                     ) : null}
@@ -148,7 +149,7 @@ export function CommentThread({
                                 <span>{comment.age}</span>
                             </>
                         ) : null}
-                        {replies > 0 ? (
+                        {replies > 0 && !collapsed ? (
                             <>
                                 <span
                                     className="redhn-comment__meta-dot"
@@ -160,66 +161,80 @@ export function CommentThread({
                             </>
                         ) : null}
                     </header>
-                    <div
-                        className="redhn-comment__text"
-                        dangerouslySetInnerHTML={{
-                            __html: sanitizeHnHtml(comment.html),
-                        }}
-                    />
-                    <div className="redhn-comment__actions">
-                        {comment.actions.upvote ? (
-                            <HnActionLink
-                                aria-label="Upvote comment"
-                                className="redhn-comment-action"
-                                href={comment.actions.upvote}
-                                onHnAction={onHnAction}
-                            >
-                                <ArrowFatUpIcon
-                                    aria-hidden="true"
-                                    weight="bold"
-                                />
-                            </HnActionLink>
-                        ) : null}
-                        <button
-                            aria-label="Downvote comment"
-                            className="redhn-comment-action redhn-comment-action--muted"
-                            disabled
-                            type="button"
-                        >
-                            <ArrowFatDownIcon
-                                aria-hidden="true"
-                                weight="bold"
-                            />
-                        </button>
-                        {replyHref && onReplyOpen && onSubmitReply ? (
-                            <button
-                                className="redhn-comment-action"
-                                onClick={() => {
-                                    onReplyOpen(comment.id);
+                    {!collapsed ? (
+                        <>
+                            <div
+                                className="redhn-comment__text"
+                                dangerouslySetInnerHTML={{
+                                    __html: sanitizeHnHtml(comment.html),
                                 }}
-                                type="button"
-                            >
-                                <ChatCircleIcon
-                                    aria-hidden="true"
-                                    weight="bold"
-                                />
-                                <span>Reply</span>
-                            </button>
-                        ) : null}
-                        <button
-                            className="redhn-comment-action redhn-comment-action--muted"
-                            disabled
-                            type="button"
-                        >
-                            <MedalIcon aria-hidden="true" weight="bold" />
-                            <span>Award</span>
-                        </button>
-                        <a className="redhn-comment-action" href={hnCommentUrl}>
-                            <ShareFatIcon aria-hidden="true" weight="bold" />
-                            <span>Share</span>
-                        </a>
-                    </div>
-                    {activeReplyCommentId === comment.id &&
+                            />
+                            <div className="redhn-comment__actions">
+                                {comment.actions.upvote ? (
+                                    <HnActionLink
+                                        aria-label="Upvote comment"
+                                        className="redhn-comment-action"
+                                        href={comment.actions.upvote}
+                                        onHnAction={onHnAction}
+                                    >
+                                        <ArrowFatUpIcon
+                                            aria-hidden="true"
+                                            weight="bold"
+                                        />
+                                    </HnActionLink>
+                                ) : null}
+                                <button
+                                    aria-label="Downvote comment"
+                                    className="redhn-comment-action redhn-comment-action--muted"
+                                    disabled
+                                    type="button"
+                                >
+                                    <ArrowFatDownIcon
+                                        aria-hidden="true"
+                                        weight="bold"
+                                    />
+                                </button>
+                                {replyHref && onReplyOpen && onSubmitReply ? (
+                                    <button
+                                        className="redhn-comment-action"
+                                        onClick={() => {
+                                            onReplyOpen(comment.id);
+                                        }}
+                                        type="button"
+                                    >
+                                        <ChatCircleIcon
+                                            aria-hidden="true"
+                                            weight="bold"
+                                        />
+                                        <span>Reply</span>
+                                    </button>
+                                ) : null}
+                                <button
+                                    className="redhn-comment-action redhn-comment-action--muted"
+                                    disabled
+                                    type="button"
+                                >
+                                    <MedalIcon
+                                        aria-hidden="true"
+                                        weight="bold"
+                                    />
+                                    <span>Award</span>
+                                </button>
+                                <a
+                                    className="redhn-comment-action"
+                                    href={hnCommentUrl}
+                                >
+                                    <ShareFatIcon
+                                        aria-hidden="true"
+                                        weight="bold"
+                                    />
+                                    <span>Share</span>
+                                </a>
+                            </div>
+                        </>
+                    ) : null}
+                    {!collapsed &&
+                    activeReplyCommentId === comment.id &&
                     replyHref &&
                     onSubmitReply ? (
                         <ReplyComposer
@@ -234,7 +249,7 @@ export function CommentThread({
                     ) : null}
                 </div>
             </div>
-            {hasReplyBranch && !repliesCollapsed ? (
+            {hasReplyBranch && !collapsed ? (
                 <div className="redhn-comment__branch">
                     {hasVisibleChildren ? (
                         <div className="redhn-comment__children">

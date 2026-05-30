@@ -18,6 +18,7 @@ function comment(
 ): ParsedComment {
     return {
         actions: {},
+        age: '1 hour ago',
         author: `user${id}`,
         children,
         depth,
@@ -124,15 +125,18 @@ describe('comment thread depth reveal', () => {
         expect(html).toContain('user107');
     });
 
-    it('manual collapse hides descendants but keeps the parent visible', () => {
+    it('manual collapse compacts the comment and hides its descendants', () => {
         const html = renderThread(chain(0, 7), {
             collapsedCommentIds: new Set([100]),
             expandedDeepThreadDepths: { 105: 8 },
         });
 
         expect(html).toContain('user100');
-        expect(html).toContain('Comment 100');
-        expect(html).toContain('redhn-comment--replies-collapsed');
+        expect(html).toContain('1 hour ago');
+        expect(html).toContain('redhn-comment--collapsed');
+        expect(html).toContain('Expand comment');
+        expect(html).not.toContain('Comment 100');
+        expect(html).not.toContain('Award');
         expect(html).not.toContain('user101');
         expect(html).not.toContain('View 2 more replies');
     });

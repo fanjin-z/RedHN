@@ -22,7 +22,6 @@ type CommentThreadProps = {
     comment: ParsedComment;
     collapsedCommentIds: Set<number>;
     activeReplyCommentId?: number;
-    collapseDepth?: number;
     expandedDeepThreadDepths?: Record<number, number>;
     visibleDepthLimit?: number;
     onHnAction: (href: string) => void;
@@ -37,7 +36,6 @@ export function CommentThread({
     comment,
     collapsedCommentIds,
     activeReplyCommentId,
-    collapseDepth,
     expandedDeepThreadDepths = {},
     visibleDepthLimit = DEFAULT_VISIBLE_COMMENT_DEPTH,
     onHnAction,
@@ -47,9 +45,7 @@ export function CommentThread({
     onSubmitReply,
     onToggle,
 }: CommentThreadProps) {
-    const collapsed =
-        collapsedCommentIds.has(comment.id) ||
-        (collapseDepth !== undefined && comment.depth >= collapseDepth);
+    const collapsed = collapsedCommentIds.has(comment.id);
     const replies = countComments(comment.children);
     const author = comment.author ?? 'unknown';
     const hnCommentUrl = `https://news.ycombinator.com/item?id=${comment.id}`;
@@ -215,7 +211,6 @@ export function CommentThread({
                                         activeReplyCommentId={
                                             activeReplyCommentId
                                         }
-                                        collapseDepth={collapseDepth}
                                         collapsedCommentIds={
                                             collapsedCommentIds
                                         }
@@ -246,8 +241,14 @@ export function CommentThread({
                                 }}
                                 type="button"
                             >
-                                View {formatNumber(hiddenReplies)} more{' '}
-                                {hiddenReplies === 1 ? 'reply' : 'replies'}
+                                <PlusCircleIcon
+                                    aria-hidden="true"
+                                    weight="bold"
+                                />
+                                <span>
+                                    View {formatNumber(hiddenReplies)} more{' '}
+                                    {hiddenReplies === 1 ? 'reply' : 'replies'}
+                                </span>
                             </button>
                         ) : null}
                     </>

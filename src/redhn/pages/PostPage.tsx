@@ -39,7 +39,6 @@ export function PostPage({
     const [collapsedCommentIds, setCollapsedCommentIds] = useState(
         () => new Set<number>(),
     );
-    const [collapseDepth, setCollapseDepth] = useState<number>();
     const [activeReplyCommentId, setActiveReplyCommentId] = useState<number>();
     const [expandedDeepThreadDepths, setExpandedDeepThreadDepths] = useState<
         Record<number, number>
@@ -255,42 +254,11 @@ export function PostPage({
                         ? ` / ${formatNumber(newCommentCount)} new`
                         : ''}
                 </span>
-                <div className="redhn-comment-tools__buttons">
-                    <button
-                        className="redhn-action"
-                        onClick={() => {
-                            setCollapseDepth(2);
-                        }}
-                        type="button"
-                    >
-                        Depth 2
-                    </button>
-                    <button
-                        className="redhn-action"
-                        onClick={() => {
-                            setCollapseDepth(4);
-                        }}
-                        type="button"
-                    >
-                        Depth 4
-                    </button>
-                    <button
-                        className="redhn-action"
-                        onClick={() => {
-                            setCollapseDepth(undefined);
-                            setCollapsedCommentIds(new Set());
-                        }}
-                        type="button"
-                    >
-                        Expand
-                    </button>
-                </div>
             </div>
             <section className="redhn-comments" aria-label="Comments">
                 {comments.map((comment) => (
                     <CommentThread
                         activeReplyCommentId={activeReplyCommentId}
-                        collapseDepth={collapseDepth}
                         collapsedCommentIds={collapsedCommentIds}
                         comment={comment}
                         expandedDeepThreadDepths={expandedDeepThreadDepths}

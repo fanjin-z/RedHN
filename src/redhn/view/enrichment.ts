@@ -13,9 +13,9 @@ export function enrichStoryWithApiItem(
     return {
         ...story,
         type: story.type ?? item.type,
-        title: item.title ?? story.title,
-        url: item.url ?? story.url,
-        author: item.by ?? story.author,
+        title: story.title ?? item.title,
+        url: story.url ?? item.url,
+        author: story.author ?? item.by,
         score: story.score ?? item.score,
         commentCount: story.commentCount ?? item.descendants,
         textHtml: story.textHtml ?? item.text,
@@ -33,10 +33,12 @@ export function enrichProfileWithApiUser(
 
     return {
         ...profile,
-        createdAt: user.created ?? profile.createdAt,
-        karma: user.karma ?? profile.karma,
-        about: user.about ? textFromHtml(user.about) : profile.about,
-        aboutHtml: user.about ?? profile.aboutHtml,
+        createdAt: profile.createdAt ?? user.created,
+        karma: profile.karma ?? user.karma,
+        about:
+            profile.about ??
+            (user.about ? textFromHtml(user.about) : undefined),
+        aboutHtml: profile.aboutHtml ?? user.about,
     };
 }
 

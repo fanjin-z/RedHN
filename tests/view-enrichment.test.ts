@@ -1,8 +1,12 @@
 import { parseHTML } from 'linkedom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { HnApiItem } from '../src/redhn/api/hnApi';
-import type { ParsedStory } from '../src/redhn/hn/types';
-import { enrichStoryWithApiItem } from '../src/redhn/view/enrichment';
+import type { HnApiItem, HnApiUser } from '../src/redhn/api/hnApi';
+import type { ParsedProfile, ParsedStory } from '../src/redhn/hn/types';
+import {
+    enrichProfileWithApiUser,
+    enrichStoryWithApiItem,
+    isVisibleApiItem,
+} from '../src/redhn/view/enrichment';
 
 function story(patch: Partial<ParsedStory> = {}): ParsedStory {
     return {
@@ -23,11 +27,66 @@ function item(patch: Partial<HnApiItem> = {}): HnApiItem {
     };
 }
 
+function profile(patch: Partial<ParsedProfile> = {}): ParsedProfile {
+    return {
+        id: 'PinkG',
+        tab: 'overview',
+        links: {
+            profile: 'https://news.ycombinator.com/user?id=PinkG',
+            submitted: 'https://news.ycombinator.com/submitted?id=PinkG',
+            comments: 'https://news.ycombinator.com/threads?id=PinkG',
+            favorites: 'https://news.ycombinator.com/favorites?id=PinkG',
+        },
+        ...patch,
+    };
+}
+
+function user(patch: Partial<HnApiUser> = {}): HnApiUser {
+    return {
+        id: 'PinkG',
+        ...patch,
+    };
+}
+
 afterEach(() => {
     vi.unstubAllGlobals();
 });
 
 describe('story API enrichment', () => {
+    it('keeps parsed title, url, and author ahead of API values', () => {
+        const enriched = enrichStoryWithApiItem(
+            story({ author: 'parsed-user' }),
+            item({
+                by: 'api-user',
+                title: 'API title',
+                url: 'https://example.com/api',
+            }),
+        );
+
+        expect(enriched.title).toBe('Parsed title');
+        expect(enriched.url).toBe('https://example.com/parsed');
+        expect(enriched.author).toBe('parsed-user');
+    });
+
+    it('uses API title, url, and author when parsed values are missing', () => {
+        const enriched = enrichStoryWithApiItem(
+            story({
+                author: undefined,
+                title: undefined as unknown as string,
+                url: undefined as unknown as string,
+            }),
+            item({
+                by: 'api-user',
+                title: 'API title',
+                url: 'https://example.com/api',
+            }),
+        );
+
+        expect(enriched.title).toBe('API title');
+        expect(enriched.url).toBe('https://example.com/api');
+        expect(enriched.author).toBe('api-user');
+    });
+
     it('keeps parsed story scores ahead of stale API scores', () => {
         const enriched = enrichStoryWithApiItem(
             story({ score: 42 }),
@@ -107,5 +166,58 @@ describe('story API enrichment', () => {
             'https://news.ycombinator.com/fave?id=1001&auth=abc',
         );
         expect(enriched.actions.favorite).toBeUndefined();
+    });
+});
+
+describe('profile API enrichment', () => {
+    it('keeps parsed profile fields ahead of API values', () => {
+        const enriched = enrichProfileWithApiUser(
+            profile({
+                about: 'Parsed about',
+                aboutHtml: '<p>Parsed about</p>',
+                createdAt: 1780065601,
+                karma: 42,
+            }),
+            user({
+                about: 'API <i>about</i>',
+                created: 1780065602,
+                karma: 99,
+            }),
+        );
+
+        expect(enriched.createdAt).toBe(1780065601);
+        expect(enriched.karma).toBe(42);
+        expect(enriched.about).toBe('Parsed about');
+        expect(enriched.aboutHtml).toBe('<p>Parsed about</p>');
+    });
+
+    it('uses API profile fields when parsed values are missing', () => {
+        vi.stubGlobal(
+            'document',
+            parseHTML('<html><body></body></html>').document,
+        );
+
+        const enriched = enrichProfileWithApiUser(
+            profile(),
+            user({
+                about: 'API <i>about</i>',
+                created: 1780065602,
+                karma: 99,
+            }),
+        );
+
+        expect(enriched.createdAt).toBe(1780065602);
+        expect(enriched.karma).toBe(99);
+        expect(enriched.about).toBe('API about');
+        expect(enriched.aboutHtml).toBe('API <i>about</i>');
+    });
+});
+
+describe('API-only item visibility', () => {
+    it('filters deleted and dead API items', () => {
+        expect(isVisibleApiItem(item())).toBe(true);
+        expect(isVisibleApiItem(item({ deleted: true }))).toBe(false);
+        expect(isVisibleApiItem(item({ dead: true }))).toBe(false);
+        expect(isVisibleApiItem(null)).toBe(false);
     });
 });

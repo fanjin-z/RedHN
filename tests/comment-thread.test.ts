@@ -1,4 +1,6 @@
 import { createElement } from 'react';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { parseHTML } from 'linkedom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -55,6 +57,14 @@ function renderThread(
     );
 }
 
+function setupDom() {
+    const { document, window } = parseHTML('<html><body></body></html>');
+    vi.stubGlobal('document', document);
+    vi.stubGlobal('window', window);
+    vi.stubGlobal('HTMLElement', window.HTMLElement);
+    return document;
+}
+
 afterEach(() => {
     vi.unstubAllGlobals();
 });
@@ -80,6 +90,30 @@ describe('comment thread depth reveal', () => {
         expect(html).not.toContain('user106');
     });
 
+    it('marks leaf comments as terminal without reply controls', () => {
+        const html = renderThread(comment(1, 0));
+
+        expect(html).toContain('redhn-comment--terminal');
+        expect(html).not.toContain('redhn-comment__threadline');
+        expect(html).not.toContain('redhn-comment__collapse');
+    });
+
+    it('marks visible reply branches with connector controls', () => {
+        const html = renderThread(comment(1, 0, [comment(2, 1)]));
+
+        expect(html).toContain('redhn-comment--has-replies');
+        expect(html).toContain('redhn-comment__threadline');
+        expect(html).toContain('redhn-comment__collapse');
+    });
+
+    it('keeps hidden deep replies as expandable reply branches', () => {
+        const html = renderThread(chain(5, 7));
+
+        expect(html).toContain('redhn-comment--has-replies');
+        expect(html).toContain('redhn-comment__threadline');
+        expect(html).toContain('View 2 more replies');
+    });
+
     it('renders revealed deep descendants for the expanded branch', () => {
         const html = renderThread(chain(0, 7), {
             expandedDeepThreadDepths: { 105: 8 },
@@ -90,14 +124,57 @@ describe('comment thread depth reveal', () => {
         expect(html).toContain('user107');
     });
 
-    it('manual collapse hides descendants even if they were revealed', () => {
+    it('manual collapse hides descendants but keeps the parent visible', () => {
         const html = renderThread(chain(0, 7), {
             collapsedCommentIds: new Set([100]),
             expandedDeepThreadDepths: { 105: 8 },
         });
 
         expect(html).toContain('user100');
+        expect(html).toContain('Comment 100');
+        expect(html).toContain('redhn-comment--replies-collapsed');
         expect(html).not.toContain('user101');
         expect(html).not.toContain('View 2 more replies');
+    });
+
+    it('connector line and collapse icon call the same toggle handler', async () => {
+        const document = setupDom();
+        const container = document.createElement('div');
+        document.body.append(container);
+        const onToggle = vi.fn();
+        const root = createRoot(container);
+
+        await act(async () => {
+            root.render(
+                createElement(CommentThread, {
+                    collapsedCommentIds: new Set<number>(),
+                    comment: comment(1, 0, [comment(2, 1)]),
+                    onHnAction: () => undefined,
+                    onRevealMore: () => undefined,
+                    onToggle,
+                }),
+            );
+        });
+
+        const threadline = container.querySelector<HTMLButtonElement>(
+            '.redhn-comment__threadline',
+        );
+        const collapse = container.querySelector<HTMLButtonElement>(
+            '.redhn-comment__collapse',
+        );
+
+        expect(threadline).not.toBeNull();
+        expect(collapse).not.toBeNull();
+
+        threadline?.click();
+        collapse?.click();
+
+        expect(onToggle).toHaveBeenCalledTimes(2);
+        expect(onToggle).toHaveBeenNthCalledWith(1, 1);
+        expect(onToggle).toHaveBeenNthCalledWith(2, 1);
+
+        await act(async () => {
+            root.unmount();
+        });
     });
 });

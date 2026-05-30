@@ -225,7 +225,7 @@ function enhancePostFromItemPage(
             hide:
                 href(findLink(subtext, 'hide'), sourceUrl) ??
                 story.actions.hide,
-            reply: href(findLink(document, 'reply'), sourceUrl),
+            reply: replyUrl(story.id, sourceUrl),
         },
     };
 }
@@ -497,6 +497,14 @@ function href(
 
 function absoluteUrl(value: string, sourceUrl: string): string {
     return safeUrl(value, sourceUrl)?.href ?? value;
+}
+
+function replyUrl(itemId: number, sourceUrl: string): string {
+    const params = new URLSearchParams({
+        id: String(itemId),
+        goto: `item?id=${itemId}`,
+    });
+    return absoluteUrl(`reply?${params.toString()}`, sourceUrl);
 }
 
 function safeUrl(value: string, baseUrl: string): URL | undefined {

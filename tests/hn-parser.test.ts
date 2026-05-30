@@ -146,6 +146,9 @@ describe('HN DOM parser', () => {
             text: 'I built a minimal, high-density Hacker News client.',
         });
         expect(page.post?.actions.favorite).toContain('/fave?id=2001');
+        expect(page.post?.actions.reply).toBe(
+            'https://news.ycombinator.com/reply?id=2001&goto=item%3Fid%3D2001',
+        );
         expect(page.comments).toHaveLength(1);
         expect(page.comments[0]).toMatchObject({
             id: 3001,

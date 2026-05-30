@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { ParsedComment, ParsedStory } from '../hn/types';
 import { CommentThread, countComments } from '../components/CommentThread';
 import { HnActionLink } from '../components/HnActionLink';
+import { ReplyComposer } from '../components/ReplyComposer';
+import { submitHnReply, type HnReplyResult } from '../hn/actions';
 import { formatNumber } from '../view/format';
 import { sanitizeHnHtml } from '../view/html';
 
@@ -30,7 +32,12 @@ export function PostPage({
         () => new Set<number>(),
     );
     const [collapseDepth, setCollapseDepth] = useState<number>();
+    const [activeReplyCommentId, setActiveReplyCommentId] = useState<number>();
+    const [expandedDeepThreadDepths, setExpandedDeepThreadDepths] = useState<
+        Record<number, number>
+    >({});
     const totalComments = countComments(comments);
+    const postReplyHref = post.actions.reply;
 
     const toggleComment = (commentId: number) => {
         setCollapsedCommentIds((current) => {
@@ -42,6 +49,28 @@ export function PostPage({
             }
             return next;
         });
+    };
+
+    const submitReply = async (
+        href: string,
+        text: string,
+    ): Promise<HnReplyResult> => {
+        const result = await submitHnReply(href, text, {
+            baseUrl: post.hnUrl,
+        });
+
+        if (result.kind === 'submitted') {
+            window.location.assign(result.url || post.hnUrl);
+        }
+
+        return result;
+    };
+
+    const revealMoreReplies = (commentId: number, depthLimit: number) => {
+        setExpandedDeepThreadDepths((current) => ({
+            ...current,
+            [commentId]: depthLimit,
+        }));
     };
 
     return (
@@ -110,16 +139,14 @@ export function PostPage({
                         <span aria-hidden="true">#</span>
                         <span>{isSaved ? 'Saved' : 'Save'}</span>
                     </button>
-                    {post.actions.reply ? (
-                        <HnActionLink
-                            className="redhn-action"
-                            href={post.actions.reply}
-                            onHnAction={onHnAction}
-                        >
-                            Reply
-                        </HnActionLink>
-                    ) : null}
                 </div>
+                {postReplyHref ? (
+                    <ReplyComposer
+                        label="Comment on this post"
+                        onSubmit={(text) => submitReply(postReplyHref, text)}
+                        placeholder="Join the conversation"
+                    />
+                ) : null}
             </header>
             <div className="redhn-comment-tools">
                 <span>
@@ -162,11 +189,19 @@ export function PostPage({
             <section className="redhn-comments" aria-label="Comments">
                 {comments.map((comment) => (
                     <CommentThread
+                        activeReplyCommentId={activeReplyCommentId}
                         collapseDepth={collapseDepth}
                         collapsedCommentIds={collapsedCommentIds}
                         comment={comment}
+                        expandedDeepThreadDepths={expandedDeepThreadDepths}
                         key={comment.id}
                         onHnAction={onHnAction}
+                        onRevealMore={revealMoreReplies}
+                        onReplyCancel={() => {
+                            setActiveReplyCommentId(undefined);
+                        }}
+                        onReplyOpen={setActiveReplyCommentId}
+                        onSubmitReply={submitReply}
                         onToggle={toggleComment}
                     />
                 ))}

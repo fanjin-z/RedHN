@@ -11,6 +11,8 @@ the official read-only Hacker News Firebase API.
 - Reddit-style feed cards with compact density mode.
 - Post pages with nested comment guides, per-thread collapse, and collapse by
   depth.
+- Inline post comments and per-comment replies using Hacker News' authenticated
+  reply forms.
 - Classic Toggle to restore the original Hacker News page immediately.
 - Storage-backed preferences for theme, font size, line height, max width, and
   density.
@@ -19,8 +21,8 @@ the official read-only Hacker News Firebase API.
 - Background-only Hacker News API enrichment for scores/comment counts and item
   cache.
 - Enhanced fallback for HN actions: safe same-origin vote, hide, and favorite
-  links are fetched with credentials; reply/login/unknown flows navigate to the
-  original HN page.
+  links are fetched with credentials; replies submit inline when HN provides an
+  authenticated form, and login/unknown flows link back to the original HN page.
 
 ## Privacy
 
@@ -82,7 +84,8 @@ wxt.config.ts
 - You can add machine-local startup overrides in `web-ext.config.ts`.
 - The official Hacker News API is read-only. Authenticated write-like actions
   rely on action links/forms already present in the loaded HN page.
-- Inline commenting is intentionally not implemented yet; reply buttons fall
-  back to HN's original reply flow.
+- Inline commenting uses Hacker News' native authenticated reply forms. If the
+  user is logged out, RedHN keeps the draft in place and links to HN's original
+  login/reply flow.
 - If an HN markup change breaks parsing, the Classic Toggle restores the
   original page without requiring a reload.

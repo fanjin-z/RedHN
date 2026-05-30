@@ -325,6 +325,9 @@ function ProfileCommentsList({
     const [collapsedCommentIds, setCollapsedCommentIds] = useState(
         () => new Set<number>(),
     );
+    const [expandedDeepThreadDepths, setExpandedDeepThreadDepths] = useState<
+        Record<number, number>
+    >({});
 
     const toggleComment = (commentId: number) => {
         setCollapsedCommentIds((current) => {
@@ -338,6 +341,13 @@ function ProfileCommentsList({
         });
     };
 
+    const revealMoreReplies = (commentId: number, depthLimit: number) => {
+        setExpandedDeepThreadDepths((current) => ({
+            ...current,
+            [commentId]: depthLimit,
+        }));
+    };
+
     if (comments.length === 0) {
         return <ProfileEmptyState title="No comments yet" />;
     }
@@ -348,8 +358,10 @@ function ProfileCommentsList({
                 <CommentThread
                     collapsedCommentIds={collapsedCommentIds}
                     comment={comment}
+                    expandedDeepThreadDepths={expandedDeepThreadDepths}
                     key={comment.id}
                     onHnAction={onHnAction}
+                    onRevealMore={revealMoreReplies}
                     onToggle={toggleComment}
                 />
             ))}

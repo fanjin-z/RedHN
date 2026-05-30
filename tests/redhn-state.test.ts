@@ -20,10 +20,10 @@ const story = (overrides: Partial<ParsedStory>): ParsedStory => ({
 });
 
 describe('RedHN state helpers', () => {
-    it('treats the HN root URL as the Top Stories sort', () => {
+    it('treats the HN root URL as the Hacker News view', () => {
         expect(
             getActiveSortOption('https://news.ycombinator.com/')?.label,
-        ).toBe('Top Stories');
+        ).toBe('Hacker News');
     });
 
     it('normalizes preferences into supported ranges', () => {

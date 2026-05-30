@@ -89,7 +89,7 @@ function SortMenu({ sourceUrl }: { sourceUrl: string }) {
                 <CaretDownIcon aria-hidden="true" weight="bold" />
             </summary>
             <div className="redhn-sort-menu__panel" role="menu">
-                <p className="redhn-sort-menu__title">Sort by</p>
+                <p className="redhn-sort-menu__title">View</p>
                 {redhnSortOptions.map((option) => (
                     <SortMenuItem
                         active={option.path === activeSort.path}

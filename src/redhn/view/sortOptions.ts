@@ -6,7 +6,7 @@ export type RedhnSortOption = {
 
 export const redhnSortOptions: RedhnSortOption[] = [
     {
-        label: 'Top Stories',
+        label: 'Hacker News',
         href: 'https://news.ycombinator.com/news',
         path: '/news',
     },

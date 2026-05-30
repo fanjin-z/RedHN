@@ -284,13 +284,13 @@ function buildSidebarSections(sourceUrl: string): SidebarSection[] {
                     active: isActivePath(sourceUrl, option.path),
                 })),
                 {
-                    label: 'Front Page',
+                    label: 'Past',
                     href: 'https://news.ycombinator.com/front',
                     icon: <FlameIcon weight="bold" />,
                     active: isActivePath(sourceUrl, '/front'),
                 },
                 {
-                    label: 'New Comments',
+                    label: 'Comments',
                     href: 'https://news.ycombinator.com/newcomments',
                     icon: <ChatCircleTextIcon weight="bold" />,
                     active: isActivePath(sourceUrl, '/newcomments'),

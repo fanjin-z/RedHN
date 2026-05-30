@@ -1,4 +1,4 @@
-import { UserCircleIcon } from '@phosphor-icons/react/dist/csr/UserCircle';
+import { UserCircleIcon } from '@phosphor-icons/react';
 
 export function UserAvatar({ userId }: { userId: string }) {
     return (

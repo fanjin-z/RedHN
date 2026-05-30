@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { XIcon } from '@phosphor-icons/react/dist/csr/X';
+import { XIcon } from '@phosphor-icons/react';
 import type {
     ParsedAuthForm,
     ParsedAuthMode,

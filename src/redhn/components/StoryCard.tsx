@@ -1,8 +1,10 @@
-import { ArrowFatUpIcon } from '@phosphor-icons/react/dist/csr/ArrowFatUp';
-import { BookmarkSimpleIcon } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
-import { ChatCircleIcon } from '@phosphor-icons/react/dist/csr/ChatCircle';
-import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
-import { ShareFatIcon } from '@phosphor-icons/react/dist/csr/ShareFat';
+import {
+    ArrowFatUpIcon,
+    BookmarkSimpleIcon,
+    ChatCircleIcon,
+    DotsThreeIcon,
+    ShareFatIcon,
+} from '@phosphor-icons/react';
 import type { ParsedStory } from '../hn/types';
 import { formatNumber } from '../view/format';
 import { HnActionLink } from './HnActionLink';

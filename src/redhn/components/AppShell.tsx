@@ -1,24 +1,26 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { BellIcon } from '@phosphor-icons/react/dist/csr/Bell';
-import { BriefcaseIcon } from '@phosphor-icons/react/dist/csr/Briefcase';
-import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
-import { CaretUpIcon } from '@phosphor-icons/react/dist/csr/CaretUp';
-import { ChatCircleIcon } from '@phosphor-icons/react/dist/csr/ChatCircle';
-import { ChatCircleTextIcon } from '@phosphor-icons/react/dist/csr/ChatCircleText';
-import { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
-import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
-import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText';
-import { FlameIcon } from '@phosphor-icons/react/dist/csr/Flame';
-import { GearSixIcon } from '@phosphor-icons/react/dist/csr/GearSix';
-import { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
-import { MegaphoneIcon } from '@phosphor-icons/react/dist/csr/Megaphone';
-import { MonitorIcon } from '@phosphor-icons/react/dist/csr/Monitor';
-import { NewspaperIcon } from '@phosphor-icons/react/dist/csr/Newspaper';
-import { PlusSquareIcon } from '@phosphor-icons/react/dist/csr/PlusSquare';
-import { PowerIcon } from '@phosphor-icons/react/dist/csr/Power';
-import { QuestionIcon } from '@phosphor-icons/react/dist/csr/Question';
-import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
-import { TrendUpIcon } from '@phosphor-icons/react/dist/csr/TrendUp';
+import {
+    BellIcon,
+    BriefcaseIcon,
+    CaretDownIcon,
+    CaretUpIcon,
+    ChatCircleIcon,
+    ChatCircleTextIcon,
+    ClockIcon,
+    DotsThreeIcon,
+    FileTextIcon,
+    FlameIcon,
+    GearSixIcon,
+    InfoIcon,
+    MegaphoneIcon,
+    MonitorIcon,
+    NewspaperIcon,
+    PlusSquareIcon,
+    PowerIcon,
+    QuestionIcon,
+    SignOutIcon,
+    TrendUpIcon,
+} from '@phosphor-icons/react';
 import type { ParsedCurrentUser } from '../hn/types';
 import {
     termsFromInput,

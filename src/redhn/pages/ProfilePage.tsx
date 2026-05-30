@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { ArrowFatUpIcon } from '@phosphor-icons/react/dist/csr/ArrowFatUp';
-import { ChatCircleIcon } from '@phosphor-icons/react/dist/csr/ChatCircle';
+import { ArrowFatUpIcon, ChatCircleIcon } from '@phosphor-icons/react';
 import type { HnApiItem, HnApiUser } from '../api/hnApi';
 import { CommentThread } from '../components/CommentThread';
 import { StoryFeed } from '../components/StoryFeed';

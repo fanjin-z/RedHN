@@ -8,6 +8,7 @@ import {
     type RedhnReadState,
 } from '../src/redhn/state/readState';
 import type { ParsedPage, ParsedStory } from '../src/redhn/hn/types';
+import { getActiveSortOption } from '../src/redhn/view/sortOptions';
 
 const story = (overrides: Partial<ParsedStory>): ParsedStory => ({
     id: 1,
@@ -19,6 +20,12 @@ const story = (overrides: Partial<ParsedStory>): ParsedStory => ({
 });
 
 describe('RedHN state helpers', () => {
+    it('treats the HN root URL as the Top Stories sort', () => {
+        expect(
+            getActiveSortOption('https://news.ycombinator.com/')?.label,
+        ).toBe('Top Stories');
+    });
+
     it('normalizes preferences into supported ranges', () => {
         const preferences = normalizePreferences({
             theme: 'dark',

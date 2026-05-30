@@ -415,9 +415,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                     sharedStoryId={sharedStoryId}
                     stories={enrichedStories}
                 />
-            ) : (
-                <SortTabs />
-            )}
+            ) : null}
             {page.kind === 'profile' && enrichedProfile ? null : page.kind ===
                   'item' && enrichedPost ? (
                 <PostPage
@@ -447,30 +445,5 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                 />
             )}
         </AppShell>
-    );
-}
-
-function SortTabs() {
-    return (
-        <div className="redhn-tabs" role="navigation" aria-label="Sort">
-            <a
-                className="redhn-tabs__item redhn-tabs__item--active"
-                href="https://news.ycombinator.com/news"
-            >
-                Best
-            </a>
-            <a
-                className="redhn-tabs__item"
-                href="https://news.ycombinator.com/newest"
-            >
-                New
-            </a>
-            <a
-                className="redhn-tabs__item"
-                href="https://news.ycombinator.com/best"
-            >
-                Top
-            </a>
-        </div>
     );
 }

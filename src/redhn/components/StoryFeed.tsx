@@ -1,6 +1,12 @@
+import { CaretDownIcon, CheckIcon } from '@phosphor-icons/react';
 import type { ParsedPage, ParsedStory } from '../hn/types';
 import type { RedhnReadState } from '../state/readState';
 import { formatNumber } from '../view/format';
+import {
+    getActiveSortOption,
+    redhnSortOptions,
+    type RedhnSortOption,
+} from '../view/sortOptions';
 import { StoryCard } from './StoryCard';
 
 type StoryFeedProps = {
@@ -34,6 +40,7 @@ export function StoryFeed({
 }: StoryFeedProps) {
     return (
         <section className="redhn-feed" aria-label="Hacker News stories">
+            <SortMenu sourceUrl={page.sourceUrl} />
             {hiddenStoryCount > 0 ? (
                 <p className="redhn-feed__muted">
                     {formatNumber(hiddenStoryCount)} muted
@@ -65,5 +72,56 @@ export function StoryFeed({
                 </div>
             ) : null}
         </section>
+    );
+}
+
+function SortMenu({ sourceUrl }: { sourceUrl: string }) {
+    const activeSort = getActiveSortOption(sourceUrl);
+
+    if (!activeSort) {
+        return null;
+    }
+
+    return (
+        <details className="redhn-sort-menu">
+            <summary className="redhn-sort-menu__button">
+                <span>{activeSort.label}</span>
+                <CaretDownIcon aria-hidden="true" weight="bold" />
+            </summary>
+            <div className="redhn-sort-menu__panel" role="menu">
+                <p className="redhn-sort-menu__title">Sort by</p>
+                {redhnSortOptions.map((option) => (
+                    <SortMenuItem
+                        active={option.path === activeSort.path}
+                        key={option.path}
+                        option={option}
+                    />
+                ))}
+            </div>
+        </details>
+    );
+}
+
+function SortMenuItem({
+    active,
+    option,
+}: {
+    active: boolean;
+    option: RedhnSortOption;
+}) {
+    return (
+        <a
+            aria-current={active ? 'page' : undefined}
+            className={
+                active
+                    ? 'redhn-sort-menu__item redhn-sort-menu__item--active'
+                    : 'redhn-sort-menu__item'
+            }
+            href={option.href}
+            role="menuitem"
+        >
+            <span>{option.label}</span>
+            {active ? <CheckIcon aria-hidden="true" weight="bold" /> : null}
+        </a>
     );
 }

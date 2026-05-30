@@ -1,6 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import {
-    BellIcon,
     BriefcaseIcon,
     CaretDownIcon,
     CaretUpIcon,
@@ -12,6 +11,7 @@ import {
     FlameIcon,
     GearSixIcon,
     InfoIcon,
+    ListIcon,
     MegaphoneIcon,
     MonitorIcon,
     NewspaperIcon,
@@ -28,6 +28,7 @@ import {
     type RedhnFilters,
 } from '../state/filters';
 import type { RedhnPreferences } from '../state/preferences';
+import { isActivePath, redhnSortOptions } from '../view/sortOptions';
 import { hnLoginUrl } from '../view/urls';
 import { UserAvatar } from './UserAvatar';
 
@@ -116,12 +117,17 @@ export function AppShell({
     onPreferencesToggle,
 }: AppShellProps) {
     const sidebarSections = buildSidebarSections(sourceUrl);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const shellClassName = [
+        'redhn-shell',
+        `redhn-shell--${preferences.theme}`,
+        isSidebarCollapsed ? 'redhn-shell--sidebar-collapsed' : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
-        <div
-            className={`redhn-shell redhn-shell--${preferences.theme}`}
-            style={preferencesStyle(preferences)}
-        >
+        <div className={shellClassName} style={preferencesStyle(preferences)}>
             <header className="redhn-topbar">
                 <a
                     aria-label="Hacker News home"
@@ -179,15 +185,37 @@ export function AppShell({
                     className="redhn-sidebar"
                     aria-label="Hacker News navigation"
                 >
-                    <nav className="redhn-nav" aria-label="Primary">
-                        {sidebarSections.map((section, index) => (
-                            <SidebarSectionNav
-                                key={section.title ?? 'main'}
-                                section={section}
-                                showDivider={index > 0}
-                            />
-                        ))}
-                    </nav>
+                    <button
+                        aria-expanded={!isSidebarCollapsed}
+                        aria-label={
+                            isSidebarCollapsed
+                                ? 'Expand navigation'
+                                : 'Collapse navigation'
+                        }
+                        className="redhn-sidebar-toggle"
+                        onClick={() => {
+                            setIsSidebarCollapsed((current) => !current);
+                        }}
+                        title={
+                            isSidebarCollapsed
+                                ? 'Expand navigation'
+                                : 'Collapse navigation'
+                        }
+                        type="button"
+                    >
+                        <ListIcon aria-hidden="true" weight="bold" />
+                    </button>
+                    <div className="redhn-sidebar__scroll">
+                        <nav className="redhn-nav" aria-label="Primary">
+                            {sidebarSections.map((section, index) => (
+                                <SidebarSectionNav
+                                    key={section.title ?? 'main'}
+                                    section={section}
+                                    showDivider={index > 0}
+                                />
+                            ))}
+                        </nav>
+                    </div>
                 </aside>
                 <main className="redhn-main" aria-label={title}>
                     <div className="redhn-main__inner">{children}</div>
@@ -232,6 +260,7 @@ function SidebarSectionNav({
                         }
                         href={item.href}
                         key={item.href}
+                        title={item.label}
                     >
                         <span className="redhn-nav__icon" aria-hidden="true">
                             {item.icon}
@@ -248,24 +277,12 @@ function buildSidebarSections(sourceUrl: string): SidebarSection[] {
     return [
         {
             items: [
-                {
-                    label: 'Top Stories',
-                    href: 'https://news.ycombinator.com/news',
-                    icon: <NewspaperIcon weight="fill" />,
-                    active: isActivePath(sourceUrl, '/news'),
-                },
-                {
-                    label: 'Best',
-                    href: 'https://news.ycombinator.com/best',
-                    icon: <TrendUpIcon weight="bold" />,
-                    active: isActivePath(sourceUrl, '/best'),
-                },
-                {
-                    label: 'New',
-                    href: 'https://news.ycombinator.com/newest',
-                    icon: <ClockIcon weight="bold" />,
-                    active: isActivePath(sourceUrl, '/newest'),
-                },
+                ...redhnSortOptions.map((option) => ({
+                    label: option.label,
+                    href: option.href,
+                    icon: sortIconForPath(option.path),
+                    active: isActivePath(sourceUrl, option.path),
+                })),
                 {
                     label: 'Front Page',
                     href: 'https://news.ycombinator.com/front',
@@ -325,11 +342,14 @@ function buildSidebarSections(sourceUrl: string): SidebarSection[] {
     ];
 }
 
-function isActivePath(sourceUrl: string, path: string): boolean {
-    try {
-        return new URL(sourceUrl).pathname === path;
-    } catch {
-        return false;
+function sortIconForPath(path: string): ReactNode {
+    switch (path) {
+        case '/best':
+            return <TrendUpIcon weight="bold" />;
+        case '/newest':
+            return <ClockIcon weight="bold" />;
+        default:
+            return <NewspaperIcon weight="fill" />;
     }
 }
 
@@ -386,14 +406,6 @@ function TopbarActions({
                         <PlusSquareIcon aria-hidden="true" weight="bold" />
                         <span>Create</span>
                     </a>
-                    <button
-                        aria-label="Notifications"
-                        className="redhn-icon-button"
-                        title="Notifications"
-                        type="button"
-                    >
-                        <BellIcon aria-hidden="true" weight="bold" />
-                    </button>
                     <button
                         aria-controls={menuId}
                         aria-expanded={menuOpen}
@@ -526,27 +538,6 @@ function AccountMenu({
                 <GearSixIcon aria-hidden="true" weight="bold" />
                 <span>{preferencesOpen ? 'Hide Settings' : 'Settings'}</span>
             </button>
-            <div className="redhn-account-menu__separator" role="separator" />
-            <a
-                className="redhn-account-menu__item"
-                href="https://news.ycombinator.com/newsguidelines.html"
-                role="menuitem"
-            >
-                <span className="redhn-menu-letter" aria-hidden="true">
-                    G
-                </span>
-                <span>Guidelines</span>
-            </a>
-            <a
-                className="redhn-account-menu__item"
-                href="https://news.ycombinator.com/newsfaq.html"
-                role="menuitem"
-            >
-                <span className="redhn-menu-letter" aria-hidden="true">
-                    ?
-                </span>
-                <span>FAQ</span>
-            </a>
             {currentUser?.logoutUrl ? (
                 <>
                     <div

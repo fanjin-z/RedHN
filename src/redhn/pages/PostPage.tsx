@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     ArrowFatUpIcon,
     BookmarkSimpleIcon,
@@ -7,7 +7,7 @@ import {
     ShareFatIcon,
 } from '@phosphor-icons/react';
 import type { ParsedComment, ParsedStory } from '../hn/types';
-import { CommentThread, countComments } from '../components/CommentThread';
+import { CommentThread } from '../components/CommentThread';
 import { HnActionLink } from '../components/HnActionLink';
 import { ReplyComposer } from '../components/ReplyComposer';
 import { submitHnReply, type HnReplyResult } from '../hn/actions';
@@ -20,7 +20,6 @@ type PostPageProps = {
     comments: ParsedComment[];
     isFavoritePending: boolean;
     isShared: boolean;
-    newCommentCount: number;
     onFavorite: (story: ParsedStory) => void;
     onHnAction: (href: string) => void;
     onShare: (story: ParsedStory) => void;
@@ -31,11 +30,11 @@ export function PostPage({
     comments,
     isFavoritePending,
     isShared,
-    newCommentCount,
     onFavorite,
     onHnAction,
     onShare,
 }: PostPageProps) {
+    const postReplyComposerRef = useRef<HTMLTextAreaElement>(null);
     const [collapsedCommentIds, setCollapsedCommentIds] = useState(
         () => new Set<number>(),
     );
@@ -43,7 +42,6 @@ export function PostPage({
     const [expandedDeepThreadDepths, setExpandedDeepThreadDepths] = useState<
         Record<number, number>
     >({});
-    const totalComments = countComments(comments);
     const postReplyHref = post.actions.reply;
     const author = post.author ?? 'unknown';
     const isUpvoted = Boolean(post.actions.unvote);
@@ -197,14 +195,31 @@ export function PostPage({
                             <span>{formatNumber(post.score)}</span>
                         </span>
                     )}
-                    <a className="redhn-action" href={commentsHref}>
-                        <ChatCircleIcon
-                            aria-hidden="true"
-                            className="redhn-action__icon"
-                            weight="bold"
-                        />
-                        <span>{formatNumber(post.commentCount)}</span>
-                    </a>
+                    {postReplyHref ? (
+                        <button
+                            className="redhn-action"
+                            onClick={() => {
+                                postReplyComposerRef.current?.focus();
+                            }}
+                            type="button"
+                        >
+                            <ChatCircleIcon
+                                aria-hidden="true"
+                                className="redhn-action__icon"
+                                weight="bold"
+                            />
+                            <span>{formatNumber(post.commentCount)}</span>
+                        </button>
+                    ) : (
+                        <a className="redhn-action" href={commentsHref}>
+                            <ChatCircleIcon
+                                aria-hidden="true"
+                                className="redhn-action__icon"
+                                weight="bold"
+                            />
+                            <span>{formatNumber(post.commentCount)}</span>
+                        </a>
+                    )}
                     <button
                         className="redhn-action"
                         onClick={() => {
@@ -244,17 +259,10 @@ export function PostPage({
                         label="Comment on this post"
                         onSubmit={(text) => submitReply(postReplyHref, text)}
                         placeholder="Join the conversation"
+                        ref={postReplyComposerRef}
                     />
                 ) : null}
             </header>
-            <div className="redhn-comment-tools">
-                <span>
-                    {formatNumber(totalComments)} comments
-                    {newCommentCount > 0
-                        ? ` / ${formatNumber(newCommentCount)} new`
-                        : ''}
-                </span>
-            </div>
             <section className="redhn-comments" aria-label="Comments">
                 {comments.map((comment) => (
                     <CommentThread

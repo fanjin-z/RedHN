@@ -1747,7 +1747,6 @@
 }
 
 .redhn-post__header {
-    border-bottom: 1px solid var(--redhn-outline);
     padding-bottom: 24px;
 }
 
@@ -1850,23 +1849,6 @@
 
 .redhn-post__header > .redhn-story__actions {
     margin-top: 22px;
-}
-
-.redhn-comment-tools {
-    position: sticky;
-    top: 65px;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    border-bottom: 1px solid var(--redhn-outline);
-    background: color-mix(in srgb, var(--redhn-surface) 94%, transparent);
-    padding: 12px 0;
-    color: var(--redhn-text-muted);
-    font-size: var(--redhn-type-small-size);
-    line-height: var(--redhn-type-small-line-height);
-    backdrop-filter: blur(12px);
 }
 
 .redhn-comments {
@@ -2363,12 +2345,6 @@
     .redhn-profile-card {
         position: static;
         order: -1;
-    }
-
-    .redhn-comment-tools {
-        position: static;
-        align-items: flex-start;
-        flex-direction: column;
     }
 
     .redhn-comment {

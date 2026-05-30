@@ -32,7 +32,6 @@ import {
     type RedhnPreferences,
 } from './state/preferences';
 import {
-    countNewComments,
     defaultReadState,
     markPageRead,
     markStoryViewed,
@@ -75,7 +74,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     const [stateLoaded, setStateLoaded] = useState(false);
     const [savedStoryIds, setSavedStoryIds] = useState(() => new Set<number>());
     const [sharedStoryId, setSharedStoryId] = useState<number>();
-    const [newCommentCount, setNewCommentCount] = useState(0);
     const [storyVoteOverrides, setStoryVoteOverrides] = useState<
         Record<number, StoryVoteOverride>
     >({});
@@ -358,7 +356,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
             return;
         }
 
-        setNewCommentCount(countNewComments(readState, page));
         const next = markPageRead(readState, page, Date.now());
         setReadState(next);
         void readStateItem.setValue(next);
@@ -511,7 +508,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
                         enrichedPost.id,
                     )}
                     isShared={sharedStoryId === enrichedPost.id}
-                    newCommentCount={newCommentCount}
                     onFavorite={runStoryFavorite}
                     onHnAction={runHnAction}
                     onShare={shareStory}

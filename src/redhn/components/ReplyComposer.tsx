@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { forwardRef, useState, type FormEvent } from 'react';
 import { PaperPlaneTiltIcon, XIcon } from '@phosphor-icons/react';
 import type { HnReplyResult } from '../hn/actions';
 
@@ -12,15 +12,21 @@ type ReplyComposerProps = {
     onSubmit: (text: string) => Promise<HnReplyResult>;
 };
 
-export function ReplyComposer({
-    label,
-    placeholder,
-    submitLabel = 'Comment',
-    autoFocus = false,
-    compact = false,
-    onCancel,
-    onSubmit,
-}: ReplyComposerProps) {
+export const ReplyComposer = forwardRef<
+    HTMLTextAreaElement,
+    ReplyComposerProps
+>(function ReplyComposer(
+    {
+        label,
+        placeholder,
+        submitLabel = 'Comment',
+        autoFocus = false,
+        compact = false,
+        onCancel,
+        onSubmit,
+    },
+    ref,
+) {
     const [text, setText] = useState('');
     const [expanded, setExpanded] = useState(autoFocus);
     const [submitting, setSubmitting] = useState(false);
@@ -73,6 +79,7 @@ export function ReplyComposer({
                     setExpanded(true);
                 }}
                 placeholder={placeholder}
+                ref={ref}
                 rows={expanded ? 4 : 1}
                 value={text}
             />
@@ -119,4 +126,4 @@ export function ReplyComposer({
             ) : null}
         </form>
     );
-}
+});

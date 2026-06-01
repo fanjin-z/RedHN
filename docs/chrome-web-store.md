@@ -13,7 +13,7 @@ scan stories and follow discussions.
 
 ## Single Purpose
 
-RedHN has one purpose: provide a Reddit-style reading interface for Hacker News.
+Provide a Reddit-style reading interface for Hacker News.
 
 ## Permission Justifications
 
@@ -55,3 +55,11 @@ News using Hacker News' own authenticated pages, links, and forms.
 ## Privacy Policy URL
 
 `https://fanjin.org/blog/redhn-privacy-policy`
+
+## Test Instructions
+
+No RedHN account or special setup is required. Install the extension, open
+`https://news.ycombinator.com/`, and the enhanced Reddit-style interface should
+load automatically. Core features to review include switching theme/settings,
+collapsing comment threads, saving stories, muting topics or domains, and
+opening Hacker News links.

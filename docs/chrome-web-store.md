@@ -54,4 +54,4 @@ News using Hacker News' own authenticated pages, links, and forms.
 
 ## Privacy Policy URL
 
-`https://gigabeyond.com/en/docs/redhn/privacy/`
+`https://fanjin.org/blog/redhn-privacy-policy`

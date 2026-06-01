@@ -2127,7 +2127,13 @@
     padding-left: var(--redhn-comment-child-offset);
 }
 
-.redhn-comment__children > .redhn-comment::before {
+.redhn-comment__child-frame {
+    position: relative;
+}
+
+.redhn-comment__children
+    > .redhn-comment__child-frame
+    > .redhn-comment::before {
     content: '';
     position: absolute;
     top: -7px;
@@ -2144,7 +2150,9 @@
     pointer-events: none;
 }
 
-.redhn-comment__children > .redhn-comment:not(:last-child)::after {
+.redhn-comment__children
+    > .redhn-comment__child-frame:not(:last-child)
+    > .redhn-comment::after {
     content: '';
     position: absolute;
     top: 23px;
@@ -2157,6 +2165,30 @@
     pointer-events: none;
 }
 
+.redhn-comment__branchline-hit {
+    position: absolute;
+    top: -7px;
+    bottom: -7px;
+    left: calc(var(--redhn-comment-parent-rail-bridge) * -1 - 7px);
+    z-index: 2;
+    width: 16px;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+}
+
+.redhn-comment__child-frame--last > .redhn-comment__branchline-hit {
+    bottom: auto;
+    height: 31px;
+}
+
+.redhn-comment__branchline-hit:focus-visible {
+    outline: 2px solid var(--redhn-primary-hot);
+    outline-offset: 2px;
+}
+
 .redhn-comment:has(
         > .redhn-comment__row
             > .redhn-comment__rail
@@ -2164,6 +2196,7 @@
     )
     > .redhn-comment__branch
     > .redhn-comment__children
+    > .redhn-comment__child-frame
     > .redhn-comment::before,
 .redhn-comment:has(
         > .redhn-comment__row
@@ -2172,6 +2205,7 @@
     )
     > .redhn-comment__branch
     > .redhn-comment__children
+    > .redhn-comment__child-frame
     > .redhn-comment::before,
 .redhn-comment:has(
         > .redhn-comment__row
@@ -2180,6 +2214,27 @@
     )
     > .redhn-comment__branch
     > .redhn-comment__children
+    > .redhn-comment__child-frame
+    > .redhn-comment::before,
+.redhn-comment:has(
+        > .redhn-comment__branch
+            > .redhn-comment__children
+            > .redhn-comment__child-frame
+            > .redhn-comment__branchline-hit:hover
+    )
+    > .redhn-comment__branch
+    > .redhn-comment__children
+    > .redhn-comment__child-frame
+    > .redhn-comment::before,
+.redhn-comment:has(
+        > .redhn-comment__branch
+            > .redhn-comment__children
+            > .redhn-comment__child-frame
+            > .redhn-comment__branchline-hit:focus-visible
+    )
+    > .redhn-comment__branch
+    > .redhn-comment__children
+    > .redhn-comment__child-frame
     > .redhn-comment::before {
     border-color: var(--redhn-comment-line-active);
 }
@@ -2191,7 +2246,8 @@
     )
     > .redhn-comment__branch
     > .redhn-comment__children
-    > .redhn-comment:not(:last-child)::after,
+    > .redhn-comment__child-frame:not(:last-child)
+    > .redhn-comment::after,
 .redhn-comment:has(
         > .redhn-comment__row
             > .redhn-comment__rail
@@ -2199,7 +2255,8 @@
     )
     > .redhn-comment__branch
     > .redhn-comment__children
-    > .redhn-comment:not(:last-child)::after,
+    > .redhn-comment__child-frame:not(:last-child)
+    > .redhn-comment::after,
 .redhn-comment:has(
         > .redhn-comment__row
             > .redhn-comment__rail
@@ -2207,7 +2264,49 @@
     )
     > .redhn-comment__branch
     > .redhn-comment__children
-    > .redhn-comment:not(:last-child)::after {
+    > .redhn-comment__child-frame:not(:last-child)
+    > .redhn-comment::after,
+.redhn-comment:has(
+        > .redhn-comment__branch
+            > .redhn-comment__children
+            > .redhn-comment__child-frame
+            > .redhn-comment__branchline-hit:hover
+    )
+    > .redhn-comment__branch
+    > .redhn-comment__children
+    > .redhn-comment__child-frame:not(:last-child)
+    > .redhn-comment::after,
+.redhn-comment:has(
+        > .redhn-comment__branch
+            > .redhn-comment__children
+            > .redhn-comment__child-frame
+            > .redhn-comment__branchline-hit:focus-visible
+    )
+    > .redhn-comment__branch
+    > .redhn-comment__children
+    > .redhn-comment__child-frame:not(:last-child)
+    > .redhn-comment::after {
+    background: var(--redhn-comment-line-active);
+}
+
+.redhn-comment:has(
+        > .redhn-comment__branch
+            > .redhn-comment__children
+            > .redhn-comment__child-frame
+            > .redhn-comment__branchline-hit:hover
+    )
+    > .redhn-comment__row
+    > .redhn-comment__rail
+    > .redhn-comment__threadline::before,
+.redhn-comment:has(
+        > .redhn-comment__branch
+            > .redhn-comment__children
+            > .redhn-comment__child-frame
+            > .redhn-comment__branchline-hit:focus-visible
+    )
+    > .redhn-comment__row
+    > .redhn-comment__rail
+    > .redhn-comment__threadline::before {
     background: var(--redhn-comment-line-active);
 }
 

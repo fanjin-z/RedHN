@@ -217,24 +217,48 @@ export function CommentThread({
                 <div className="redhn-comment__branch">
                     {hasVisibleChildren ? (
                         <div className="redhn-comment__children">
-                            {visibleChildren.map((child) => (
-                                <CommentThread
-                                    activeReplyCommentId={activeReplyCommentId}
-                                    collapsedCommentIds={collapsedCommentIds}
-                                    comment={child}
-                                    expandedDeepThreadDepths={
-                                        expandedDeepThreadDepths
-                                    }
-                                    key={child.id}
-                                    onHnAction={onHnAction}
-                                    onRevealMore={onRevealMore}
-                                    onReplyCancel={onReplyCancel}
-                                    onReplyOpen={onReplyOpen}
-                                    onSubmitReply={onSubmitReply}
-                                    onToggle={onToggle}
-                                    visibleDepthLimit={childDepthLimit}
-                                />
-                            ))}
+                            {visibleChildren.map((child, index) => {
+                                const isLastChild =
+                                    index === visibleChildren.length - 1;
+
+                                return (
+                                    <div
+                                        className={
+                                            isLastChild
+                                                ? 'redhn-comment__child-frame redhn-comment__child-frame--last'
+                                                : 'redhn-comment__child-frame'
+                                        }
+                                        key={child.id}
+                                    >
+                                        <button
+                                            aria-label="Collapse comment"
+                                            aria-expanded="true"
+                                            className="redhn-comment__branchline-hit"
+                                            onClick={toggleComment}
+                                            type="button"
+                                        />
+                                        <CommentThread
+                                            activeReplyCommentId={
+                                                activeReplyCommentId
+                                            }
+                                            collapsedCommentIds={
+                                                collapsedCommentIds
+                                            }
+                                            comment={child}
+                                            expandedDeepThreadDepths={
+                                                expandedDeepThreadDepths
+                                            }
+                                            onHnAction={onHnAction}
+                                            onRevealMore={onRevealMore}
+                                            onReplyCancel={onReplyCancel}
+                                            onReplyOpen={onReplyOpen}
+                                            onSubmitReply={onSubmitReply}
+                                            onToggle={onToggle}
+                                            visibleDepthLimit={childDepthLimit}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : null}
                     {hasHiddenReplies && onRevealMore ? (

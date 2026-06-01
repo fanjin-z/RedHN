@@ -213,4 +213,39 @@ describe('comment thread depth reveal', () => {
             root.unmount();
         });
     });
+
+    it('branch connector segments toggle the parent comment', async () => {
+        const document = setupDom();
+        const container = document.createElement('div');
+        document.body.append(container);
+        const onToggle = vi.fn();
+        const root = createRoot(container);
+
+        await act(async () => {
+            root.render(
+                createElement(CommentThread, {
+                    collapsedCommentIds: new Set<number>(),
+                    comment: comment(1, 0, [comment(2, 1), comment(3, 1)]),
+                    onHnAction: () => undefined,
+                    onRevealMore: () => undefined,
+                    onToggle,
+                }),
+            );
+        });
+
+        const branchlineHit = container.querySelector<HTMLButtonElement>(
+            '.redhn-comment__branchline-hit',
+        );
+
+        expect(branchlineHit).not.toBeNull();
+
+        branchlineHit?.click();
+
+        expect(onToggle).toHaveBeenCalledTimes(1);
+        expect(onToggle).toHaveBeenCalledWith(1);
+
+        await act(async () => {
+            root.unmount();
+        });
+    });
 });

@@ -31,15 +31,28 @@ only `storage` plus host access for the official Hacker News Firebase API:
 `https://hacker-news.firebaseio.com/*`. It does not add analytics, tracking, or
 third-party write endpoints.
 
+## Publishing
+
+Chrome Web Store listing copy, permission justifications, and privacy text live
+in `docs/chrome-web-store.md`. The GitHub Pages privacy policy source lives in
+`docs/privacy-policy.md` and is intended to be published at
+`https://fanjin-z.github.io/RedHN/privacy/`.
+
 ## Project Structure
 
 ```
+assets/
+	redhn-icon.svg
+docs/
+	chrome-web-store.md
+	privacy-policy.md
 entrypoints/
 	background.ts
 	redhn.content.tsx
 	redhn/
 		styles.css
 public/
+	icons/
 src/
 	redhn/
 		api/
@@ -64,6 +77,8 @@ wxt.config.ts
 - `npm run dev:firefox` starts the Firefox development runner.
 - `npm run build` builds the extension for Chrome.
 - `npm run build:firefox` builds the extension for Firefox.
+- `npm run icons:generate` regenerates PNG extension icons from the project
+  icon geometry.
 - `npm run lint` runs ESLint.
 - `npm run lint:fix` runs ESLint with auto-fixes.
 - `npm run format:all` formats all files with Prettier.

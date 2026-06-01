@@ -5,7 +5,7 @@ export default defineConfig({
     manifestVersion: 3,
     manifest: {
         name: 'RedHN',
-        description: 'RedHN browser extension built with WXT',
+        description: 'A Reddit-style reading interface for Hacker News.',
         permissions: ['storage'],
         host_permissions: ['https://hacker-news.firebaseio.com/*'],
         browser_specific_settings: {

@@ -558,47 +558,6 @@
     font-weight: 900;
 }
 
-.redhn-menu-switch {
-    position: relative;
-    display: inline-flex;
-    width: 42px;
-    height: 24px;
-    cursor: pointer;
-}
-
-.redhn-menu-switch input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.redhn-menu-switch span {
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px;
-    background: var(--redhn-outline-strong);
-}
-
-.redhn-menu-switch span::after {
-    content: '';
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 16px;
-    height: 16px;
-    border-radius: 9999px;
-    background: #ffffff;
-    transition: transform 150ms ease;
-}
-
-.redhn-menu-switch input:checked + span {
-    background: var(--redhn-primary-hot);
-}
-
-.redhn-menu-switch input:checked + span::after {
-    transform: translateX(18px);
-}
-
 .redhn-button,
 .redhn-switch {
     display: inline-flex;
@@ -2463,21 +2422,6 @@
 .redhn-button:disabled {
     cursor: not-allowed;
     opacity: 0.58;
-}
-
-.redhn-classic-bar {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 2147483647;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border: 1px solid var(--redhn-outline);
-    border-radius: var(--redhn-radius-lg);
-    background: var(--redhn-surface-card);
-    box-shadow: var(--redhn-shadow);
-    padding: 8px;
 }
 
 .redhn-sr-only {

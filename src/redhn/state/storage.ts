@@ -4,6 +4,13 @@ import { defaultFilters, type RedhnFilters } from './filters';
 import { defaultPreferences, type RedhnPreferences } from './preferences';
 import { defaultReadState, type RedhnReadState } from './readState';
 
+export const extensionEnabledItem = storage.defineItem<boolean>(
+    'local:redhn.enabled',
+    {
+        fallback: true,
+    },
+);
+
 export const preferencesItem = storage.defineItem<RedhnPreferences>(
     'local:redhn.preferences',
     {

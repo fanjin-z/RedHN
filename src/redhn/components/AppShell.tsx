@@ -16,7 +16,6 @@ import {
     MonitorIcon,
     NewspaperIcon,
     PlusSquareIcon,
-    PowerIcon,
     QuestionIcon,
     SignOutIcon,
     TrendUpIcon,
@@ -36,13 +35,11 @@ type AppShellProps = {
     children: ReactNode;
     accountMenuOpen: boolean;
     currentUser?: ParsedCurrentUser;
-    enabled: boolean;
     filters: RedhnFilters;
     preferences: RedhnPreferences;
     preferencesOpen: boolean;
     sourceUrl: string;
     title: string;
-    onEnabledChange: (enabled: boolean) => void;
     onFiltersChange: (patch: Partial<RedhnFilters>) => void;
     onMenuOpenChange: (open: boolean) => void;
     onPreferencesChange: (patch: Partial<RedhnPreferences>) => void;
@@ -61,27 +58,6 @@ type SidebarSection = {
     expanded?: boolean;
     items: SidebarItem[];
 };
-
-export function ClassicBar({
-    onEnabledChange,
-}: {
-    onEnabledChange: (enabled: boolean) => void;
-}) {
-    return (
-        <div className="redhn-classic-bar">
-            <strong>RedHN</strong>
-            <button
-                className="redhn-button redhn-button--primary"
-                type="button"
-                onClick={() => {
-                    onEnabledChange(true);
-                }}
-            >
-                Enable
-            </button>
-        </div>
-    );
-}
 
 export function AuthShell({
     children,
@@ -104,13 +80,11 @@ export function AppShell({
     children,
     accountMenuOpen,
     currentUser,
-    enabled,
     filters,
     preferences,
     preferencesOpen,
     sourceUrl,
     title,
-    onEnabledChange,
     onFiltersChange,
     onMenuOpenChange,
     onPreferencesChange,
@@ -157,10 +131,8 @@ export function AppShell({
                 <div className="redhn-topbar__actions">
                     <TopbarActions
                         currentUser={currentUser}
-                        enabled={enabled}
                         loginUrl={hnLoginUrl(sourceUrl, 'login')}
                         menuOpen={accountMenuOpen}
-                        onEnabledChange={onEnabledChange}
                         onMenuOpenChange={onMenuOpenChange}
                         onPreferencesToggle={onPreferencesToggle}
                         onThemeChange={(theme) => {
@@ -355,13 +327,11 @@ function sortIconForPath(path: string): ReactNode {
 
 type TopbarActionsProps = {
     currentUser?: ParsedCurrentUser;
-    enabled: boolean;
     loginUrl: string;
     menuOpen: boolean;
     preferencesOpen: boolean;
     signupUrl: string;
     theme: RedhnPreferences['theme'];
-    onEnabledChange: (enabled: boolean) => void;
     onMenuOpenChange: (open: boolean) => void;
     onPreferencesToggle: () => void;
     onThemeChange: (theme: RedhnPreferences['theme']) => void;
@@ -369,13 +339,11 @@ type TopbarActionsProps = {
 
 function TopbarActions({
     currentUser,
-    enabled,
     loginUrl,
     menuOpen,
     preferencesOpen,
     signupUrl,
     theme,
-    onEnabledChange,
     onMenuOpenChange,
     onPreferencesToggle,
     onThemeChange,
@@ -447,9 +415,7 @@ function TopbarActions({
             {menuOpen ? (
                 <AccountMenu
                     currentUser={currentUser}
-                    enabled={enabled}
                     id={menuId}
-                    onEnabledChange={onEnabledChange}
                     onPreferencesToggle={onPreferencesToggle}
                     onThemeChange={onThemeChange}
                     preferencesOpen={preferencesOpen}
@@ -462,22 +428,18 @@ function TopbarActions({
 
 type AccountMenuProps = {
     currentUser?: ParsedCurrentUser;
-    enabled: boolean;
     id: string;
     preferencesOpen: boolean;
     theme: RedhnPreferences['theme'];
-    onEnabledChange: (enabled: boolean) => void;
     onPreferencesToggle: () => void;
     onThemeChange: (theme: RedhnPreferences['theme']) => void;
 };
 
 function AccountMenu({
     currentUser,
-    enabled,
     id,
     preferencesOpen,
     theme,
-    onEnabledChange,
     onPreferencesToggle,
     onThemeChange,
 }: AccountMenuProps) {
@@ -516,18 +478,6 @@ function AccountMenu({
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                 </select>
-            </MenuRow>
-            <MenuRow icon={<PowerIcon weight="bold" />} label="RedHN View">
-                <label className="redhn-menu-switch">
-                    <input
-                        checked={enabled}
-                        onChange={(event) => {
-                            onEnabledChange(event.currentTarget.checked);
-                        }}
-                        type="checkbox"
-                    />
-                    <span aria-hidden="true" />
-                </label>
             </MenuRow>
             <button
                 className="redhn-account-menu__item"

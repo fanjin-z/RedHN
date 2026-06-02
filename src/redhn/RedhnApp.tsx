@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { sendRedhnMessage } from './api/backgroundClient';
 import type { HnApiItem, HnApiUser } from './api/hnApi';
-import { AppShell, AuthShell, ClassicBar } from './components/AppShell';
+import { AppShell, AuthShell } from './components/AppShell';
 import { StoryFeed } from './components/StoryFeed';
 import { performHnAction } from './hn/actions';
 import {
@@ -51,7 +51,6 @@ import {
 
 type RedhnAppProps = {
     page: ParsedPage;
-    onClassicToggle: (enabled: boolean) => void;
 };
 
 type StoryVoteOverride = OptimisticStoryVote & {
@@ -62,8 +61,7 @@ type StoryFavoriteOverride = OptimisticStoryFavorite & {
     pending: boolean;
 };
 
-export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
-    const [enabled, setEnabled] = useState(true);
+export default function RedhnApp({ page }: RedhnAppProps) {
     const [preferencesOpen, setPreferencesOpen] = useState(false);
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const [preferences, setPreferences] =
@@ -321,10 +319,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
     };
 
     useEffect(() => {
-        onClassicToggle(enabled);
-    }, [enabled, onClassicToggle]);
-
-    useEffect(() => {
         let active = true;
 
         void Promise.all([
@@ -448,10 +442,6 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         };
     }, [profileOverviewItemIds]);
 
-    if (!enabled) {
-        return <ClassicBar onEnabledChange={setEnabled} />;
-    }
-
     if (page.kind === 'auth' && page.auth) {
         return (
             <AuthShell preferences={preferences}>
@@ -464,9 +454,7 @@ export default function RedhnApp({ page, onClassicToggle }: RedhnAppProps) {
         <AppShell
             accountMenuOpen={accountMenuOpen}
             currentUser={page.currentUser}
-            enabled={enabled}
             filters={filters}
-            onEnabledChange={setEnabled}
             onFiltersChange={updateFilters}
             onMenuOpenChange={setAccountMenuOpen}
             onPreferencesChange={updatePreferences}

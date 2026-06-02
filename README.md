@@ -1,106 +1,80 @@
 # RedHN
 
-RedHN is a WXT-powered browser extension that renders Hacker News with a
-Reddit-style reading interface. It keeps the loaded HN page as the source of
-truth for speed and logged-in action links, then enriches public metadata with
-the official read-only Hacker News Firebase API.
+RedHN is a browser extension that gives Hacker News a modern, Reddit-style
+reading interface. It keeps you on the official Hacker News site while making
+stories easier to scan, comments easier to follow, and daily reading more
+comfortable.
+
+## Motivation
+
+Hacker News is one of the best places to find thoughtful technical discussions,
+and its classic interface is intentionally minimal. RedHN is for readers who
+want a more structured, familiar browsing experience while still using the
+original Hacker News domain.
+
+The design is opinionated, with an emphasis on fast scanning, readable threads,
+and information density.
 
 ## Features
 
-- Shadow DOM-isolated React UI on `news.ycombinator.com`.
-- Reddit-style feed cards with compact density mode.
-- Post pages with nested comment guides, per-thread collapse, and collapse by
-  depth.
-- Inline post comments and per-comment replies using Hacker News' authenticated
-  reply forms.
-- Classic Toggle to restore the original Hacker News page immediately.
-- Storage-backed preferences for theme, font size, line height, max width, and
-  density.
-- Read/viewed story state, saved stories, muted keywords, muted domains, and
-  muted topics.
-- Background-only Hacker News API enrichment for scores/comment counts and item
-  cache.
-- Enhanced fallback for HN actions: safe same-origin vote, hide, and favorite
-  links are fetched with credentials; replies submit inline when HN provides an
-  authenticated form, and login/unknown flows link back to the original HN page.
+- Reddit-style story cards for easier scanning.
+- Cleaner nested comment threads with visual guides.
+- Collapse individual threads or hide replies after a chosen depth.
+- Save stories locally for later.
+- Mute keywords, domains, and topics.
+- Adjust theme, font size, line height, density, and content width.
+- Reply, vote, hide, and favorite through Hacker News' own links and forms.
+- Toggle back to classic Hacker News at any time.
+- Keep settings and read state in local browser storage.
+
+## Screenshots
+
+Screenshots are placeholders for now and will be replaced with real examples.
+
+| Feed                                                                           | Comments                                                                                           | Settings                                                             |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| ![Feed before and after placeholder](docs/readme-assets/feed-before-after.png) | ![Comment thread before and after placeholder](docs/readme-assets/comment-thread-before-after.png) | ![Settings placeholder](docs/readme-assets/settings-placeholder.png) |
 
 ## Privacy
 
-RedHN stores settings and read state locally with extension storage. It requests
-only `storage` plus host access for the official Hacker News Firebase API:
-`https://hacker-news.firebaseio.com/*`. It does not add analytics, tracking, or
-third-party write endpoints.
+RedHN stores settings and read state locally in browser extension storage. It
+does not add analytics, tracking, ads, remote code, or a RedHN-operated backend.
 
-## Publishing
+RedHN runs on supported `news.ycombinator.com` pages and requests public
+metadata from the official read-only Hacker News Firebase API at
+`https://hacker-news.firebaseio.com/`.
 
-Chrome Web Store listing copy, permission justifications, and privacy text live
-in `docs/chrome-web-store.md`. The GitHub Pages privacy policy source lives in
-`docs/privacy-policy.md` and is intended to be published at
-`https://fanjin-z.github.io/RedHN/privacy/`.
+Privacy policy: `https://fanjin.org/blog/redhn-privacy-policy`
 
-## Project Structure
+## Development
 
-```
-assets/
-	redhn-icon.svg
-docs/
-	chrome-web-store.md
-	privacy-policy.md
-entrypoints/
-	background.ts
-	redhn.content.tsx
-	redhn/
-		styles.css
-public/
-	icons/
-src/
-	redhn/
-		api/
-		hn/
-		state/
-tests/
-	fixtures/
-	hn-actions.test.ts
-	hn-api.test.ts
-	hn-parser.test.ts
-	redhn-state.test.ts
-	smoke.test.ts
-eslint.config.mjs
-tsconfig.json
-vitest.config.ts
-wxt.config.ts
+RedHN is built with WXT, React, and TypeScript.
+
+```sh
+npm install
+npm run dev
 ```
 
-## Commands
+Useful commands:
 
 - `npm run dev` starts the Chrome development runner.
 - `npm run dev:firefox` starts the Firefox development runner.
 - `npm run build` builds the extension for Chrome.
 - `npm run build:firefox` builds the extension for Firefox.
-- `npm run icons:generate` regenerates PNG extension icons from the project
-  icon geometry.
 - `npm run lint` runs ESLint.
-- `npm run lint:fix` runs ESLint with auto-fixes.
-- `npm run format:all` formats all files with Prettier.
-- `npm run format:cached` formats staged files with Prettier.
 - `npm run typecheck` runs TypeScript type checking.
 - `npm test` runs the Vitest test suite once.
-- `npm run test:watch` runs Vitest in watch mode.
 
-## Git Hooks
+## Publishing Notes
 
-- `pre-commit` runs `npm run lint:fix`, `npm run format:cached`, then `git update-index --again`.
+- Chrome Web Store listing copy and permission justifications live in
+  `docs/chrome-web-store.md`.
+- The privacy policy source lives in `docs/privacy-policy.md`.
+- The extension requests `storage` plus host access for the official Hacker
+  News Firebase API.
+- Authenticated Hacker News actions rely on links and forms already provided by
+  the loaded Hacker News page.
 
-## Notes
+## License
 
-- TypeScript configuration extends WXT-generated settings from
-  `.wxt/tsconfig.json`.
-- Browser startup defaults are configured in `wxt.config.ts`.
-- You can add machine-local startup overrides in `web-ext.config.ts`.
-- The official Hacker News API is read-only. Authenticated write-like actions
-  rely on action links/forms already present in the loaded HN page.
-- Inline commenting uses Hacker News' native authenticated reply forms. If the
-  user is logged out, RedHN keeps the draft in place and links to HN's original
-  login/reply flow.
-- If an HN markup change breaks parsing, the Classic Toggle restores the
-  original page without requiring a reload.
+MIT

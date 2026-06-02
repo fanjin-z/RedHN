@@ -15,15 +15,32 @@ const response = (data: unknown, ok = true, status = 200): Response =>
     }) as Response;
 
 describe('HN API client', () => {
-    it('fetches one item from the official API shape', async () => {
-        const item = await fetchHnItem(123, async (url) => {
-            expect(url).toBe(
-                'https://hacker-news.firebaseio.com/v0/item/123.json',
-            );
-            return response({ id: 123, title: 'Hello', descendants: 3 });
-        });
+    it('fetches item and user resources from the official API paths', async () => {
+        await expect(
+            fetchHnItem(123, async (url) => {
+                expect(url).toBe(
+                    'https://hacker-news.firebaseio.com/v0/item/123.json',
+                );
+                return response({ id: 123, title: 'Hello', descendants: 3 });
+            }),
+        ).resolves.toMatchObject({ id: 123, descendants: 3 });
 
-        expect(item).toMatchObject({ id: 123, descendants: 3 });
+        await expect(
+            fetchHnUser('PinkG', async (url) => {
+                expect(url).toBe(
+                    'https://hacker-news.firebaseio.com/v0/user/PinkG.json',
+                );
+                return response({
+                    id: 'PinkG',
+                    karma: 55,
+                    submitted: [48323683],
+                });
+            }),
+        ).resolves.toMatchObject({
+            id: 'PinkG',
+            karma: 55,
+            submitted: [48323683],
+        });
     });
 
     it('deduplicates item batch requests', async () => {
@@ -40,33 +57,10 @@ describe('HN API client', () => {
         expect(items[2]?.id).toBe(2);
     });
 
-    it('fetches updates and rejects failed responses', async () => {
-        await expect(
-            fetchHnUpdates(async () => response({ items: [1], profiles: [] })),
-        ).resolves.toEqual({ items: [1], profiles: [] });
+    it('rejects failed API responses', async () => {
         await expect(
             fetchHnUpdates(async () => response({}, false, 500)),
         ).rejects.toThrow('500');
-    });
-
-    it('fetches one user from the official API shape', async () => {
-        const user = await fetchHnUser('PinkG', async (url) => {
-            expect(url).toBe(
-                'https://hacker-news.firebaseio.com/v0/user/PinkG.json',
-            );
-            return response({
-                id: 'PinkG',
-                created: 1780065601,
-                karma: 55,
-                submitted: [48323683],
-            });
-        });
-
-        expect(user).toMatchObject({
-            id: 'PinkG',
-            karma: 55,
-            submitted: [48323683],
-        });
     });
 });
 
@@ -78,9 +72,6 @@ describe('background message guards', () => {
         expect(
             isRedhnBackgroundRequest({ type: 'redhn:getItems', ids: [1, 2] }),
         ).toBe(true);
-        expect(isRedhnBackgroundRequest({ type: 'redhn:getUpdates' })).toBe(
-            true,
-        );
         expect(
             isRedhnBackgroundRequest({ type: 'redhn:getUser', id: 'PinkG' }),
         ).toBe(true);

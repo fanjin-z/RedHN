@@ -46,7 +46,7 @@ describe('RedHN state helpers', () => {
         expect(preferences).not.toHaveProperty('density');
     });
 
-    it('filters stories by keywords, topics, and domains', () => {
+    it('normalizes filter input and filters stories by keywords, topics, and domains', () => {
         const stories = [
             story({ id: 1, title: 'AI tool launch', domain: 'example.com' }),
             story({
@@ -61,6 +61,10 @@ describe('RedHN state helpers', () => {
             }),
         ];
 
+        expect(termsFromInput('AI, ai,  github.com ,,')).toEqual([
+            'ai',
+            'github.com',
+        ]);
         expect(
             applyStoryFilters(stories, {
                 mutedKeywords: ['launch'],
@@ -68,13 +72,6 @@ describe('RedHN state helpers', () => {
                 mutedTopics: ['ask hn'],
             }).map((item) => item.id),
         ).toEqual([]);
-    });
-
-    it('parses comma-separated filter input', () => {
-        expect(termsFromInput('AI, ai,  github.com ,,')).toEqual([
-            'ai',
-            'github.com',
-        ]);
     });
 
     it('marks stories and comments as read', () => {

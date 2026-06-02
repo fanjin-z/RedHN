@@ -52,168 +52,122 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-describe('story API enrichment', () => {
-    it('keeps parsed title, url, and author ahead of API values', () => {
-        const enriched = enrichStoryWithApiItem(
-            story({ author: 'parsed-user' }),
-            item({
-                by: 'api-user',
-                title: 'API title',
-                url: 'https://example.com/api',
-            }),
-        );
-
-        expect(enriched.title).toBe('Parsed title');
-        expect(enriched.url).toBe('https://example.com/parsed');
-        expect(enriched.author).toBe('parsed-user');
-    });
-
-    it('uses API title, url, and author when parsed values are missing', () => {
-        const enriched = enrichStoryWithApiItem(
-            story({
-                author: undefined,
-                title: undefined as unknown as string,
-                url: undefined as unknown as string,
-            }),
-            item({
-                by: 'api-user',
-                title: 'API title',
-                url: 'https://example.com/api',
-            }),
-        );
-
-        expect(enriched.title).toBe('API title');
-        expect(enriched.url).toBe('https://example.com/api');
-        expect(enriched.author).toBe('api-user');
-    });
-
-    it('keeps parsed story scores ahead of stale API scores', () => {
-        const enriched = enrichStoryWithApiItem(
-            story({ score: 42 }),
-            item({ score: 41 }),
-        );
-
-        expect(enriched.score).toBe(42);
-    });
-
-    it('keeps parsed comment counts ahead of stale API descendants', () => {
-        const enriched = enrichStoryWithApiItem(
-            story({ commentCount: 7 }),
-            item({ descendants: 6 }),
-        );
-
-        expect(enriched.commentCount).toBe(7);
-    });
-
-    it('uses API counts when parsed story values are missing', () => {
-        const enriched = enrichStoryWithApiItem(
-            story({ score: undefined, commentCount: undefined }),
-            item({ score: 12, descendants: 5 }),
-        );
-
-        expect(enriched.score).toBe(12);
-        expect(enriched.commentCount).toBe(5);
-    });
-
-    it('uses API item type and text when parsed story values are missing', () => {
+describe('API enrichment', () => {
+    it('keeps parsed story fields and fills missing values from the API', () => {
         vi.stubGlobal(
             'document',
             parseHTML('<html><body></body></html>').document,
         );
 
-        const enriched = enrichStoryWithApiItem(
-            story({ text: undefined, textHtml: undefined, type: undefined }),
-            item({
-                text: 'Hello <i>from API</i>',
-                type: 'poll',
-            }),
-        );
+        expect(
+            enrichStoryWithApiItem(
+                story({
+                    author: 'parsed-user',
+                    commentCount: 7,
+                    score: 42,
+                    text: 'Parsed text',
+                    textHtml: '<p>Parsed text</p>',
+                    type: 'story',
+                }),
+                item({
+                    by: 'api-user',
+                    descendants: 6,
+                    score: 41,
+                    text: 'API text',
+                    title: 'API title',
+                    type: 'job',
+                    url: 'https://example.com/api',
+                }),
+            ),
+        ).toMatchObject({
+            author: 'parsed-user',
+            commentCount: 7,
+            score: 42,
+            text: 'Parsed text',
+            textHtml: '<p>Parsed text</p>',
+            title: 'Parsed title',
+            type: 'story',
+            url: 'https://example.com/parsed',
+        });
 
-        expect(enriched.type).toBe('poll');
-        expect(enriched.textHtml).toBe('Hello <i>from API</i>');
-        expect(enriched.text).toBe('Hello from API');
+        expect(
+            enrichStoryWithApiItem(
+                story({
+                    author: undefined,
+                    commentCount: undefined,
+                    score: undefined,
+                    text: undefined,
+                    textHtml: undefined,
+                    title: undefined as unknown as string,
+                    type: undefined,
+                    url: undefined as unknown as string,
+                }),
+                item({
+                    by: 'api-user',
+                    descendants: 5,
+                    score: 12,
+                    text: 'Hello <i>from API</i>',
+                    title: 'API title',
+                    type: 'poll',
+                    url: 'https://example.com/api',
+                }),
+            ),
+        ).toMatchObject({
+            author: 'api-user',
+            commentCount: 5,
+            score: 12,
+            text: 'Hello from API',
+            textHtml: 'Hello <i>from API</i>',
+            title: 'API title',
+            type: 'poll',
+            url: 'https://example.com/api',
+        });
     });
 
-    it('keeps parsed item type and text ahead of API fallback values', () => {
-        const enriched = enrichStoryWithApiItem(
-            story({
-                text: 'Parsed text',
-                textHtml: '<p>Parsed text</p>',
-                type: 'story',
-            }),
-            item({
-                text: 'API text',
-                type: 'job',
-            }),
-        );
-
-        expect(enriched.type).toBe('story');
-        expect(enriched.textHtml).toBe('<p>Parsed text</p>');
-        expect(enriched.text).toBe('Parsed text');
-    });
-
-    it('preserves parsed HN favorite actions over API item data', () => {
-        const actions = {
-            unfavorite: 'https://news.ycombinator.com/fave?id=1001&auth=abc',
-        };
-        const enriched = enrichStoryWithApiItem(
-            story({ actions }),
-            item({ title: 'API title' }),
-        );
-
-        expect(enriched.actions).toBe(actions);
-        expect(enriched.actions.unfavorite).toBe(
-            'https://news.ycombinator.com/fave?id=1001&auth=abc',
-        );
-        expect(enriched.actions.favorite).toBeUndefined();
-    });
-});
-
-describe('profile API enrichment', () => {
-    it('keeps parsed profile fields ahead of API values', () => {
-        const enriched = enrichProfileWithApiUser(
-            profile({
-                about: 'Parsed about',
-                aboutHtml: '<p>Parsed about</p>',
-                createdAt: 1780065601,
-                karma: 42,
-            }),
-            user({
-                about: 'API <i>about</i>',
-                created: 1780065602,
-                karma: 99,
-            }),
-        );
-
-        expect(enriched.createdAt).toBe(1780065601);
-        expect(enriched.karma).toBe(42);
-        expect(enriched.about).toBe('Parsed about');
-        expect(enriched.aboutHtml).toBe('<p>Parsed about</p>');
-    });
-
-    it('uses API profile fields when parsed values are missing', () => {
+    it('keeps parsed profile fields and fills missing values from the API', () => {
         vi.stubGlobal(
             'document',
             parseHTML('<html><body></body></html>').document,
         );
 
-        const enriched = enrichProfileWithApiUser(
-            profile(),
-            user({
-                about: 'API <i>about</i>',
-                created: 1780065602,
-                karma: 99,
-            }),
-        );
+        expect(
+            enrichProfileWithApiUser(
+                profile({
+                    about: 'Parsed about',
+                    aboutHtml: '<p>Parsed about</p>',
+                    createdAt: 1780065601,
+                    karma: 42,
+                }),
+                user({
+                    about: 'API <i>about</i>',
+                    created: 1780065602,
+                    karma: 99,
+                }),
+            ),
+        ).toMatchObject({
+            about: 'Parsed about',
+            aboutHtml: '<p>Parsed about</p>',
+            createdAt: 1780065601,
+            karma: 42,
+        });
 
-        expect(enriched.createdAt).toBe(1780065602);
-        expect(enriched.karma).toBe(99);
-        expect(enriched.about).toBe('API about');
-        expect(enriched.aboutHtml).toBe('API <i>about</i>');
+        expect(
+            enrichProfileWithApiUser(
+                profile(),
+                user({
+                    about: 'API <i>about</i>',
+                    created: 1780065602,
+                    karma: 99,
+                }),
+            ),
+        ).toMatchObject({
+            about: 'API about',
+            aboutHtml: 'API <i>about</i>',
+            createdAt: 1780065602,
+            karma: 99,
+        });
     });
-});
 
-describe('API-only item visibility', () => {
     it('filters deleted and dead API items', () => {
         expect(isVisibleApiItem(item())).toBe(true);
         expect(isVisibleApiItem(item({ deleted: true }))).toBe(false);

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { parseHTML } from 'linkedom';
+import { describe, expect, it } from 'vitest';
 import { performHnAction, submitHnReply } from '../src/redhn/hn/actions';
 
 const response = (url: string, ok = true): Response =>
@@ -20,37 +20,35 @@ const parseHtml = (html: string): Document => parseHTML(html).document;
 
 describe('HN action fallback', () => {
     it('fetches safe same-origin HN actions with credentials', async () => {
-        const calls: RequestInit[] = [];
-        const result = await performHnAction('vote?id=1&how=up', {
-            baseUrl: 'https://news.ycombinator.com/item?id=1',
-            fetcher: async (_url, init) => {
-                calls.push(init ?? {});
-                return response('https://news.ycombinator.com/item?id=1');
-            },
-        });
-
-        expect(result.kind).toBe('performed');
-        expect(calls[0]).toMatchObject({ credentials: 'include' });
-    });
-
-    it('fetches favorite actions with credentials', async () => {
         const calls: Array<{ url: string; init?: RequestInit }> = [];
-        const result = await performHnAction('fave?id=1&auth=x', {
-            baseUrl: 'https://news.ycombinator.com/item?id=1',
-            fetcher: async (url, init) => {
-                calls.push({ url: String(url), init });
-                return response('https://news.ycombinator.com/item?id=1');
-            },
-        });
 
-        expect(result.kind).toBe('performed');
-        expect(calls[0]).toMatchObject({
-            init: { credentials: 'include' },
-            url: 'https://news.ycombinator.com/fave?id=1&auth=x',
-        });
+        for (const href of ['vote?id=1&how=up', 'fave?id=1&auth=x']) {
+            await expect(
+                performHnAction(href, {
+                    baseUrl: 'https://news.ycombinator.com/item?id=1',
+                    fetcher: async (url, init) => {
+                        calls.push({ url: String(url), init });
+                        return response(
+                            'https://news.ycombinator.com/item?id=1',
+                        );
+                    },
+                }),
+            ).resolves.toMatchObject({ kind: 'performed' });
+        }
+
+        expect(calls).toMatchObject([
+            {
+                init: { credentials: 'include' },
+                url: 'https://news.ycombinator.com/vote?id=1&how=up',
+            },
+            {
+                init: { credentials: 'include' },
+                url: 'https://news.ycombinator.com/fave?id=1&auth=x',
+            },
+        ]);
     });
 
-    it('navigates for reply forms and external URLs', async () => {
+    it('navigates for non-fetchable actions and login-required responses', async () => {
         await expect(
             performHnAction('reply?id=1', {
                 baseUrl: 'https://news.ycombinator.com/item?id=1',
@@ -68,9 +66,7 @@ describe('HN action fallback', () => {
             kind: 'navigate',
             url: 'https://example.com/',
         });
-    });
 
-    it('falls back to navigation on login redirects', async () => {
         await expect(
             performHnAction('fave?id=1&auth=x', {
                 baseUrl: 'https://news.ycombinator.com/item?id=1',
@@ -78,9 +74,7 @@ describe('HN action fallback', () => {
                     response('https://news.ycombinator.com/login'),
             }),
         ).resolves.toMatchObject({ kind: 'navigate' });
-    });
 
-    it('falls back to navigation when favorite actions return an inline login page', async () => {
         await expect(
             performHnAction('fave?id=1&auth=x', {
                 baseUrl: 'https://news.ycombinator.com/item?id=1',

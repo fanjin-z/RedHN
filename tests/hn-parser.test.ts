@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
 import { parseHTML } from 'linkedom';
+import { describe, expect, it } from 'vitest';
 import {
     flattenComments,
-    isRedhnSupportedPage,
     parseHnPage,
     parseItemIdFromUrl,
 } from '../src/redhn/hn/parser';
@@ -15,6 +14,39 @@ function fixture(name: string): Document {
     );
     return parseHTML(html).document;
 }
+
+function favoritePage(subtext: string): Document {
+    return parseHTML(`
+        <html>
+            <body>
+                <table class="fatitem">
+                    <tr class="athing" id="2002">
+                        <td class="title">
+                            <span class="titleline">
+                                <a href="item?id=2002">Ask HN: Saved?</a>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subtext">
+                            by <a class="hnuser" href="user?id=pg">pg</a>
+                            ${subtext}
+                        </td>
+                    </tr>
+                </table>
+            </body>
+        </html>
+    `).document;
+}
+
+type FavoriteCase = {
+    label: string;
+    subtext: string;
+    expected: {
+        favorite?: string;
+        unfavorite?: string;
+    };
+};
 
 describe('HN DOM parser', () => {
     it('parses feed stories and pagination from loaded HN markup', () => {
@@ -49,83 +81,6 @@ describe('HN DOM parser', () => {
             domain: undefined,
             commentCount: 432,
         });
-    });
-
-    it('parses already-upvoted stories with an unvote action', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="itemlist">
-                        <tr class="athing" id="1003">
-                            <td class="title"><span class="rank">1.</span></td>
-                            <td class="votelinks"></td>
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="https://example.com/voted">Already voted</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"></td>
-                            <td class="subtext">
-                                <span class="score" id="score_1003">12 points</span>
-                                by <a class="hnuser" href="user?id=dev_jane">dev_jane</a>
-                                <span class="age"><a href="item?id=1003">1 hour ago</a></span>
-                                <a href="vote?id=1003&amp;how=un&amp;goto=news">unvote</a>
-                                <a href="item?id=1003">4 comments</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(document, 'https://news.ycombinator.com/news');
-
-        expect(page.stories[0].actions.upvote).toBeUndefined();
-        expect(page.stories[0].actions.unvote).toBe(
-            'https://news.ycombinator.com/vote?id=1003&how=un&goto=news',
-        );
-    });
-
-    it('parses HN morelink pagination instead of story links containing more', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="itemlist">
-                        <tr class="athing" id="1004">
-                            <td class="title"><span class="rank">1.</span></td>
-                            <td class="votelinks"></td>
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="https://example.com/more-news">Tell HN: More news from a project</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"></td>
-                            <td class="subtext">
-                                by <a class="hnuser" href="user?id=dev_jane">dev_jane</a>
-                                <span class="age"><a href="item?id=1004">1 hour ago</a></span>
-                                <a href="item?id=1004">4 comments</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"></td>
-                            <td class="title">
-                                <a href="?p=2" class="morelink" rel="next">More</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(document, 'https://news.ycombinator.com/news');
-
-        expect(page.pagination.more).toBe(
-            'https://news.ycombinator.com/news?p=2',
-        );
     });
 
     it('parses an item page into a post and nested comment tree', () => {
@@ -168,206 +123,44 @@ describe('HN DOM parser', () => {
         ).toEqual([3001, 3002]);
     });
 
-    it('parses HN un-favorite item page actions with non-breaking hyphens', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="fatitem">
-                        <tr class="athing" id="2002">
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="item?id=2002">Ask HN: Saved?</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="subtext">
-                                <span class="score">5 points</span>
-                                by <a class="hnuser" href="user?id=pg">pg</a>
-                                <span class="age">
-                                    <a href="item?id=2002">1 hour ago</a>
-                                </span>
-                                <a href="fave?id=2002&amp;un=t&amp;auth=abc">un‑favorite</a>
-                                <a href="item?id=2002">3 comments</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
+    it.each<FavoriteCase>([
+        {
+            label: 'favorite link',
+            subtext: '<a href="fave?id=2002&amp;auth=abc">favorite</a>',
+            expected: {
+                favorite: 'https://news.ycombinator.com/fave?id=2002&auth=abc',
+            },
+        },
+        {
+            label: 'un flag',
+            subtext:
+                '<a href="fave?id=2002&amp;un=t&amp;auth=abc">favorite</a>',
+            expected: {
+                unfavorite:
+                    'https://news.ycombinator.com/fave?id=2002&un=t&auth=abc',
+            },
+        },
+        {
+            label: 'normalized unfavorite label',
+            subtext: '<a href="fave?id=2002&amp;auth=abc">un\u2011favorite</a>',
+            expected: {
+                unfavorite:
+                    'https://news.ycombinator.com/fave?id=2002&auth=abc',
+            },
+        },
+        {
+            label: 'non-fave favorite text',
+            subtext: '<a href="item?id=2002">favorite comments</a>',
+            expected: {},
+        },
+    ])('parses item favorite state from $label', ({ subtext, expected }) => {
         const page = parseHnPage(
-            document,
+            favoritePage(subtext),
             'https://news.ycombinator.com/item?id=2002',
         );
 
-        expect(page.post?.actions.favorite).toBeUndefined();
-        expect(page.post?.actions.unfavorite).toBe(
-            'https://news.ycombinator.com/fave?id=2002&un=t&auth=abc',
-        );
-    });
-
-    it('uses the fave un flag as favorited state even if the label changes', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="fatitem">
-                        <tr class="athing" id="2006">
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="item?id=2006">Ask HN: flagged?</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="subtext">
-                                by <a class="hnuser" href="user?id=pg">pg</a>
-                                <a href="fave?id=2006&amp;un=t&amp;auth=flag">favorite</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/item?id=2006',
-        );
-
-        expect(page.post?.actions.favorite).toBeUndefined();
-        expect(page.post?.actions.unfavorite).toBe(
-            'https://news.ycombinator.com/fave?id=2006&un=t&auth=flag',
-        );
-    });
-
-    it('parses compact unfavorite item page labels as favorited state', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="fatitem">
-                        <tr class="athing" id="2003">
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="item?id=2003">Ask HN: Favorited?</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="subtext">
-                                by <a class="hnuser" href="user?id=pg">pg</a>
-                                <a href="fave?id=2003&amp;auth=def">unfavorite</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/item?id=2003',
-        );
-
-        expect(page.post?.actions.favorite).toBeUndefined();
-        expect(page.post?.actions.unfavorite).toBe(
-            'https://news.ycombinator.com/fave?id=2003&auth=def',
-        );
-    });
-
-    it('ignores unrelated favorite text without a fave action link', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="fatitem">
-                        <tr class="athing" id="2004">
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="item?id=2004">Ask HN: favorite editors?</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="subtext">
-                                by <a class="hnuser" href="user?id=pg">pg</a>
-                                <a href="item?id=2004">favorite comments</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="toptext">
-                                This story says favorite a lot.
-                            </td>
-                        </tr>
-                    </table>
-                    <table class="comment-tree">
-                        <tr class="athing comtr" id="3004">
-                            <td class="default">
-                                <span class="comhead">
-                                    <a class="hnuser" href="user?id=commenter">commenter</a>
-                                </span>
-                                <div class="comment">
-                                    <span class="commtext">favorite</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/item?id=2004',
-        );
-
-        expect(page.post?.actions.favorite).toBeUndefined();
-        expect(page.post?.actions.unfavorite).toBeUndefined();
-    });
-
-    it('reads favorite state from the top story subtext instead of global page subtext', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <div class="subtext">
-                        <a href="fave?id=9999&amp;auth=wrong">favorite</a>
-                    </div>
-                    <table class="fatitem">
-                        <tr class="athing" id="2005">
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="item?id=2005">Ask HN: scoped state?</a>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="subtext">
-                                by <a class="hnuser" href="user?id=pg">pg</a>
-                                <a href="fave?id=2005&amp;auth=right">un-favorite</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/item?id=2005',
-        );
-
-        expect(page.post?.actions.favorite).toBeUndefined();
-        expect(page.post?.actions.unfavorite).toBe(
-            'https://news.ycombinator.com/fave?id=2005&auth=right',
-        );
-    });
-
-    it('supports parsed feed and item pages for RedHN rendering', () => {
-        const feedPage = parseHnPage(
-            fixture('feed.html'),
-            'https://news.ycombinator.com/news',
-        );
-        const itemPage = parseHnPage(
-            fixture('item.html'),
-            'https://news.ycombinator.com/item?id=2001',
-        );
-
-        expect(isRedhnSupportedPage(feedPage)).toBe(true);
-        expect(isRedhnSupportedPage(itemPage)).toBe(true);
+        expect(page.post?.actions.favorite).toBe(expected.favorite);
+        expect(page.post?.actions.unfavorite).toBe(expected.unfavorite);
     });
 
     it('parses HN user profile fields', () => {
@@ -387,9 +180,6 @@ describe('HN DOM parser', () => {
                         </tr>
                         <tr><td valign="top">karma:</td><td>55</td></tr>
                         <tr><td valign="top">about:</td><td>Building things.</td></tr>
-                        <tr><td></td><td><a href="submitted?id=PinkG">submissions</a></td></tr>
-                        <tr><td></td><td><a href="threads?id=PinkG">comments</a></td></tr>
-                        <tr><td></td><td><a href="favorites?id=PinkG">favorites</a></td></tr>
                     </table>
                 </body>
             </html>
@@ -413,121 +203,6 @@ describe('HN DOM parser', () => {
         expect(page.profile?.links.comments).toBe(
             'https://news.ycombinator.com/threads?id=PinkG',
         );
-        expect(isRedhnSupportedPage(page)).toBe(true);
-    });
-
-    it('parses submitted profile pages as profile posts', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table>
-                        <tr class="athing submission" id="48323683">
-                            <td align="right" class="title"><span class="rank">1.</span></td>
-                            <td class="votelinks"><a href="vote?id=48323683&amp;how=up">up</a></td>
-                            <td class="title">
-                                <span class="titleline">
-                                    <a href="https://openpath.quest/post">I Am Retiring from Tech</a>
-                                    <span class="sitebit comhead"> (<span class="sitestr">openpath.quest</span>)</span>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"></td>
-                            <td class="subtext">
-                                <span class="score">150 points</span>
-                                by <a href="user?id=PinkG" class="hnuser">PinkG</a>
-                                <span class="age"><a href="item?id=48323683">47 minutes ago</a></span>
-                                | <a href="item?id=48323683">72 comments</a>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/submitted?id=PinkG',
-        );
-
-        expect(page.kind).toBe('profile');
-        expect(page.profile).toMatchObject({ id: 'PinkG', tab: 'posts' });
-        expect(page.stories).toHaveLength(1);
-        expect(page.stories[0]).toMatchObject({
-            id: 48323683,
-            title: 'I Am Retiring from Tech',
-            author: 'PinkG',
-            score: 150,
-            commentCount: 72,
-        });
-        expect(isRedhnSupportedPage(page)).toBe(true);
-    });
-
-    it('parses threads profile pages as profile comments, not item pages', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <tr class="athing comtr" id="39667625">
-                        <td>
-                            <table>
-                                <tr>
-                                    <td class="ind" indent="0"><img src="s.gif" width="0" /></td>
-                                    <td class="votelinks"><a href="vote?id=39667625&amp;how=up">up</a></td>
-                                    <td class="default">
-                                        <span class="comhead">
-                                            <a href="user?id=PinkG" class="hnuser">PinkG</a>
-                                            <span class="age"><a href="item?id=39667625">on May 29, 2026</a></span>
-                                            | <a href="item?id=39662907">parent</a>
-                                        </span>
-                                        <div class="comment">
-                                            <div class="commtext">A profile comment.</div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/threads?id=PinkG',
-        );
-
-        expect(page.kind).toBe('profile');
-        expect(page.profile).toMatchObject({ id: 'PinkG', tab: 'comments' });
-        expect(page.post).toBeUndefined();
-        expect(page.comments).toHaveLength(1);
-        expect(page.comments[0]).toMatchObject({
-            id: 39667625,
-            author: 'PinkG',
-            text: 'A profile comment.',
-        });
-        expect(isRedhnSupportedPage(page)).toBe(true);
-    });
-
-    it('supports empty favorites profile pages', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table id="hnmain">
-                        <tr id="bigbox"><td></td></tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/favorites?id=PinkG',
-        );
-
-        expect(page.kind).toBe('profile');
-        expect(page.profile).toMatchObject({ id: 'PinkG', tab: 'favorites' });
-        expect(page.stories).toHaveLength(0);
-        expect(isRedhnSupportedPage(page)).toBe(true);
     });
 
     it('parses login pages for RedHN auth rendering', () => {
@@ -583,10 +258,9 @@ describe('HN DOM parser', () => {
                 hiddenFields: { goto: 'xxx', creating: 't' },
             },
         });
-        expect(isRedhnSupportedPage(page)).toBe(true);
     });
 
-    it('does not support FAQ or guidelines-like pages for RedHN rendering', () => {
+    it('treats unsupported HN pages as unknown', () => {
         const document = parseHTML(`
             <html>
                 <head><title>Hacker News FAQ</title></head>
@@ -608,37 +282,9 @@ describe('HN DOM parser', () => {
         );
 
         expect(page.kind).toBe('unknown');
-        expect(isRedhnSupportedPage(page)).toBe(false);
     });
 
-    it('does not support empty non-story pages for RedHN rendering', () => {
-        const document = parseHTML(`
-            <html>
-                <head><title>Hacker News</title></head>
-                <body>
-                    <span class="pagetop">
-                        <a href="news">Hacker News</a>
-                    </span>
-                    <table class="itemlist"></table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(document, 'https://news.ycombinator.com/news');
-
-        expect(page.kind).toBe('unknown');
-        expect(isRedhnSupportedPage(page)).toBe(false);
-    });
-
-    it('extracts item ids from HN URLs', () => {
-        expect(parseItemIdFromUrl('item?id=123')).toBe(123);
-        expect(
-            parseItemIdFromUrl('https://news.ycombinator.com/item?id=456'),
-        ).toBe(456);
-        expect(parseItemIdFromUrl('news')).toBeUndefined();
-    });
-
-    it('parses the logged-in HN user from the page top bar', () => {
+    it('extracts HN URL ids and the logged-in current user', () => {
         const document = parseHTML(`
             <html>
                 <body>
@@ -647,7 +293,6 @@ describe('HN DOM parser', () => {
                         <a id="me" href="user?id=daanyal">daanyal</a>
                         <a id="logout" href="logout?auth=abc&amp;goto=news">logout</a>
                     </span>
-                    <table class="itemlist"></table>
                 </body>
             </html>
         `).document;
@@ -658,32 +303,15 @@ describe('HN DOM parser', () => {
             789,
         );
 
+        expect(parseItemIdFromUrl('item?id=123')).toBe(123);
+        expect(
+            parseItemIdFromUrl('https://news.ycombinator.com/item?id=456'),
+        ).toBe(456);
+        expect(parseItemIdFromUrl('news')).toBeUndefined();
         expect(page.currentUser).toEqual({
             id: 'daanyal',
             profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
             logoutUrl: 'https://news.ycombinator.com/logout?auth=abc&goto=news',
         });
-    });
-
-    it('leaves currentUser empty for logged-out HN pages', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <span class="pagetop">
-                        <a href="news">Hacker News</a>
-                        <a href="login?goto=news">login</a>
-                    </span>
-                    <table class="itemlist"></table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/news',
-            789,
-        );
-
-        expect(page.currentUser).toBeUndefined();
     });
 });

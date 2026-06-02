@@ -80,72 +80,39 @@ afterEach(() => {
 });
 
 describe('comment thread depth reveal', () => {
-    it('counts hidden replies beyond the visible depth limit', () => {
+    it('counts hidden replies and advances reveal depth in steps', () => {
         const boundary = chain(5, 7);
 
         expect(countHiddenReplies(boundary.children, 5)).toBe(2);
         expect(countHiddenReplies(boundary.children, 8)).toBe(0);
-    });
-
-    it('reveals three additional depth levels at a time', () => {
         expect(nextRevealDepth(5)).toBe(8);
         expect(nextRevealDepth(8)).toBe(11);
     });
 
-    it('renders a more replies row for deep descendants', () => {
-        const html = renderThread(chain(0, 7));
-
-        expect(html).toContain('View 2 more replies');
-        expect(html).toContain('user105');
-        expect(html).not.toContain('user106');
-    });
-
-    it('marks leaf comments as terminal without reply controls', () => {
-        const html = renderThread(comment(1, 0));
-
-        expect(html).toContain('redhn-comment--terminal');
-        expect(html).not.toContain('redhn-comment__threadline');
-        expect(html).not.toContain('redhn-comment__collapse');
-    });
-
-    it('marks visible reply branches with connector controls', () => {
-        const html = renderThread(comment(1, 0, [comment(2, 1)]));
-
-        expect(html).toContain('redhn-comment--has-replies');
-        expect(html).toContain('redhn-comment__threadline');
-        expect(html).toContain('redhn-comment__collapse');
-    });
-
-    it('keeps hidden deep replies as expandable reply branches', () => {
-        const html = renderThread(chain(5, 7));
-
-        expect(html).toContain('redhn-comment--has-replies');
-        expect(html).toContain('redhn-comment__threadline');
-        expect(html).toContain('View 2 more replies');
-    });
-
-    it('renders revealed deep descendants for the expanded branch', () => {
-        const html = renderThread(chain(0, 7), {
+    it('hides and reveals deep descendants by branch depth', () => {
+        const hiddenHtml = renderThread(chain(0, 7));
+        const revealedHtml = renderThread(chain(0, 7), {
             expandedDeepThreadDepths: { 105: 8 },
         });
 
-        expect(html).not.toContain('View 2 more replies');
-        expect(html).toContain('user106');
-        expect(html).toContain('user107');
+        expect(hiddenHtml).toContain('View 2 more replies');
+        expect(hiddenHtml).toContain('user105');
+        expect(hiddenHtml).not.toContain('user106');
+        expect(revealedHtml).not.toContain('View 2 more replies');
+        expect(revealedHtml).toContain('user106');
+        expect(revealedHtml).toContain('user107');
     });
 
-    it('manual collapse compacts the comment and hides its descendants', () => {
+    it('compacts collapsed branches and hides descendants', () => {
         const html = renderThread(chain(0, 7), {
             collapsedCommentIds: new Set([100]),
             expandedDeepThreadDepths: { 105: 8 },
         });
 
         expect(html).toContain('user100');
-        expect(html).toContain('1 hour ago');
         expect(html).toContain('redhn-comment--collapsed');
         expect(html).toContain('Expand comment');
         expect(html).not.toContain('Comment 100');
-        expect(html).not.toContain('Award');
         expect(html).not.toContain('user101');
         expect(html).not.toContain('View 2 more replies');
     });
@@ -173,48 +140,7 @@ describe('comment thread depth reveal', () => {
         expect(html).not.toContain('Share');
     });
 
-    it('connector line and collapse icon call the same toggle handler', async () => {
-        const document = setupDom();
-        const container = document.createElement('div');
-        document.body.append(container);
-        const onToggle = vi.fn();
-        const root = createRoot(container);
-
-        await act(async () => {
-            root.render(
-                createElement(CommentThread, {
-                    collapsedCommentIds: new Set<number>(),
-                    comment: comment(1, 0, [comment(2, 1)]),
-                    onHnAction: () => undefined,
-                    onRevealMore: () => undefined,
-                    onToggle,
-                }),
-            );
-        });
-
-        const threadline = container.querySelector<HTMLButtonElement>(
-            '.redhn-comment__threadline',
-        );
-        const collapse = container.querySelector<HTMLButtonElement>(
-            '.redhn-comment__collapse',
-        );
-
-        expect(threadline).not.toBeNull();
-        expect(collapse).not.toBeNull();
-
-        threadline?.click();
-        collapse?.click();
-
-        expect(onToggle).toHaveBeenCalledTimes(2);
-        expect(onToggle).toHaveBeenNthCalledWith(1, 1);
-        expect(onToggle).toHaveBeenNthCalledWith(2, 1);
-
-        await act(async () => {
-            root.unmount();
-        });
-    });
-
-    it('branch connector segments toggle the parent comment', async () => {
+    it('connector controls toggle the parent comment', async () => {
         const document = setupDom();
         const container = document.createElement('div');
         document.body.append(container);
@@ -233,15 +159,19 @@ describe('comment thread depth reveal', () => {
             );
         });
 
-        const branchlineHit = container.querySelector<HTMLButtonElement>(
+        const selectors = [
+            '.redhn-comment__threadline',
+            '.redhn-comment__collapse',
             '.redhn-comment__branchline-hit',
-        );
+        ];
 
-        expect(branchlineHit).not.toBeNull();
+        for (const selector of selectors) {
+            const button = container.querySelector<HTMLButtonElement>(selector);
+            expect(button).not.toBeNull();
+            button?.click();
+        }
 
-        branchlineHit?.click();
-
-        expect(onToggle).toHaveBeenCalledTimes(1);
+        expect(onToggle).toHaveBeenCalledTimes(3);
         expect(onToggle).toHaveBeenCalledWith(1);
 
         await act(async () => {

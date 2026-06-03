@@ -3,6 +3,7 @@ import { parseHTML } from 'linkedom';
 import { describe, expect, it } from 'vitest';
 import {
     flattenComments,
+    isRedhnSupportedPage,
     parseHnPage,
     parseItemIdFromUrl,
 } from '../src/redhn/hn/parser';
@@ -258,6 +259,85 @@ describe('HN DOM parser', () => {
                 hiddenFields: { goto: 'xxx', creating: 't' },
             },
         });
+    });
+
+    it('parses the HN submit form contract', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <center>
+                        <table id="hnmain">
+                            <tbody>
+                                <tr id="bigbox">
+                                    <td>
+                                        <form action="/r" method="post">
+                                            <input type="hidden" name="fnid" value="Pek2ac3yCOcK58mIBGbzjC">
+                                            <input type="hidden" name="fnop" value="submit-page">
+                                            <table>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>title</td>
+                                                        <td><input type="text" name="title" value="" size="50"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>url</td>
+                                                        <td><input type="url" name="url" value="" size="50"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>text</td>
+                                                        <td><textarea name="text" rows="4" cols="49"></textarea></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td><input type="submit" value="submit"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td>
+                                                            Leave url blank to submit a question for discussion.
+                                                            If there is no url, text will appear at the top of the thread.
+                                                            If there is a url, text is optional.<br><br>
+                                                            You can also submit via
+                                                            <a href="bookmarklet.html" rel="nofollow"><u>bookmarklet</u></a>.
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </center>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/submit',
+        );
+
+        expect(page.kind).toBe('submit');
+        expect(isRedhnSupportedPage(page)).toBe(true);
+        expect(page.submit).toMatchObject({
+            form: {
+                action: 'https://news.ycombinator.com/r',
+                method: 'post',
+                titleName: 'title',
+                urlName: 'url',
+                textName: 'text',
+                submitLabel: 'submit',
+                hiddenFields: {
+                    fnid: 'Pek2ac3yCOcK58mIBGbzjC',
+                    fnop: 'submit-page',
+                },
+            },
+            bookmarkletUrl: 'https://news.ycombinator.com/bookmarklet.html',
+        });
+        expect(page.submit?.helperText).toContain(
+            'Leave url blank to submit a question for discussion.',
+        );
     });
 
     it('treats unsupported HN pages as unknown', () => {

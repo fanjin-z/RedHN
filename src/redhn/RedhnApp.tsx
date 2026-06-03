@@ -20,6 +20,7 @@ import {
 import { AuthPage } from './pages/AuthPage';
 import { PostPage } from './pages/PostPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SubmitPage } from './pages/SubmitPage';
 import {
     applyStoryFilters,
     defaultFilters,
@@ -85,8 +86,12 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     const title = useMemo(
         () =>
             page.post?.title ??
-            (page.profile ? `${page.profile.id} | Hacker News` : 'Hacker News'),
-        [page.post?.title, page.profile],
+            (page.profile
+                ? `${page.profile.id} | Hacker News`
+                : page.submit
+                  ? 'Create post | Hacker News'
+                  : 'Hacker News'),
+        [page.post?.title, page.profile, page.submit],
     );
     const visibleStories = useMemo(
         () => applyStoryFilters(page.stories, filters),
@@ -489,7 +494,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                 />
             ) : null}
             {page.kind === 'profile' && enrichedProfile ? null : page.kind ===
-                  'item' && enrichedPost ? (
+                  'submit' && page.submit ? (
+                <SubmitPage submit={page.submit} />
+            ) : page.kind === 'item' && enrichedPost ? (
                 <PostPage
                     comments={page.comments}
                     isFavoritePending={pendingFavoriteStoryIds.has(

@@ -8,6 +8,7 @@ import type {
     ParsedProfile,
     ParsedProfileTab,
     ParsedStory,
+    ParsedSubmitPage,
     HnActionMap,
 } from './types';
 
@@ -22,8 +23,9 @@ export function parseHnPage(
     const comments = parseComments(document, sourceUrl);
     const profile = parseProfile(document, sourceUrl);
     const auth = parseAuthPage(document, sourceUrl);
+    const submit = parseSubmitPage(document, sourceUrl);
     const post =
-        !profile && !auth && isItemPage(sourceUrl, document)
+        !profile && !auth && !submit && isItemPage(sourceUrl, document)
             ? enhancePostFromItemPage(document, stories[0], sourceUrl)
             : undefined;
 
@@ -32,11 +34,13 @@ export function parseHnPage(
             ? 'profile'
             : auth
               ? 'auth'
-              : post
-                ? 'item'
-                : stories.length > 0
-                  ? 'feed'
-                  : 'unknown',
+              : submit
+                ? 'submit'
+                : post
+                  ? 'item'
+                  : stories.length > 0
+                    ? 'feed'
+                    : 'unknown',
         sourceUrl,
         title: text(document.querySelector('title')),
         currentUser: parseCurrentUser(document, sourceUrl),
@@ -44,6 +48,7 @@ export function parseHnPage(
         post,
         profile,
         auth,
+        submit,
         comments,
         pagination: parsePagination(document, sourceUrl),
         capturedAt,
@@ -55,7 +60,8 @@ export function isRedhnSupportedPage(page: ParsedPage): boolean {
         (page.kind === 'feed' && page.stories.length > 0) ||
         (page.kind === 'item' && page.post !== undefined) ||
         (page.kind === 'profile' && page.profile !== undefined) ||
-        (page.kind === 'auth' && page.auth !== undefined)
+        (page.kind === 'auth' && page.auth !== undefined) ||
+        (page.kind === 'submit' && page.submit !== undefined)
     );
 }
 
@@ -328,6 +334,88 @@ function parseAuthForm(
         submitLabel: submit?.value || undefined,
         hiddenFields: parseHiddenFields(form),
     };
+}
+
+function parseSubmitPage(
+    document: Document,
+    sourceUrl: string,
+): ParsedSubmitPage | undefined {
+    const url = safeUrl(sourceUrl, HN_ORIGIN);
+    if (url?.pathname !== '/submit') {
+        return undefined;
+    }
+
+    const form = Array.from(document.querySelectorAll<HTMLFormElement>('form'))
+        .map((candidate) => parseSubmitForm(candidate, sourceUrl))
+        .find((candidate): candidate is ParsedSubmitPage['form'] =>
+            Boolean(candidate),
+        );
+
+    if (!form) {
+        return undefined;
+    }
+
+    return {
+        form,
+        helperText: parseSubmitHelperText(document),
+        bookmarkletUrl: href(findLink(document, 'bookmarklet'), sourceUrl),
+    };
+}
+
+function parseSubmitForm(
+    form: HTMLFormElement,
+    sourceUrl: string,
+): ParsedSubmitPage['form'] | undefined {
+    const titleInput = findNamedControl<HTMLInputElement>(
+        form,
+        'input',
+        'title',
+    );
+    const urlInput = findNamedControl<HTMLInputElement>(form, 'input', 'url');
+    const textArea = findNamedControl<HTMLTextAreaElement>(
+        form,
+        'textarea',
+        'text',
+    );
+    const submit = form.querySelector<HTMLInputElement>('input[type="submit"]');
+
+    if (!titleInput?.name || !urlInput?.name || !textArea?.name) {
+        return undefined;
+    }
+
+    return {
+        action: absoluteUrl(
+            form.getAttribute('action') || sourceUrl,
+            sourceUrl,
+        ),
+        method: (form.getAttribute('method') || 'get').toLowerCase(),
+        titleName: titleInput.name,
+        urlName: urlInput.name,
+        textName: textArea.name,
+        titleValue: titleInput.value,
+        urlValue: urlInput.value,
+        textValue: textArea.value,
+        submitLabel: submit?.value || undefined,
+        hiddenFields: parseHiddenFields(form),
+    };
+}
+
+function findNamedControl<T extends Element>(
+    form: HTMLFormElement,
+    selector: string,
+    name: string,
+): T | undefined {
+    return Array.from(form.querySelectorAll<T>(`${selector}[name]`)).find(
+        (control) => control.getAttribute('name') === name,
+    );
+}
+
+function parseSubmitHelperText(document: Document): string | undefined {
+    const helperRow = Array.from(document.querySelectorAll('form tr')).find(
+        (row) => text(row).includes('Leave url blank'),
+    );
+
+    return text(helperRow) || undefined;
 }
 
 function parseHiddenFields(form: HTMLFormElement): Record<string, string> {

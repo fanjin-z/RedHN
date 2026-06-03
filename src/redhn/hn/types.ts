@@ -1,4 +1,10 @@
-export type ParsedPageKind = 'feed' | 'item' | 'profile' | 'auth' | 'unknown';
+export type ParsedPageKind =
+    | 'feed'
+    | 'item'
+    | 'profile'
+    | 'auth'
+    | 'submit'
+    | 'unknown';
 
 export type ParsedProfileTab = 'overview' | 'posts' | 'comments' | 'favorites';
 
@@ -91,6 +97,24 @@ export type ParsedAuthPage = {
     gotoUrl: string;
 };
 
+export type ParsedSubmitForm = {
+    action: string;
+    method: string;
+    titleName: string;
+    urlName: string;
+    textName: string;
+    titleValue: string;
+    urlValue: string;
+    textValue: string;
+    hiddenFields: Record<string, string>;
+};
+
+export type ParsedSubmitPage = {
+    form: ParsedSubmitForm;
+    helperText?: string;
+    bookmarkletUrl?: string;
+};
+
 export type ParsedPage = {
     kind: ParsedPageKind;
     sourceUrl: string;
@@ -100,6 +124,7 @@ export type ParsedPage = {
     post?: ParsedStory;
     profile?: ParsedProfile;
     auth?: ParsedAuthPage;
+    submit?: ParsedSubmitPage;
     comments: ParsedComment[];
     pagination: ParsedPagination;
     capturedAt: number;

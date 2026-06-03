@@ -1,4 +1,4 @@
-import { parseHTML } from 'linkedom';
+import { DOMParser, parseHTML } from 'linkedom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HnApiItem, HnApiUser } from '../src/redhn/api/hnApi';
 import type { ParsedProfile, ParsedStory } from '../src/redhn/hn/types';
@@ -63,6 +63,7 @@ describe('API enrichment', () => {
             'document',
             parseHTML('<html><body></body></html>').document,
         );
+        vi.stubGlobal('DOMParser', DOMParser);
 
         expect(
             enrichStoryWithApiItem(
@@ -134,6 +135,7 @@ describe('API enrichment', () => {
             'document',
             parseHTML('<html><body></body></html>').document,
         );
+        vi.stubGlobal('DOMParser', DOMParser);
 
         expect(
             enrichProfileWithApiUser(

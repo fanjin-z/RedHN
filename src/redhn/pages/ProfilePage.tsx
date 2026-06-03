@@ -24,7 +24,7 @@ import {
     formatProfileDate,
     formatUnixDate,
 } from '../view/format';
-import { sanitizeHnHtml } from '../view/html';
+import { renderHnHtml } from '../view/html';
 import { hnItemUrl } from '../view/urls';
 
 type ProfilePageProps = {
@@ -587,12 +587,9 @@ function ProfileSummaryCard({
                 </div>
             </dl>
             {profile.aboutHtml ? (
-                <div
-                    className="redhn-profile-card__about"
-                    dangerouslySetInnerHTML={{
-                        __html: sanitizeHnHtml(profile.aboutHtml),
-                    }}
-                />
+                <div className="redhn-profile-card__about">
+                    {renderHnHtml(profile.aboutHtml)}
+                </div>
             ) : null}
         </aside>
     );
@@ -674,12 +671,9 @@ function ProfileActivityCard({
                 <a href={itemUrl}>{title}</a>
             </h2>
             {isComment && item.text ? (
-                <div
-                    className="redhn-profile-activity__text"
-                    dangerouslySetInnerHTML={{
-                        __html: sanitizeHnHtml(item.text),
-                    }}
-                />
+                <div className="redhn-profile-activity__text">
+                    {renderHnHtml(item.text)}
+                </div>
             ) : null}
             {!isComment && item.url ? (
                 <a

@@ -1,45 +1,127 @@
-export function sanitizeHnHtml(html: string): string {
-    const template = document.createElement('template');
-    template.innerHTML = html;
+import { Fragment, createElement, type ReactNode } from 'react';
 
-    for (const element of template.content.querySelectorAll('*')) {
-        if (
-            [
-                'script',
-                'style',
-                'iframe',
-                'object',
-                'embed',
-                'link',
-                'meta',
-            ].includes(element.tagName.toLowerCase())
-        ) {
-            element.remove();
-            continue;
-        }
+const HN_ORIGIN = 'https://news.ycombinator.com';
+const ELEMENT_NODE = 1;
+const TEXT_NODE = 3;
 
-        for (const attribute of Array.from(element.attributes)) {
-            const name = attribute.name.toLowerCase();
-            const value = attribute.value.trim().toLowerCase();
-            if (
-                name.startsWith('on') ||
-                ((name === 'href' || name === 'src') &&
-                    value.startsWith('javascript:'))
-            ) {
-                element.removeAttribute(attribute.name);
-            }
-        }
+const PRESERVED_TAGS = new Set([
+    'a',
+    'b',
+    'blockquote',
+    'br',
+    'code',
+    'div',
+    'em',
+    'i',
+    'p',
+    'pre',
+    's',
+    'span',
+    'strike',
+    'strong',
+    'u',
+]);
 
-        if (element.tagName.toLowerCase() === 'a') {
-            element.setAttribute('rel', 'nofollow noopener noreferrer');
-        }
-    }
+const DROPPED_TAGS = new Set([
+    'audio',
+    'button',
+    'canvas',
+    'embed',
+    'form',
+    'iframe',
+    'img',
+    'input',
+    'link',
+    'math',
+    'meta',
+    'object',
+    'script',
+    'select',
+    'source',
+    'style',
+    'svg',
+    'template',
+    'textarea',
+    'video',
+]);
 
-    return template.innerHTML;
+export function renderHnHtml(html: string): ReactNode {
+    const document = parseHtmlSnippet(html);
+    return renderChildren(document.body.childNodes, 'hn');
 }
 
 export function textFromHtml(html: string): string {
-    const container = document.createElement('div');
-    container.innerHTML = html;
-    return container.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const document = parseHtmlSnippet(html);
+    return document.body.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function parseHtmlSnippet(html: string): Document {
+    return new DOMParser().parseFromString(
+        `<!doctype html><html><body>${html}</body></html>`,
+        'text/html',
+    );
+}
+
+function renderChildren(nodes: NodeListOf<ChildNode>, keyPrefix: string) {
+    return Array.from(nodes)
+        .map((node, index) => renderNode(node, `${keyPrefix}-${index}`))
+        .filter((node) => node !== null);
+}
+
+function renderNode(node: ChildNode, key: string): ReactNode {
+    if (node.nodeType === TEXT_NODE) {
+        return node.textContent ?? '';
+    }
+
+    if (node.nodeType !== ELEMENT_NODE) {
+        return null;
+    }
+
+    const element = node as Element;
+    const tagName = element.tagName.toLowerCase();
+
+    if (DROPPED_TAGS.has(tagName)) {
+        return null;
+    }
+
+    const children = renderChildren(element.childNodes, key);
+
+    if (!PRESERVED_TAGS.has(tagName)) {
+        return createElement(Fragment, { key }, ...children);
+    }
+
+    if (tagName === 'br') {
+        return createElement('br', { key });
+    }
+
+    if (tagName === 'a') {
+        return createElement(
+            'a',
+            {
+                href: safeHref(element.getAttribute('href')),
+                key,
+                rel: 'nofollow noopener noreferrer',
+            },
+            ...children,
+        );
+    }
+
+    return createElement(tagName, { key }, ...children);
+}
+
+function safeHref(href: string | null): string | undefined {
+    const value = href?.trim();
+
+    if (!value) {
+        return undefined;
+    }
+
+    try {
+        const url = new URL(value, HN_ORIGIN);
+        return ['http:', 'https:', 'mailto:'].includes(url.protocol)
+            ? url.href
+            : undefined;
+    } catch {
+        return undefined;
+    }
 }

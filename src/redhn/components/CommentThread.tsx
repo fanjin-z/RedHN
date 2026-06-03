@@ -7,7 +7,7 @@ import {
 import type { HnReplyResult } from '../hn/actions';
 import type { ParsedComment } from '../hn/types';
 import { formatNumber } from '../view/format';
-import { sanitizeHnHtml } from '../view/html';
+import { renderHnHtml } from '../view/html';
 import { HnActionLink } from './HnActionLink';
 import { ReplyComposer } from './ReplyComposer';
 import { userInitials } from './UserAvatar';
@@ -159,12 +159,9 @@ export function CommentThread({
                     </header>
                     {!collapsed ? (
                         <>
-                            <div
-                                className="redhn-comment__text"
-                                dangerouslySetInnerHTML={{
-                                    __html: sanitizeHnHtml(comment.html),
-                                }}
-                            />
+                            <div className="redhn-comment__text">
+                                {renderHnHtml(comment.html)}
+                            </div>
                             <div className="redhn-comment__actions">
                                 {comment.actions.upvote ? (
                                     <HnActionLink

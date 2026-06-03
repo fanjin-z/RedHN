@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { parseHTML } from 'linkedom';
+import { DOMParser, parseHTML } from 'linkedom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     CommentThread,
@@ -50,6 +50,7 @@ function renderThread(
     } = {},
 ): string {
     vi.stubGlobal('document', parseHTML('<html><body></body></html>').document);
+    vi.stubGlobal('DOMParser', DOMParser);
 
     return renderToStaticMarkup(
         createElement(CommentThread, {
@@ -72,6 +73,7 @@ function setupDom() {
     vi.stubGlobal('document', document);
     vi.stubGlobal('window', window);
     vi.stubGlobal('HTMLElement', window.HTMLElement);
+    vi.stubGlobal('DOMParser', DOMParser);
     return document;
 }
 

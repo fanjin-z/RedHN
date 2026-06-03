@@ -12,7 +12,7 @@ import { HnActionLink } from '../components/HnActionLink';
 import { ReplyComposer } from '../components/ReplyComposer';
 import { submitHnReply, type HnReplyResult } from '../hn/actions';
 import { formatNumber } from '../view/format';
-import { sanitizeHnHtml } from '../view/html';
+import { renderHnHtml } from '../view/html';
 import { userInitials } from '../components/UserAvatar';
 import { useCloseOnOutsidePointer } from '../components/useCloseOnOutsidePointer';
 
@@ -178,12 +178,9 @@ export function PostPage({
                     </div>
                 ) : null}
                 {post.textHtml ? (
-                    <div
-                        className="redhn-post__text"
-                        dangerouslySetInnerHTML={{
-                            __html: sanitizeHnHtml(post.textHtml),
-                        }}
-                    />
+                    <div className="redhn-post__text">
+                        {renderHnHtml(post.textHtml)}
+                    </div>
                 ) : null}
                 <div className="redhn-story__actions">
                     {voteHref ? (

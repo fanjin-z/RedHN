@@ -117,6 +117,10 @@
 
 :host {
     all: initial;
+    display: block;
+    min-width: 100vw;
+    min-height: 100vh;
+    background: #f6f7f8;
 }
 
 #redhn-app,
@@ -177,6 +181,7 @@
     --redhn-type-code-line-height: var(--redhn-type-body-line-height);
     display: block;
     min-height: 100vh;
+    background: var(--redhn-surface);
     color: var(--redhn-text);
     font-family: var(--redhn-font-sans);
     font-size: 14px;

@@ -28,10 +28,15 @@ function setOriginalPageHidden(style: HTMLStyleElement, hidden: boolean): void {
             body {
                 margin: 0 !important;
                 padding: 0 !important;
+                width: 100% !important;
+                min-height: 100% !important;
+                background: #0b0d0e !important;
             }
 
             redhn-root {
                 display: block !important;
+                min-width: 100vw !important;
+                min-height: 100vh !important;
             }
 
             body > :not(redhn-root) {

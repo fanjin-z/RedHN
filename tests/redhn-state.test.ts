@@ -9,6 +9,13 @@ import {
 } from '../src/redhn/state/readState';
 import type { ParsedPage, ParsedStory } from '../src/redhn/hn/types';
 import { getActiveSortOption } from '../src/redhn/view/sortOptions';
+import {
+    CURRENT_USER_CACHE_TTL_MS,
+    resolveCurrentUserForPage,
+    shouldClearCachedCurrentUser,
+    toCachedCurrentUser,
+    type CachedCurrentUser,
+} from '../src/redhn/state/currentUser';
 
 const story = (overrides: Partial<ParsedStory>): ParsedStory => ({
     id: 1,
@@ -16,6 +23,16 @@ const story = (overrides: Partial<ParsedStory>): ParsedStory => ({
     url: 'https://example.com',
     hnUrl: 'https://news.ycombinator.com/item?id=1',
     actions: {},
+    ...overrides,
+});
+
+const page = (overrides: Partial<ParsedPage>): ParsedPage => ({
+    capturedAt: 1,
+    comments: [],
+    kind: 'feed',
+    pagination: {},
+    sourceUrl: 'https://news.ycombinator.com/news',
+    stories: [],
     ...overrides,
 });
 
@@ -115,5 +132,68 @@ describe('RedHN state helpers', () => {
             readCommentIds: { 10: 6, 11: 6 },
             storyCommentCounts: { 1: 2 },
         });
+    });
+
+    it('caches parsed current users without logout URLs', () => {
+        const cached = toCachedCurrentUser(
+            {
+                id: 'daanyal',
+                profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+                logoutUrl: 'https://news.ycombinator.com/logout?auth=secret',
+            },
+            100,
+        );
+
+        expect(cached).toEqual({
+            id: 'daanyal',
+            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+            cachedAt: 100,
+        });
+        expect(cached).not.toHaveProperty('logoutUrl');
+    });
+
+    it('uses only fresh cached users for submit pages without parsed identity', () => {
+        const cached: CachedCurrentUser = {
+            id: 'daanyal',
+            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+            cachedAt: 1000,
+        };
+        const submitPage = page({
+            kind: 'submit',
+            sourceUrl: 'https://news.ycombinator.com/submit',
+        });
+
+        expect(resolveCurrentUserForPage(submitPage, cached, 2000)).toEqual({
+            id: 'daanyal',
+            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+        });
+        expect(
+            resolveCurrentUserForPage(
+                submitPage,
+                cached,
+                1000 + CURRENT_USER_CACHE_TTL_MS + 1,
+            ),
+        ).toBeUndefined();
+    });
+
+    it('clears cached users on anonymous non-submit auth surfaces', () => {
+        expect(shouldClearCachedCurrentUser(page({ kind: 'feed' }))).toBe(true);
+        expect(shouldClearCachedCurrentUser(page({ kind: 'submit' }))).toBe(
+            false,
+        );
+        expect(shouldClearCachedCurrentUser(page({ kind: 'auth' }))).toBe(
+            false,
+        );
+        expect(
+            shouldClearCachedCurrentUser(
+                page({
+                    currentUser: {
+                        id: 'daanyal',
+                        profileUrl:
+                            'https://news.ycombinator.com/user?id=daanyal',
+                    },
+                }),
+            ),
+        ).toBe(false);
     });
 });

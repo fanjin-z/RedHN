@@ -65,8 +65,7 @@ export function SubmitPage({ submit }: SubmitPageProps) {
     const title = composeSubmitTitle(section, editableTitle);
     const titleCount = title.length;
     const titleTooLong = titleCount > HN_SUBMIT_TITLE_LIMIT;
-    const urlLocked = section === 'ask';
-    const submittedUrl = urlLocked ? '' : url;
+    const hidesUrl = section === 'ask';
     const canSubmit = editableTitle.trim().length > 0;
     const rules = useMemo(() => rulesForSection(section), [section]);
 
@@ -183,30 +182,22 @@ export function SubmitPage({ submit }: SubmitPageProps) {
                     >
                         {titleCount}/{HN_SUBMIT_TITLE_LIMIT}
                     </div>
-                    <label
-                        className={
-                            urlLocked
-                                ? 'redhn-submit-field redhn-submit-field--muted'
-                                : 'redhn-submit-field'
-                        }
-                    >
-                        <span className="redhn-sr-only">URL</span>
-                        <input
-                            aria-disabled={urlLocked}
-                            name={form.urlName}
-                            onChange={(event) => {
-                                setUrl(event.currentTarget.value);
-                            }}
-                            placeholder={
-                                urlLocked
-                                    ? 'URL left blank for Ask HN'
-                                    : 'URL (optional)'
-                            }
-                            readOnly={urlLocked}
-                            type="url"
-                            value={submittedUrl}
-                        />
-                    </label>
+                    {hidesUrl ? (
+                        <input name={form.urlName} type="hidden" value="" />
+                    ) : (
+                        <label className="redhn-submit-field">
+                            <span className="redhn-sr-only">URL</span>
+                            <input
+                                name={form.urlName}
+                                onChange={(event) => {
+                                    setUrl(event.currentTarget.value);
+                                }}
+                                placeholder="URL (optional)"
+                                type="url"
+                                value={url}
+                            />
+                        </label>
+                    )}
                     <label className="redhn-submit-body">
                         <span className="redhn-sr-only">Text</span>
                         <textarea

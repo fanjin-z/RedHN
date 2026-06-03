@@ -1,5 +1,6 @@
 import { storage } from 'wxt/utils/storage';
 import type { HnApiItem, HnApiUser } from '../api/hnApi';
+import type { CachedCurrentUser } from './currentUser';
 import { defaultFilters, type RedhnFilters } from './filters';
 import { defaultPreferences, type RedhnPreferences } from './preferences';
 import { defaultReadState, type RedhnReadState } from './readState';
@@ -36,6 +37,13 @@ export const savedStoryIdsItem = storage.defineItem<number[]>(
     'local:redhn.savedStoryIds',
     {
         fallback: [],
+    },
+);
+
+export const currentUserItem = storage.defineItem<CachedCurrentUser | null>(
+    'local:redhn.currentUser',
+    {
+        fallback: null,
     },
 );
 

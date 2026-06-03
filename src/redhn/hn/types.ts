@@ -106,6 +106,7 @@ export type ParsedSubmitForm = {
     titleValue: string;
     urlValue: string;
     textValue: string;
+    submitLabel?: string;
     hiddenFields: Record<string, string>;
 };
 

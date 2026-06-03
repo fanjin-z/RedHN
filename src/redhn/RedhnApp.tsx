@@ -39,11 +39,18 @@ import {
     type RedhnReadState,
 } from './state/readState';
 import {
+    currentUserItem,
     filtersItem,
     preferencesItem,
     readStateItem,
     savedStoryIdsItem,
 } from './state/storage';
+import {
+    resolveCurrentUserForPage,
+    shouldClearCachedCurrentUser,
+    toCachedCurrentUser,
+    type CachedCurrentUser,
+} from './state/currentUser';
 import {
     enrichProfileWithApiUser,
     enrichStoryWithApiItem,
@@ -83,6 +90,8 @@ export default function RedhnApp({ page }: RedhnAppProps) {
         {},
     );
     const [apiUser, setApiUser] = useState<HnApiUser | null>();
+    const [cachedCurrentUser, setCachedCurrentUser] =
+        useState<CachedCurrentUser | null>();
     const title = useMemo(
         () =>
             page.post?.title ??
@@ -164,6 +173,10 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                     .map(([storyId]) => Number(storyId)),
             ),
         [storyFavoriteOverrides],
+    );
+    const currentUser = useMemo(
+        () => resolveCurrentUserForPage(page, cachedCurrentUser),
+        [cachedCurrentUser, page],
     );
 
     const updatePreferences = (patch: Partial<RedhnPreferences>) => {
@@ -351,6 +364,34 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     }, []);
 
     useEffect(() => {
+        if (page.currentUser) {
+            const next = toCachedCurrentUser(page.currentUser);
+            setCachedCurrentUser(next);
+            void currentUserItem.setValue(next);
+            return;
+        }
+
+        if (shouldClearCachedCurrentUser(page)) {
+            setCachedCurrentUser(null);
+            void currentUserItem.setValue(null);
+        }
+
+        if (page.kind === 'submit') {
+            let active = true;
+
+            void currentUserItem.getValue().then((storedCurrentUser) => {
+                if (active) {
+                    setCachedCurrentUser(storedCurrentUser);
+                }
+            });
+
+            return () => {
+                active = false;
+            };
+        }
+    }, [page]);
+
+    useEffect(() => {
         if (!stateLoaded || !page.post) {
             return;
         }
@@ -458,7 +499,7 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     return (
         <AppShell
             accountMenuOpen={accountMenuOpen}
-            currentUser={page.currentUser}
+            currentUser={currentUser}
             filters={filters}
             onFiltersChange={updateFilters}
             onMenuOpenChange={setAccountMenuOpen}

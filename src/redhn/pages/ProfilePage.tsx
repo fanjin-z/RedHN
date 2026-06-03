@@ -1,13 +1,21 @@
-import { useState } from 'react';
-import { ArrowFatUpIcon, ChatCircleIcon } from '@phosphor-icons/react';
+import { useCallback, useEffect, useState } from 'react';
+import {
+    ArrowFatUpIcon,
+    CaretDownIcon,
+    ChatCircleIcon,
+} from '@phosphor-icons/react';
 import type { HnApiItem, HnApiUser } from '../api/hnApi';
 import { CommentThread } from '../components/CommentThread';
 import { StoryFeed } from '../components/StoryFeed';
+import { useCloseOnOutsidePointer } from '../components/useCloseOnOutsidePointer';
 import { UserAvatar, userInitials } from '../components/UserAvatar';
 import type {
     ParsedComment,
     ParsedPage,
     ParsedProfile,
+    ParsedProfileAccountForm,
+    ParsedProfileSelectField,
+    ParsedProfileTextField,
     ParsedStory,
 } from '../hn/types';
 import type { RedhnReadState } from '../state/readState';
@@ -37,6 +45,13 @@ type ProfilePageProps = {
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
     onVote: (story: ParsedStory) => void;
+};
+
+type ProfileVisibleTab = ParsedProfile['tab'] | 'account';
+
+type ProfileMoreLink = {
+    href: string;
+    label: string;
 };
 
 const profileTabs: Array<{
@@ -69,6 +84,25 @@ export function ProfilePage({
     onHnAction,
     onVote,
 }: ProfilePageProps) {
+    const [activeTab, setActiveTab] = useState<ProfileVisibleTab>(profile.tab);
+    const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+    const isOwnProfile = Boolean(
+        profile.accountForm || page.currentUser?.id === profile.id,
+    );
+    const moreLinks = isOwnProfile ? profileMoreLinks(profile) : [];
+    const closeMoreMenu = useCallback(() => {
+        setMoreMenuOpen(false);
+    }, []);
+    const moreMenuRef = useCloseOnOutsidePointer<HTMLDivElement>({
+        open: moreMenuOpen,
+        onClose: closeMoreMenu,
+    });
+
+    useEffect(() => {
+        setActiveTab(profile.tab);
+        setMoreMenuOpen(false);
+    }, [profile.id, profile.tab]);
+
     return (
         <section className="redhn-profile" aria-label={`${profile.id} profile`}>
             <div className="redhn-profile__main">
@@ -82,10 +116,33 @@ export function ProfilePage({
                     </div>
                 </header>
                 <nav className="redhn-profile-tabs" aria-label="Profile">
+                    {profile.accountForm ? (
+                        <button
+                            className={
+                                activeTab === 'account'
+                                    ? 'redhn-profile-tabs__item redhn-profile-tabs__item--active'
+                                    : 'redhn-profile-tabs__item'
+                            }
+                            onClick={() => {
+                                setActiveTab('account');
+                                setMoreMenuOpen(false);
+                            }}
+                            type="button"
+                        >
+                            Account
+                        </button>
+                    ) : isOwnProfile ? (
+                        <a
+                            className="redhn-profile-tabs__item"
+                            href={profile.links.profile}
+                        >
+                            Account
+                        </a>
+                    ) : null}
                     {profileTabs.map((item) => (
                         <a
                             className={
-                                profile.tab === item.tab
+                                activeTab === item.tab
                                     ? 'redhn-profile-tabs__item redhn-profile-tabs__item--active'
                                     : 'redhn-profile-tabs__item'
                             }
@@ -95,15 +152,58 @@ export function ProfilePage({
                             {item.label}
                         </a>
                     ))}
+                    {moreLinks.length > 0 ? (
+                        <div
+                            className="redhn-profile-tabs__more"
+                            ref={moreMenuRef}
+                        >
+                            <button
+                                aria-expanded={moreMenuOpen}
+                                aria-haspopup="menu"
+                                className={
+                                    isMoreTab(activeTab)
+                                        ? 'redhn-profile-tabs__item redhn-profile-tabs__item--more redhn-profile-tabs__item--active'
+                                        : 'redhn-profile-tabs__item redhn-profile-tabs__item--more'
+                                }
+                                onClick={() => {
+                                    setMoreMenuOpen((current) => !current);
+                                }}
+                                type="button"
+                            >
+                                <span>More</span>
+                                <CaretDownIcon
+                                    aria-hidden="true"
+                                    weight="bold"
+                                />
+                            </button>
+                            {moreMenuOpen ? (
+                                <div
+                                    aria-label="More profile links"
+                                    className="redhn-profile-tabs__more-menu"
+                                    role="menu"
+                                >
+                                    {moreLinks.map((link) => (
+                                        <a
+                                            href={link.href}
+                                            key={link.label}
+                                            role="menuitem"
+                                        >
+                                            {link.label}
+                                        </a>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </nav>
-                {profile.tab === 'overview' ? (
+                {activeTab === 'overview' ? (
                     <ProfileOverviewFeed
                         items={overviewItems}
                         loading={overviewLoading}
                         profile={profile}
                     />
                 ) : null}
-                {profile.tab === 'posts' ? (
+                {activeTab === 'posts' ? (
                     stories.length > 0 || page.pagination.more ? (
                         <StoryFeed
                             hiddenStoryCount={hiddenStoryCount}
@@ -123,13 +223,13 @@ export function ProfilePage({
                         <ProfileEmptyState title="No posts yet" />
                     )
                 ) : null}
-                {profile.tab === 'comments' ? (
+                {activeTab === 'comments' ? (
                     <ProfileCommentsList
                         comments={comments}
                         onHnAction={onHnAction}
                     />
                 ) : null}
-                {profile.tab === 'favorites' ? (
+                {activeTab === 'favorites' ? (
                     stories.length > 0 || page.pagination.more ? (
                         <StoryFeed
                             hiddenStoryCount={hiddenStoryCount}
@@ -149,9 +249,320 @@ export function ProfilePage({
                         <ProfileEmptyState title="No visible favorites" />
                     )
                 ) : null}
+                {activeTab === 'upvotedPosts' ? (
+                    stories.length > 0 || page.pagination.more ? (
+                        <StoryFeed
+                            hiddenStoryCount={hiddenStoryCount}
+                            onHnAction={onHnAction}
+                            onSave={onSave}
+                            onShare={onShare}
+                            onStoryView={onStoryView}
+                            onVote={onVote}
+                            page={page}
+                            pendingVoteStoryIds={pendingVoteStoryIds}
+                            readState={readState}
+                            savedStoryIds={savedStoryIds}
+                            sharedStoryId={sharedStoryId}
+                            stories={stories}
+                        />
+                    ) : (
+                        <ProfileEmptyState title="No upvoted posts" />
+                    )
+                ) : null}
+                {activeTab === 'upvotedComments' ? (
+                    <ProfileCommentsList
+                        comments={comments}
+                        onHnAction={onHnAction}
+                    />
+                ) : null}
+                {activeTab === 'favoriteComments' ? (
+                    <ProfileCommentsList
+                        comments={comments}
+                        onHnAction={onHnAction}
+                    />
+                ) : null}
+                {activeTab === 'account' && profile.accountForm ? (
+                    <ProfileAccountForm form={profile.accountForm} />
+                ) : null}
             </div>
             <ProfileSummaryCard apiUser={apiUser} profile={profile} />
         </section>
+    );
+}
+
+function profileMoreLinks(profile: ParsedProfile): ProfileMoreLink[] {
+    return [
+        {
+            href: profile.links.upvotedSubmissions,
+            label: 'Upvoted posts',
+        },
+        {
+            href: profile.links.upvotedComments,
+            label: 'Upvoted comments',
+        },
+        {
+            href: profile.links.favoriteComments,
+            label: 'Favorite comments',
+        },
+    ];
+}
+
+function isMoreTab(tab: ProfileVisibleTab): boolean {
+    return (
+        tab === 'upvotedPosts' ||
+        tab === 'upvotedComments' ||
+        tab === 'favoriteComments'
+    );
+}
+
+function ProfileAccountForm({ form }: { form: ParsedProfileAccountForm }) {
+    const [about, setAbout] = useState(form.about?.value ?? '');
+    const [email, setEmail] = useState(form.email?.value ?? '');
+    const [showDead, setShowDead] = useState(form.showDead?.value ?? 'no');
+    const [noProcrast, setNoProcrast] = useState(
+        form.noProcrast?.value ?? 'no',
+    );
+    const [maxVisit, setMaxVisit] = useState(form.maxVisit?.value ?? '');
+    const [minAway, setMinAway] = useState(form.minAway?.value ?? '');
+    const [delay, setDelay] = useState(form.delay?.value ?? '');
+    const showVisitLimits = noProcrast === 'yes';
+
+    return (
+        <form
+            action={form.action}
+            className="redhn-profile-account"
+            method={form.method}
+        >
+            {Object.entries(form.hiddenFields).map(([name, value]) => (
+                <input key={name} name={name} type="hidden" value={value} />
+            ))}
+            {form.about ? (
+                <ProfileAccountTextArea
+                    field={form.about}
+                    helper="public bio. HN formatting works here."
+                    label="About"
+                    onChange={setAbout}
+                    value={about}
+                />
+            ) : null}
+            {form.links.formatDoc ? (
+                <a
+                    className="redhn-profile-account__help-link"
+                    href={form.links.formatDoc}
+                >
+                    Formatting help
+                </a>
+            ) : null}
+            {form.email ? (
+                <ProfileAccountInput
+                    field={form.email}
+                    helper="private. only HN admins can see it."
+                    label="Email"
+                    onChange={setEmail}
+                    type="email"
+                    value={email}
+                />
+            ) : null}
+            {form.links.changePassword ? (
+                <a
+                    className="redhn-profile-account__utility-link"
+                    href={form.links.changePassword}
+                >
+                    Change password
+                </a>
+            ) : null}
+            <section
+                className="redhn-profile-account__group"
+                aria-label="Display settings"
+            >
+                {form.showDead ? (
+                    <ProfileAccountSelect
+                        field={form.showDead}
+                        helper="show dead posts and comments."
+                        label="Showdead"
+                        onChange={setShowDead}
+                        value={showDead}
+                    />
+                ) : null}
+                {form.delay ? (
+                    <ProfileAccountInput
+                        field={form.delay}
+                        helper="delay your comments before they go live. max 10 minutes."
+                        label="Delay"
+                        max="10"
+                        min="0"
+                        onChange={setDelay}
+                        type="number"
+                        value={delay}
+                    />
+                ) : null}
+            </section>
+            <section
+                className="redhn-profile-account__group"
+                aria-label="Procrastination settings"
+            >
+                {form.noProcrast ? (
+                    <ProfileAccountSelect
+                        field={form.noProcrast}
+                        helper="turn on HN's time limit."
+                        label="Noprocrast"
+                        onChange={setNoProcrast}
+                        value={noProcrast}
+                    />
+                ) : null}
+                {showVisitLimits ? (
+                    <>
+                        {form.maxVisit ? (
+                            <ProfileAccountInput
+                                field={form.maxVisit}
+                                helper="minutes allowed per visit."
+                                label="Maxvisit"
+                                min="0"
+                                onChange={setMaxVisit}
+                                type="number"
+                                value={maxVisit}
+                            />
+                        ) : null}
+                        {form.minAway ? (
+                            <ProfileAccountInput
+                                field={form.minAway}
+                                helper="minutes away before HN lets you back."
+                                label="Minaway"
+                                min="0"
+                                onChange={setMinAway}
+                                type="number"
+                                value={minAway}
+                            />
+                        ) : null}
+                    </>
+                ) : (
+                    <>
+                        {form.maxVisit ? (
+                            <input
+                                name={form.maxVisit.name}
+                                type="hidden"
+                                value={maxVisit}
+                            />
+                        ) : null}
+                        {form.minAway ? (
+                            <input
+                                name={form.minAway.name}
+                                type="hidden"
+                                value={minAway}
+                            />
+                        ) : null}
+                    </>
+                )}
+            </section>
+            <div className="redhn-profile-account__footer">
+                <button
+                    className="redhn-button redhn-button--primary"
+                    type="submit"
+                >
+                    {form.submitLabel || 'Update'}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+function ProfileAccountInput({
+    field,
+    helper,
+    label,
+    max,
+    min,
+    onChange,
+    type = 'text',
+    value,
+}: {
+    field: ParsedProfileTextField;
+    helper: string;
+    label: string;
+    max?: string;
+    min?: string;
+    onChange: (value: string) => void;
+    type?: string;
+    value: string;
+}) {
+    return (
+        <label className="redhn-profile-account__field">
+            <span>{label}</span>
+            <input
+                max={max}
+                min={min}
+                name={field.name}
+                onChange={(event) => {
+                    onChange(event.currentTarget.value);
+                }}
+                type={type}
+                value={value}
+            />
+            <small>{helper}</small>
+        </label>
+    );
+}
+
+function ProfileAccountTextArea({
+    field,
+    helper,
+    label,
+    onChange,
+    value,
+}: {
+    field: ParsedProfileTextField;
+    helper: string;
+    label: string;
+    onChange: (value: string) => void;
+    value: string;
+}) {
+    return (
+        <label className="redhn-profile-account__field redhn-profile-account__field--wide">
+            <span>{label}</span>
+            <textarea
+                name={field.name}
+                onChange={(event) => {
+                    onChange(event.currentTarget.value);
+                }}
+                rows={7}
+                value={value}
+            />
+            <small>{helper}</small>
+        </label>
+    );
+}
+
+function ProfileAccountSelect({
+    field,
+    helper,
+    label,
+    onChange,
+    value,
+}: {
+    field: ParsedProfileSelectField;
+    helper: string;
+    label: string;
+    onChange: (value: string) => void;
+    value: string;
+}) {
+    return (
+        <label className="redhn-profile-account__field">
+            <span>{label}</span>
+            <select
+                name={field.name}
+                onChange={(event) => {
+                    onChange(event.currentTarget.value);
+                }}
+                value={value}
+            >
+                {field.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
+            <small>{helper}</small>
+        </label>
     );
 }
 

@@ -6,6 +6,7 @@ import type {
     ParsedPage,
     ParsedPagination,
     ParsedProfile,
+    ParsedProfileSelectField,
     ParsedProfileTab,
     ParsedStory,
     ParsedSubmitPage,
@@ -447,6 +448,7 @@ function parseProfile(
     const karmaCell = karmaRow?.children.item(1);
     const aboutCell = aboutRow?.children.item(1) as HTMLElement | null;
     const id = text(userCell?.querySelector('.hnuser')) || route.id;
+    const accountForm = parseProfileAccountForm(document, sourceUrl);
 
     return {
         id,
@@ -454,10 +456,159 @@ function parseProfile(
         createdAt: toNumber(userCell?.getAttribute('timestamp')),
         created: text(createdCell) || undefined,
         karma: toNumber(text(karmaCell)),
-        about: text(aboutCell) || undefined,
-        aboutHtml: aboutCell?.innerHTML.trim() || undefined,
+        about: accountForm?.about?.value || text(aboutCell) || undefined,
+        aboutHtml: accountForm
+            ? undefined
+            : aboutCell?.innerHTML.trim() || undefined,
         links: profileLinks(id, sourceUrl),
+        accountForm,
     };
+}
+
+function parseProfileAccountForm(
+    document: Document,
+    sourceUrl: string,
+): ParsedProfile['accountForm'] {
+    const form = Array.from(
+        document.querySelectorAll<HTMLFormElement>('form'),
+    ).find((candidate) => isProfileAccountForm(candidate));
+
+    if (!form) {
+        return undefined;
+    }
+
+    const about = findNamedControl<HTMLTextAreaElement>(
+        form,
+        'textarea',
+        'about',
+    );
+    const email = findNamedControl<HTMLInputElement>(form, 'input', 'email');
+    const showDead = findNamedControl<HTMLSelectElement>(
+        form,
+        'select',
+        'showd',
+    );
+    const noProcrast = findNamedControl<HTMLSelectElement>(
+        form,
+        'select',
+        'nopro',
+    );
+    const maxVisit = findNamedControl<HTMLInputElement>(form, 'input', 'maxv');
+    const minAway = findNamedControl<HTMLInputElement>(form, 'input', 'mina');
+    const delay = findNamedControl<HTMLInputElement>(form, 'input', 'delay');
+    const submit = form.querySelector<HTMLInputElement>('input[type="submit"]');
+
+    return {
+        action: absoluteUrl(
+            form.getAttribute('action') || sourceUrl,
+            sourceUrl,
+        ),
+        method: (form.getAttribute('method') || 'get').toLowerCase(),
+        hiddenFields: parseHiddenFields(form),
+        submitLabel: submit?.value || undefined,
+        about: about?.name
+            ? { name: about.name, value: about.value }
+            : undefined,
+        email: email?.name
+            ? { name: email.name, value: email.value }
+            : undefined,
+        showDead: parseProfileSelectField(showDead),
+        noProcrast: parseProfileSelectField(noProcrast),
+        maxVisit: maxVisit?.name
+            ? { name: maxVisit.name, value: maxVisit.value }
+            : undefined,
+        minAway: minAway?.name
+            ? { name: minAway.name, value: minAway.value }
+            : undefined,
+        delay: delay?.name
+            ? { name: delay.name, value: delay.value }
+            : undefined,
+        links: parseProfileAccountLinks(form, sourceUrl),
+    };
+}
+
+function isProfileAccountForm(form: HTMLFormElement): boolean {
+    const action = form.getAttribute('action') ?? '';
+    return (
+        form.classList.contains('profileform') ||
+        action.includes('/xuser') ||
+        (form.querySelector('textarea[name="about"]') !== null &&
+            form.querySelector('input[name="email"]') !== null)
+    );
+}
+
+function parseProfileSelectField(
+    select: HTMLSelectElement | undefined,
+): ParsedProfileSelectField | undefined {
+    if (!select?.name) {
+        return undefined;
+    }
+
+    const options = Array.from(select.querySelectorAll('option')).map(
+        (option) => ({
+            value: option.getAttribute('value') ?? text(option),
+            label: text(option),
+        }),
+    );
+    const selected = Array.from(select.querySelectorAll('option')).find(
+        (option) => option.hasAttribute('selected'),
+    );
+
+    return {
+        name: select.name,
+        value:
+            selected?.getAttribute('value') ??
+            (selected ? text(selected) : select.value),
+        options,
+    };
+}
+
+function parseProfileAccountLinks(
+    form: HTMLFormElement,
+    sourceUrl: string,
+): NonNullable<ParsedProfile['accountForm']>['links'] {
+    const links = Array.from(form.querySelectorAll<HTMLAnchorElement>('a'));
+
+    return {
+        changePassword: href(
+            findLinkByExactText(links, 'change password'),
+            sourceUrl,
+        ),
+        submitted: href(findLinkByExactText(links, 'submissions'), sourceUrl),
+        comments: href(findLinkByExactText(links, 'comments'), sourceUrl),
+        upvotedSubmissions: href(
+            findProfileLinkByPath(links, sourceUrl, '/upvoted', false),
+            sourceUrl,
+        ),
+        upvotedComments: href(
+            findProfileLinkByPath(links, sourceUrl, '/upvoted', true),
+            sourceUrl,
+        ),
+        favoriteSubmissions: href(
+            findProfileLinkByPath(links, sourceUrl, '/favorites', false),
+            sourceUrl,
+        ),
+        favoriteComments: href(
+            findProfileLinkByPath(links, sourceUrl, '/favorites', true),
+            sourceUrl,
+        ),
+        formatDoc: href(findLinkByExactText(links, 'help'), sourceUrl),
+    };
+}
+
+function findProfileLinkByPath(
+    links: HTMLAnchorElement[],
+    sourceUrl: string,
+    pathname: string,
+    comments: boolean,
+): HTMLAnchorElement | undefined {
+    return links.find((link) => {
+        const url = safeUrl(link.getAttribute('href') ?? '', sourceUrl);
+        return (
+            url?.pathname === pathname &&
+            (url.searchParams.get('comments') === 't') === comments
+        );
+    });
 }
 
 function parseProfileRoute(
@@ -471,6 +622,23 @@ function parseProfileRoute(
     const id = url.searchParams.get('id')?.trim();
     if (!id) {
         return undefined;
+    }
+
+    if (url.pathname === '/upvoted') {
+        return {
+            id,
+            tab:
+                url.searchParams.get('comments') === 't'
+                    ? 'upvotedComments'
+                    : 'upvotedPosts',
+        };
+    }
+
+    if (
+        url.pathname === '/favorites' &&
+        url.searchParams.get('comments') === 't'
+    ) {
+        return { id, tab: 'favoriteComments' };
     }
 
     const tabByPath: Record<string, ParsedProfileTab | undefined> = {
@@ -499,6 +667,15 @@ function profileLinks(id: string, sourceUrl: string): ParsedProfile['links'] {
         submitted: absoluteUrl(`submitted?id=${encodedId}`, sourceUrl),
         comments: absoluteUrl(`threads?id=${encodedId}`, sourceUrl),
         favorites: absoluteUrl(`favorites?id=${encodedId}`, sourceUrl),
+        upvotedSubmissions: absoluteUrl(`upvoted?id=${encodedId}`, sourceUrl),
+        upvotedComments: absoluteUrl(
+            `upvoted?id=${encodedId}&comments=t`,
+            sourceUrl,
+        ),
+        favoriteComments: absoluteUrl(
+            `favorites?id=${encodedId}&comments=t`,
+            sourceUrl,
+        ),
     };
 }
 

@@ -204,7 +204,191 @@ describe('HN DOM parser', () => {
         expect(page.profile?.links.comments).toBe(
             'https://news.ycombinator.com/threads?id=PinkG',
         );
+        expect(page.profile?.accountForm).toBeUndefined();
     });
+
+    it('parses editable HN account settings from an own profile page', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <span class="pagetop">
+                        <a id="me" href="user?id=fanjinz">fanjinz</a>
+                    </span>
+                    <form class="profileform" action="/xuser" method="post">
+                        <input type="hidden" name="id" value="fanjinz">
+                        <input type="hidden" name="hmac" value="abc123">
+                        <table>
+                            <tbody>
+                                <tr class="athing">
+                                    <td valign="top">user:</td>
+                                    <td timestamp="1779000583">
+                                        <a href="user?id=fanjinz" class="hnuser">fanjinz</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">created:</td>
+                                    <td><span class="age">16 days ago</span></td>
+                                </tr>
+                                <tr><td valign="top">karma:</td><td>1</td></tr>
+                                <tr>
+                                    <td valign="top">about:</td>
+                                    <td>
+                                        <textarea name="about" rows="5" cols="60">Building RedHN.</textarea>
+                                        <a href="formatdoc">help</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">email:</td>
+                                    <td><input type="text" name="email" value="fj.zeng@yahoo.com"></td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">showdead:</td>
+                                    <td>
+                                        <select name="showd">
+                                            <option>yes</option>
+                                            <option selected="t">no</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">noprocrast:</td>
+                                    <td>
+                                        <select name="nopro">
+                                            <option>yes</option>
+                                            <option selected="t">no</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr><td valign="top">maxvisit:</td><td><input type="text" name="maxv" value="20"></td></tr>
+                                <tr><td valign="top">minaway:</td><td><input type="text" name="mina" value="180"></td></tr>
+                                <tr><td valign="top">delay:</td><td><input type="text" name="delay" value="0"></td></tr>
+                                <tr><td></td><td><a href="changepw">change password</a></td></tr>
+                                <tr><td></td><td><a href="submitted?id=fanjinz">submissions</a></td></tr>
+                                <tr><td></td><td><a href="threads?id=fanjinz">comments</a></td></tr>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <a href="upvoted?id=fanjinz">upvoted submissions</a>
+                                        /
+                                        <a href="upvoted?id=fanjinz&amp;comments=t">comments</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <a href="favorites?id=fanjinz">favorite submissions</a>
+                                        /
+                                        <a href="favorites?id=fanjinz&amp;comments=t">comments</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <input type="submit" value="update">
+                    </form>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/user?id=fanjinz',
+        );
+
+        expect(page.kind).toBe('profile');
+        expect(page.profile).toMatchObject({
+            id: 'fanjinz',
+            tab: 'overview',
+            createdAt: 1779000583,
+            about: 'Building RedHN.',
+            aboutHtml: undefined,
+            accountForm: {
+                action: 'https://news.ycombinator.com/xuser',
+                method: 'post',
+                hiddenFields: {
+                    id: 'fanjinz',
+                    hmac: 'abc123',
+                },
+                submitLabel: 'update',
+                about: { name: 'about', value: 'Building RedHN.' },
+                email: { name: 'email', value: 'fj.zeng@yahoo.com' },
+                showDead: { name: 'showd', value: 'no' },
+                noProcrast: { name: 'nopro', value: 'no' },
+                maxVisit: { name: 'maxv', value: '20' },
+                minAway: { name: 'mina', value: '180' },
+                delay: { name: 'delay', value: '0' },
+            },
+        });
+        expect(page.profile?.accountForm?.showDead?.options).toEqual([
+            { value: 'yes', label: 'yes' },
+            { value: 'no', label: 'no' },
+        ]);
+        expect(page.profile?.accountForm?.links).toMatchObject({
+            changePassword: 'https://news.ycombinator.com/changepw',
+            submitted: 'https://news.ycombinator.com/submitted?id=fanjinz',
+            comments: 'https://news.ycombinator.com/threads?id=fanjinz',
+            upvotedSubmissions:
+                'https://news.ycombinator.com/upvoted?id=fanjinz',
+            upvotedComments:
+                'https://news.ycombinator.com/upvoted?id=fanjinz&comments=t',
+            favoriteSubmissions:
+                'https://news.ycombinator.com/favorites?id=fanjinz',
+            favoriteComments:
+                'https://news.ycombinator.com/favorites?id=fanjinz&comments=t',
+            formatDoc: 'https://news.ycombinator.com/formatdoc',
+        });
+    });
+
+    it.each([
+        {
+            url: 'https://news.ycombinator.com/upvoted?id=fanjinz',
+            tab: 'upvotedPosts',
+        },
+        {
+            url: 'https://news.ycombinator.com/upvoted?id=fanjinz&comments=t',
+            tab: 'upvotedComments',
+        },
+        {
+            url: 'https://news.ycombinator.com/favorites?id=fanjinz&comments=t',
+            tab: 'favoriteComments',
+        },
+    ] as const)(
+        'keeps extra profile routes in the profile shell: $tab',
+        ({ url, tab }) => {
+            const document = parseHTML(`
+            <html>
+                <body>
+                    <span class="pagetop">
+                        <a id="me" href="user?id=fanjinz">fanjinz</a>
+                    </span>
+                </body>
+            </html>
+        `).document;
+
+            const page = parseHnPage(document, url);
+
+            expect(page.kind).toBe('profile');
+            expect(page.profile).toMatchObject({
+                id: 'fanjinz',
+                tab,
+                links: {
+                    profile: 'https://news.ycombinator.com/user?id=fanjinz',
+                    submitted:
+                        'https://news.ycombinator.com/submitted?id=fanjinz',
+                    comments: 'https://news.ycombinator.com/threads?id=fanjinz',
+                    favorites:
+                        'https://news.ycombinator.com/favorites?id=fanjinz',
+                    upvotedSubmissions:
+                        'https://news.ycombinator.com/upvoted?id=fanjinz',
+                    upvotedComments:
+                        'https://news.ycombinator.com/upvoted?id=fanjinz&comments=t',
+                    favoriteComments:
+                        'https://news.ycombinator.com/favorites?id=fanjinz&comments=t',
+                },
+            });
+            expect(page.currentUser?.id).toBe('fanjinz');
+            expect(isRedhnSupportedPage(page)).toBe(true);
+        },
+    );
 
     it('parses login pages for RedHN auth rendering', () => {
         const document = parseHTML(`

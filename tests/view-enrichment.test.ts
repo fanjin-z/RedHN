@@ -36,6 +36,11 @@ function profile(patch: Partial<ParsedProfile> = {}): ParsedProfile {
             submitted: 'https://news.ycombinator.com/submitted?id=PinkG',
             comments: 'https://news.ycombinator.com/threads?id=PinkG',
             favorites: 'https://news.ycombinator.com/favorites?id=PinkG',
+            upvotedSubmissions: 'https://news.ycombinator.com/upvoted?id=PinkG',
+            upvotedComments:
+                'https://news.ycombinator.com/upvoted?id=PinkG&comments=t',
+            favoriteComments:
+                'https://news.ycombinator.com/favorites?id=PinkG&comments=t',
         },
         ...patch,
     };

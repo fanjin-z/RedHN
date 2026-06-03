@@ -1216,12 +1216,18 @@
 }
 
 .redhn-profile-tabs__item {
+    appearance: none;
+    border: 0;
     border-radius: 9999px;
+    background: transparent;
     color: var(--redhn-text);
+    cursor: pointer;
+    font-family: var(--redhn-font-sans);
     font-size: calc(var(--redhn-type-body-size) * 1.071429);
     font-weight: 800;
     line-height: calc(var(--redhn-type-body-size) * 1.5);
     padding: 11px 18px;
+    text-align: center;
     text-decoration: none;
 }
 
@@ -1231,6 +1237,50 @@
         var(--redhn-surface-muted) 82%,
         var(--redhn-text-muted) 18%
     );
+}
+
+.redhn-profile-tabs__item--more {
+    display: inline-flex;
+    gap: 7px;
+    align-items: center;
+}
+
+.redhn-profile-tabs__item--more svg {
+    width: 16px;
+    height: 16px;
+}
+
+.redhn-profile-tabs__more {
+    position: relative;
+}
+
+.redhn-profile-tabs__more-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 20;
+    display: grid;
+    min-width: 190px;
+    border: 1px solid var(--redhn-outline);
+    border-radius: var(--redhn-radius-lg);
+    background: var(--redhn-surface-card);
+    padding: 6px;
+    box-shadow: 0 16px 40px rgb(0 0 0 / 16%);
+}
+
+.redhn-profile-tabs__more-menu a {
+    border-radius: var(--redhn-radius);
+    color: var(--redhn-text);
+    font-size: var(--redhn-type-ui-size);
+    font-weight: 750;
+    line-height: var(--redhn-type-ui-line-height);
+    padding: 9px 11px;
+    text-decoration: none;
+}
+
+.redhn-profile-tabs__more-menu a:hover,
+.redhn-profile-tabs__more-menu a:focus {
+    background: var(--redhn-surface-muted);
 }
 
 .redhn-profile-card {
@@ -1373,6 +1423,106 @@
 
 .redhn-profile-empty p {
     margin: 0;
+}
+
+.redhn-profile-account {
+    display: grid;
+    gap: 18px;
+    max-width: 760px;
+    padding: 22px 0 48px;
+}
+
+.redhn-profile-account__group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    border-top: 1px solid var(--redhn-outline);
+    padding-top: 18px;
+}
+
+.redhn-profile-account__field {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+
+.redhn-profile-account__field--wide {
+    grid-column: 1 / -1;
+}
+
+.redhn-profile-account__field > span {
+    color: var(--redhn-text);
+    font-size: var(--redhn-type-ui-size);
+    font-weight: 800;
+    line-height: var(--redhn-type-ui-line-height);
+}
+
+.redhn-profile-account__field input,
+.redhn-profile-account__field select,
+.redhn-profile-account__field textarea {
+    width: 100%;
+    border: 1px solid var(--redhn-outline-strong);
+    border-radius: var(--redhn-radius-lg);
+    background: color-mix(
+        in srgb,
+        var(--redhn-surface-card) 88%,
+        var(--redhn-surface-muted) 12%
+    );
+    color: var(--redhn-text);
+    font-family: var(--redhn-font-sans);
+    font-size: var(--redhn-type-ui-size);
+    font-weight: 600;
+    line-height: var(--redhn-type-ui-line-height);
+    outline: 0;
+}
+
+.redhn-profile-account__field input,
+.redhn-profile-account__field select {
+    min-height: 44px;
+    padding: 0 14px;
+}
+
+.redhn-profile-account__field textarea {
+    min-height: 148px;
+    padding: 12px 14px;
+    resize: vertical;
+}
+
+.redhn-profile-account__field input:focus,
+.redhn-profile-account__field select:focus,
+.redhn-profile-account__field textarea:focus {
+    border-color: color-mix(in srgb, var(--redhn-primary-hot) 72%, #ffffff);
+    box-shadow: 0 0 0 3px rgb(255 69 0 / 16%);
+}
+
+.redhn-profile-account__field small {
+    color: var(--redhn-text-muted);
+    font-size: var(--redhn-type-small-size);
+    font-weight: 600;
+    line-height: var(--redhn-type-small-line-height);
+}
+
+.redhn-profile-account__help-link {
+    justify-self: start;
+    color: var(--redhn-text-muted);
+    font-size: var(--redhn-type-small-size);
+    font-weight: 800;
+    line-height: var(--redhn-type-small-line-height);
+}
+
+.redhn-profile-account__utility-link {
+    justify-self: start;
+    color: var(--redhn-text);
+    font-size: var(--redhn-type-ui-size);
+    font-weight: 800;
+    line-height: var(--redhn-type-ui-line-height);
+}
+
+.redhn-profile-account__footer {
+    display: flex;
+    justify-content: flex-start;
+    border-top: 1px solid var(--redhn-outline);
+    padding-top: 18px;
 }
 
 .redhn-feed {
@@ -3020,9 +3170,19 @@
         padding: 9px 12px;
     }
 
+    .redhn-profile-tabs__more-menu {
+        position: static;
+        min-width: min(100vw - 48px, 220px);
+        margin-top: 4px;
+    }
+
     .redhn-profile-card,
     .redhn-profile-activity {
         padding: 16px;
+    }
+
+    .redhn-profile-account__group {
+        grid-template-columns: 1fr;
     }
 
     .redhn-story__title {

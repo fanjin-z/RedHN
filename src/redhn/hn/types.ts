@@ -6,7 +6,14 @@ export type ParsedPageKind =
     | 'submit'
     | 'unknown';
 
-export type ParsedProfileTab = 'overview' | 'posts' | 'comments' | 'favorites';
+export type ParsedProfileTab =
+    | 'overview'
+    | 'posts'
+    | 'comments'
+    | 'favorites'
+    | 'upvotedPosts'
+    | 'upvotedComments'
+    | 'favoriteComments';
 
 export type ParsedAuthMode = 'login' | 'signup';
 
@@ -64,6 +71,46 @@ export type ParsedCurrentUser = {
     logoutUrl?: string;
 };
 
+export type ParsedProfileSelectOption = {
+    value: string;
+    label: string;
+};
+
+export type ParsedProfileSelectField = {
+    name: string;
+    value: string;
+    options: ParsedProfileSelectOption[];
+};
+
+export type ParsedProfileTextField = {
+    name: string;
+    value: string;
+};
+
+export type ParsedProfileAccountForm = {
+    action: string;
+    method: string;
+    hiddenFields: Record<string, string>;
+    submitLabel?: string;
+    about?: ParsedProfileTextField;
+    email?: ParsedProfileTextField;
+    showDead?: ParsedProfileSelectField;
+    noProcrast?: ParsedProfileSelectField;
+    maxVisit?: ParsedProfileTextField;
+    minAway?: ParsedProfileTextField;
+    delay?: ParsedProfileTextField;
+    links: {
+        changePassword?: string;
+        submitted?: string;
+        comments?: string;
+        upvotedSubmissions?: string;
+        upvotedComments?: string;
+        favoriteSubmissions?: string;
+        favoriteComments?: string;
+        formatDoc?: string;
+    };
+};
+
 export type ParsedProfile = {
     id: string;
     tab: ParsedProfileTab;
@@ -77,7 +124,11 @@ export type ParsedProfile = {
         submitted: string;
         comments: string;
         favorites: string;
+        upvotedSubmissions: string;
+        upvotedComments: string;
+        favoriteComments: string;
     };
+    accountForm?: ParsedProfileAccountForm;
 };
 
 export type ParsedAuthForm = {

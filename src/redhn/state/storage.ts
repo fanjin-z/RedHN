@@ -33,13 +33,6 @@ export const filtersItem = storage.defineItem<RedhnFilters>(
     },
 );
 
-export const savedStoryIdsItem = storage.defineItem<number[]>(
-    'local:redhn.savedStoryIds',
-    {
-        fallback: [],
-    },
-);
-
 export const currentUserItem = storage.defineItem<CachedCurrentUser | null>(
     'local:redhn.currentUser',
     {

@@ -37,10 +37,8 @@ type ProfilePageProps = {
     comments: ParsedComment[];
     hiddenStoryCount: number;
     readState: RedhnReadState;
-    savedStoryIds: Set<number>;
     sharedStoryId?: number;
     pendingVoteStoryIds: Set<number>;
-    onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
@@ -75,10 +73,8 @@ export function ProfilePage({
     comments,
     hiddenStoryCount,
     readState,
-    savedStoryIds,
     sharedStoryId,
     pendingVoteStoryIds,
-    onSave,
     onShare,
     onStoryView,
     onHnAction,
@@ -208,14 +204,12 @@ export function ProfilePage({
                         <StoryFeed
                             hiddenStoryCount={hiddenStoryCount}
                             onHnAction={onHnAction}
-                            onSave={onSave}
                             onShare={onShare}
                             onStoryView={onStoryView}
                             onVote={onVote}
                             page={page}
                             pendingVoteStoryIds={pendingVoteStoryIds}
                             readState={readState}
-                            savedStoryIds={savedStoryIds}
                             sharedStoryId={sharedStoryId}
                             stories={stories}
                         />
@@ -234,14 +228,12 @@ export function ProfilePage({
                         <StoryFeed
                             hiddenStoryCount={hiddenStoryCount}
                             onHnAction={onHnAction}
-                            onSave={onSave}
                             onShare={onShare}
                             onStoryView={onStoryView}
                             onVote={onVote}
                             page={page}
                             pendingVoteStoryIds={pendingVoteStoryIds}
                             readState={readState}
-                            savedStoryIds={savedStoryIds}
                             sharedStoryId={sharedStoryId}
                             stories={stories}
                         />
@@ -254,14 +246,12 @@ export function ProfilePage({
                         <StoryFeed
                             hiddenStoryCount={hiddenStoryCount}
                             onHnAction={onHnAction}
-                            onSave={onSave}
                             onShare={onShare}
                             onStoryView={onStoryView}
                             onVote={onVote}
                             page={page}
                             pendingVoteStoryIds={pendingVoteStoryIds}
                             readState={readState}
-                            savedStoryIds={savedStoryIds}
                             sharedStoryId={sharedStoryId}
                             stories={stories}
                         />

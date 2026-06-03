@@ -25,7 +25,6 @@ including:
 
 - Theme, font size, line height, and page width preferences.
 - Read/viewed story state.
-- Saved story IDs.
 - Muted keywords, muted domains, and muted topics.
 - A short-lived cache of public Hacker News API item and user responses.
 

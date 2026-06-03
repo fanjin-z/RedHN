@@ -43,7 +43,6 @@ import {
     filtersItem,
     preferencesItem,
     readStateItem,
-    savedStoryIdsItem,
 } from './state/storage';
 import {
     resolveCurrentUserForPage,
@@ -77,7 +76,6 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     const [readState, setReadState] =
         useState<RedhnReadState>(defaultReadState);
     const [stateLoaded, setStateLoaded] = useState(false);
-    const [savedStoryIds, setSavedStoryIds] = useState(() => new Set<number>());
     const [sharedStoryId, setSharedStoryId] = useState<number>();
     const [storyVoteOverrides, setStoryVoteOverrides] = useState<
         Record<number, StoryVoteOverride>
@@ -182,19 +180,6 @@ export default function RedhnApp({ page }: RedhnAppProps) {
         setPreferences((current) => {
             const next = normalizePreferences({ ...current, ...patch });
             void preferencesItem.setValue(next);
-            return next;
-        });
-    };
-
-    const toggleSavedStory = (storyId: number) => {
-        setSavedStoryIds((current) => {
-            const next = new Set(current);
-            if (next.has(storyId)) {
-                next.delete(storyId);
-            } else {
-                next.add(storyId);
-            }
-            void savedStoryIdsItem.setValue(Array.from(next));
             return next;
         });
     };
@@ -334,20 +319,16 @@ export default function RedhnApp({ page }: RedhnAppProps) {
             preferencesItem.getValue(),
             filtersItem.getValue(),
             readStateItem.getValue(),
-            savedStoryIdsItem.getValue(),
-        ]).then(
-            ([storedPreferences, storedFilters, storedReadState, savedIds]) => {
-                if (!active) {
-                    return;
-                }
+        ]).then(([storedPreferences, storedFilters, storedReadState]) => {
+            if (!active) {
+                return;
+            }
 
-                setPreferences(normalizePreferences(storedPreferences));
-                setFilters(normalizeFilters(storedFilters));
-                setReadState(storedReadState);
-                setSavedStoryIds(new Set(savedIds));
-                setStateLoaded(true);
-            },
-        );
+            setPreferences(normalizePreferences(storedPreferences));
+            setFilters(normalizeFilters(storedFilters));
+            setReadState(storedReadState);
+            setStateLoaded(true);
+        });
 
         return () => {
             active = false;
@@ -503,7 +484,6 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                     comments={page.comments}
                     hiddenStoryCount={hiddenStoryCount}
                     onHnAction={runHnAction}
-                    onSave={toggleSavedStory}
                     onShare={shareStory}
                     onStoryView={markViewed}
                     onVote={runStoryVote}
@@ -513,7 +493,6 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                     page={page}
                     profile={enrichedProfile}
                     readState={readState}
-                    savedStoryIds={savedStoryIds}
                     sharedStoryId={sharedStoryId}
                     stories={enrichedStories}
                 />
@@ -537,14 +516,12 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                 <StoryFeed
                     hiddenStoryCount={hiddenStoryCount}
                     onHnAction={runHnAction}
-                    onSave={toggleSavedStory}
                     onShare={shareStory}
                     onStoryView={markViewed}
                     onVote={runStoryVote}
                     page={page}
                     pendingVoteStoryIds={pendingVoteStoryIds}
                     readState={readState}
-                    savedStoryIds={savedStoryIds}
                     sharedStoryId={sharedStoryId}
                     stories={enrichedStories}
                 />

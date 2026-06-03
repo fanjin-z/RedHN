@@ -20,7 +20,6 @@ and information density.
 - Reddit-style story cards for easier scanning.
 - Cleaner nested comment threads with visual guides.
 - Collapse individual threads or hide replies after a chosen depth.
-- Save stories locally for later.
 - Mute keywords, domains, and topics.
 - Adjust theme, font size, line height, density, and content width.
 - Reply, vote, hide, and favorite through Hacker News' own links and forms.

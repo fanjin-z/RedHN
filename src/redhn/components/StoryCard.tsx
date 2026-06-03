@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
     ArrowFatUpIcon,
-    BookmarkSimpleIcon,
     ChatCircleIcon,
     DotsThreeIcon,
     EyeSlashIcon,
@@ -15,11 +14,9 @@ import { userInitials } from './UserAvatar';
 
 type StoryCardProps = {
     story: ParsedStory;
-    isSaved: boolean;
     isShared: boolean;
     isViewed: boolean;
     isVotePending: boolean;
-    onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
@@ -28,11 +25,9 @@ type StoryCardProps = {
 
 export function StoryCard({
     story,
-    isSaved,
     isShared,
     isViewed,
     isVotePending,
-    onSave,
     onShare,
     onStoryView,
     onHnAction,
@@ -101,40 +96,26 @@ export function StoryCard({
                             </>
                         ) : null}
                     </div>
-                    <details
-                        className="redhn-story__menu"
-                        open={menuOpen}
-                        ref={menuRef}
-                    >
-                        <summary
-                            aria-label="More story actions"
-                            onClick={(event) => {
-                                event.preventDefault();
-                                setMenuOpen((current) => !current);
-                            }}
+                    {story.actions.hide ? (
+                        <details
+                            className="redhn-story__menu"
+                            open={menuOpen}
+                            ref={menuRef}
                         >
-                            <DotsThreeIcon
-                                aria-hidden="true"
-                                className="redhn-story__menu-icon"
-                                weight="bold"
-                            />
-                        </summary>
-                        <div className="redhn-story__menu-panel">
-                            <button
-                                className="redhn-story__menu-item"
-                                onClick={() => {
-                                    onSave(story.id);
+                            <summary
+                                aria-label="More story actions"
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    setMenuOpen((current) => !current);
                                 }}
-                                type="button"
                             >
-                                <BookmarkSimpleIcon
+                                <DotsThreeIcon
                                     aria-hidden="true"
-                                    className="redhn-story__menu-item-icon"
-                                    weight={isSaved ? 'fill' : 'bold'}
+                                    className="redhn-story__menu-icon"
+                                    weight="bold"
                                 />
-                                {isSaved ? 'Saved' : 'Save'}
-                            </button>
-                            {story.actions.hide ? (
+                            </summary>
+                            <div className="redhn-story__menu-panel">
                                 <HnActionLink
                                     className="redhn-story__menu-item"
                                     href={story.actions.hide}
@@ -147,9 +128,9 @@ export function StoryCard({
                                     />
                                     Hide
                                 </HnActionLink>
-                            ) : null}
-                        </div>
-                    </details>
+                            </div>
+                        </details>
+                    ) : null}
                 </header>
                 <h2 className="redhn-story__title">{story.title}</h2>
                 <a

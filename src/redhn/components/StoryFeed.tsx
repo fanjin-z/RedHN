@@ -16,10 +16,8 @@ type StoryFeedProps = {
     stories: ParsedStory[];
     hiddenStoryCount: number;
     readState: RedhnReadState;
-    savedStoryIds: Set<number>;
     sharedStoryId?: number;
     pendingVoteStoryIds: Set<number>;
-    onSave: (storyId: number) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
@@ -31,10 +29,8 @@ export function StoryFeed({
     stories,
     hiddenStoryCount,
     readState,
-    savedStoryIds,
     sharedStoryId,
     pendingVoteStoryIds,
-    onSave,
     onShare,
     onStoryView,
     onHnAction,
@@ -50,12 +46,10 @@ export function StoryFeed({
             ) : null}
             {stories.map((story) => (
                 <StoryCard
-                    isSaved={savedStoryIds.has(story.id)}
                     isShared={sharedStoryId === story.id}
                     isViewed={readState.viewedStoryIds[story.id] !== undefined}
                     isVotePending={pendingVoteStoryIds.has(story.id)}
                     key={story.id}
-                    onSave={onSave}
                     onShare={onShare}
                     onStoryView={onStoryView}
                     onHnAction={onHnAction}

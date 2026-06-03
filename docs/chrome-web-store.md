@@ -5,8 +5,8 @@
 RedHN makes Hacker News easier to read.
 
 It gives Hacker News a clean, Reddit-style layout with story cards, better
-comment threads, easy collapsing, saved stories, muted topics, and comfortable
-reading settings.
+comment threads, easy collapsing, muted topics, and comfortable reading
+settings.
 
 Install RedHN if you read Hacker News often and want a calmer, faster way to
 scan stories and follow discussions.
@@ -20,10 +20,10 @@ Provide a Reddit-style reading interface for Hacker News.
 ### `storage`
 
 RedHN uses extension storage to save local user preferences and reading state,
-including theme, font size, line height, page width, read/viewed stories, saved
-stories, muted keywords, muted domains, muted topics, and a short-lived cache of
-public Hacker News API responses. This data stays in the browser's extension
-storage and is not sent to a RedHN server.
+including theme, font size, line height, page width, read/viewed stories, muted
+keywords, muted domains, muted topics, and a short-lived cache of public Hacker
+News API responses. This data stays in the browser's extension storage and is
+not sent to a RedHN server.
 
 ## Host Permission Justifications
 
@@ -61,5 +61,5 @@ News using Hacker News' own authenticated pages, links, and forms.
 No RedHN account or special setup is required. Install the extension, open
 `https://news.ycombinator.com/`, and the enhanced Reddit-style interface should
 load automatically. Core features to review include switching theme/settings,
-collapsing comment threads, saving stories, muting topics or domains, and
-opening Hacker News links.
+collapsing comment threads, muting topics or domains, and opening Hacker News
+links.

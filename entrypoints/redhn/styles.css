@@ -1666,7 +1666,7 @@
 .redhn-story__source-link {
     position: relative;
     z-index: 3;
-    display: block;
+    display: inline-block;
     max-width: 100%;
     margin-top: 6px;
     color: color-mix(in srgb, var(--redhn-text-muted) 82%, #5f84a2 18%);
@@ -1678,6 +1678,10 @@
     white-space: nowrap;
     text-decoration: none;
     pointer-events: auto;
+}
+
+.redhn-story__source-link:hover {
+    text-decoration: underline;
 }
 
 .redhn-story__title {

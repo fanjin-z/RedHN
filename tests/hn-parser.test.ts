@@ -84,6 +84,61 @@ describe('HN DOM parser', () => {
         });
     });
 
+    it('parses current HN feed story rows without following the sitebit link', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table>
+                        <tr class="athing submission" id="48371562">
+                            <td align="right" valign="top" class="title">
+                                <span class="rank">1.</span>
+                            </td>
+                            <td valign="top" class="votelinks">
+                                <center>
+                                    <a id="up_48371562" class="clicky" href="vote?id=48371562&amp;how=up&amp;auth=b32fad690572a311cdc37426fe5c687f80a2c14c&amp;goto=news">
+                                        <div class="votearrow" title="upvote"></div>
+                                    </a>
+                                </center>
+                            </td>
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="https://blog.ammaraskar.com/github-token-stealing/">1-Click GitHub Token Stealing via a VSCode Bug</a>
+                                    <span class="sitebit comhead">
+                                        (<a href="from?site=ammaraskar.com"><span class="sitestr">ammaraskar.com</span></a>)
+                                    </span>
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/news',
+            789,
+        );
+
+        expect(page.kind).toBe('feed');
+        expect(page.stories).toHaveLength(1);
+        expect(page.stories[0]).toMatchObject({
+            id: 48371562,
+            rank: 1,
+            title: '1-Click GitHub Token Stealing via a VSCode Bug',
+            url: 'https://blog.ammaraskar.com/github-token-stealing/',
+            hnUrl: 'https://news.ycombinator.com/item?id=48371562',
+            domain: 'ammaraskar.com',
+            commentCount: 0,
+        });
+        expect(page.stories[0].actions.upvote).toBe(
+            'https://news.ycombinator.com/vote?id=48371562&how=up&auth=b32fad690572a311cdc37426fe5c687f80a2c14c&goto=news',
+        );
+        expect(page.stories[0].actions.comments).toBe(
+            'https://news.ycombinator.com/item?id=48371562',
+        );
+    });
+
     it('parses an item page into a post and nested comment tree', () => {
         const page = parseHnPage(
             fixture('item.html'),

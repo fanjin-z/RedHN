@@ -155,6 +155,9 @@ export function StoryCard({
                 <a
                     className="redhn-story__source-link"
                     href={story.url}
+                    onClick={() => {
+                        onStoryView(story.id);
+                    }}
                     title={story.url}
                 >
                     {story.url || sourceLabel}

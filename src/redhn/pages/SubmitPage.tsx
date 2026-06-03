@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import {
     CaretDownIcon,
     CaretUpIcon,
@@ -14,6 +14,7 @@ import {
     prefixForSubmitSection,
     type SubmitSection,
 } from '../view/submit';
+import { useCloseOnOutsidePointer } from '../components/useCloseOnOutsidePointer';
 
 type SubmitPageProps = {
     submit: ParsedSubmitPage;
@@ -68,6 +69,13 @@ export function SubmitPage({ submit }: SubmitPageProps) {
     const hidesUrl = section === 'ask';
     const canSubmit = editableTitle.trim().length > 0;
     const rules = useMemo(() => rulesForSection(section), [section]);
+    const closeSectionMenu = useCallback(() => {
+        setSectionMenuOpen(false);
+    }, []);
+    const sectionMenuRef = useCloseOnOutsidePointer<HTMLDivElement>({
+        open: sectionMenuOpen,
+        onClose: closeSectionMenu,
+    });
 
     return (
         <div className="redhn-submit-page">
@@ -75,7 +83,7 @@ export function SubmitPage({ submit }: SubmitPageProps) {
                 <header className="redhn-submit-page__header">
                     <h1>Create post</h1>
                 </header>
-                <div className="redhn-submit-section">
+                <div className="redhn-submit-section" ref={sectionMenuRef}>
                     <button
                         aria-expanded={sectionMenuOpen}
                         aria-haspopup="listbox"

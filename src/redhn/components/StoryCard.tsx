@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import {
     ArrowFatUpIcon,
     BookmarkSimpleIcon,
@@ -8,6 +9,7 @@ import {
 import type { ParsedStory } from '../hn/types';
 import { formatNumber } from '../view/format';
 import { HnActionLink } from './HnActionLink';
+import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
 import { userInitials } from './UserAvatar';
 
 type StoryCardProps = {
@@ -40,6 +42,14 @@ export function StoryCard({
     const creditAuthor = story.author ?? 'unknown';
     const isUpvoted = Boolean(story.actions.unvote);
     const voteHref = story.actions.unvote ?? story.actions.upvote;
+    const [menuOpen, setMenuOpen] = useState(false);
+    const closeMenu = useCallback(() => {
+        setMenuOpen(false);
+    }, []);
+    const menuRef = useCloseOnOutsidePointer<HTMLDetailsElement>({
+        open: menuOpen,
+        onClose: closeMenu,
+    });
 
     return (
         <article
@@ -90,8 +100,18 @@ export function StoryCard({
                             </>
                         ) : null}
                     </div>
-                    <details className="redhn-story__menu">
-                        <summary aria-label="More story actions">
+                    <details
+                        className="redhn-story__menu"
+                        open={menuOpen}
+                        ref={menuRef}
+                    >
+                        <summary
+                            aria-label="More story actions"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                setMenuOpen((current) => !current);
+                            }}
+                        >
                             <DotsThreeIcon
                                 aria-hidden="true"
                                 className="redhn-story__menu-icon"

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     ArrowFatUpIcon,
     BookmarkSimpleIcon,
@@ -14,6 +14,7 @@ import { submitHnReply, type HnReplyResult } from '../hn/actions';
 import { formatNumber } from '../view/format';
 import { sanitizeHnHtml } from '../view/html';
 import { userInitials } from '../components/UserAvatar';
+import { useCloseOnOutsidePointer } from '../components/useCloseOnOutsidePointer';
 
 type PostPageProps = {
     post: ParsedStory;
@@ -51,6 +52,14 @@ export function PostPage({
     const postUrl = linkPreviewUrl(post);
     const postUrlLabel = postUrl ? displayUrl(postUrl) : undefined;
     const commentsHref = post.actions.comments ?? post.hnUrl;
+    const [postMenuOpen, setPostMenuOpen] = useState(false);
+    const closePostMenu = useCallback(() => {
+        setPostMenuOpen(false);
+    }, []);
+    const postMenuRef = useCloseOnOutsidePointer<HTMLDetailsElement>({
+        open: postMenuOpen,
+        onClose: closePostMenu,
+    });
 
     const toggleComment = (commentId: number) => {
         setCollapsedCommentIds((current) => {
@@ -116,8 +125,18 @@ export function PostPage({
                             <span>{post.age}</span>
                         </>
                     ) : null}
-                    <details className="redhn-post__menu redhn-story__menu">
-                        <summary aria-label="More post actions">
+                    <details
+                        className="redhn-post__menu redhn-story__menu"
+                        open={postMenuOpen}
+                        ref={postMenuRef}
+                    >
+                        <summary
+                            aria-label="More post actions"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                setPostMenuOpen((current) => !current);
+                            }}
+                        >
                             <DotsThreeIcon
                                 aria-hidden="true"
                                 className="redhn-story__menu-icon"

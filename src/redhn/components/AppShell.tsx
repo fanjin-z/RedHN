@@ -1,4 +1,9 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import {
+    useCallback,
+    useState,
+    type CSSProperties,
+    type ReactNode,
+} from 'react';
 import {
     BriefcaseIcon,
     CaretDownIcon,
@@ -29,6 +34,7 @@ import {
 import type { RedhnPreferences } from '../state/preferences';
 import { isActivePath, redhnSortOptions } from '../view/sortOptions';
 import { hnLoginUrl } from '../view/urls';
+import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
 import { UserAvatar } from './UserAvatar';
 
 type AppShellProps = {
@@ -92,6 +98,13 @@ export function AppShell({
 }: AppShellProps) {
     const sidebarSections = buildSidebarSections(sourceUrl);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const closeAccountMenu = useCallback(() => {
+        onMenuOpenChange(false);
+    }, [onMenuOpenChange]);
+    const accountMenuRef = useCloseOnOutsidePointer<HTMLDivElement>({
+        open: accountMenuOpen,
+        onClose: closeAccountMenu,
+    });
     const shellClassName = [
         'redhn-shell',
         `redhn-shell--${preferences.theme}`,
@@ -128,7 +141,7 @@ export function AppShell({
                         type="search"
                     />
                 </form>
-                <div className="redhn-topbar__actions">
+                <div className="redhn-topbar__actions" ref={accountMenuRef}>
                     <TopbarActions
                         currentUser={currentUser}
                         loginUrl={hnLoginUrl(sourceUrl, 'login')}

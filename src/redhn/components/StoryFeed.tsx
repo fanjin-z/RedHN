@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { CaretDownIcon, CheckIcon } from '@phosphor-icons/react';
 import type { ParsedPage, ParsedStory } from '../hn/types';
 import type { RedhnReadState } from '../state/readState';
@@ -8,6 +9,7 @@ import {
     type RedhnSortOption,
 } from '../view/sortOptions';
 import { StoryCard } from './StoryCard';
+import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
 
 type StoryFeedProps = {
     page: ParsedPage;
@@ -76,15 +78,29 @@ export function StoryFeed({
 }
 
 function SortMenu({ sourceUrl }: { sourceUrl: string }) {
+    const [menuOpen, setMenuOpen] = useState(false);
     const activeSort = getActiveSortOption(sourceUrl);
+    const closeMenu = useCallback(() => {
+        setMenuOpen(false);
+    }, []);
+    const menuRef = useCloseOnOutsidePointer<HTMLDetailsElement>({
+        open: menuOpen,
+        onClose: closeMenu,
+    });
 
     if (!activeSort) {
         return null;
     }
 
     return (
-        <details className="redhn-sort-menu">
-            <summary className="redhn-sort-menu__button">
+        <details className="redhn-sort-menu" open={menuOpen} ref={menuRef}>
+            <summary
+                className="redhn-sort-menu__button"
+                onClick={(event) => {
+                    event.preventDefault();
+                    setMenuOpen((current) => !current);
+                }}
+            >
                 <span>{activeSort.label}</span>
                 <CaretDownIcon aria-hidden="true" weight="bold" />
             </summary>

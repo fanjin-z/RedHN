@@ -132,4 +132,69 @@ describe('SubmitPage', () => {
             root.unmount();
         });
     });
+
+    it('closes the section menu on outside pointer down only', async () => {
+        const document = setupDom();
+        const container = document.createElement('div');
+        document.body.append(container);
+        const root = createRoot(container);
+
+        await act(async () => {
+            root.render(
+                createElement(SubmitPage, {
+                    submit: submitPage(),
+                }),
+            );
+        });
+
+        const sectionButton = container.querySelector<HTMLButtonElement>(
+            '.redhn-submit-section__button',
+        );
+        expect(sectionButton).not.toBeNull();
+
+        await act(async () => {
+            sectionButton!.click();
+        });
+
+        expect(
+            container.querySelector('.redhn-submit-section__menu'),
+        ).not.toBeNull();
+
+        const section = container.querySelector<HTMLDivElement>(
+            '.redhn-submit-section',
+        );
+        expect(section).not.toBeNull();
+
+        await act(async () => {
+            const insideEvent = new window.Event('pointerdown', {
+                bubbles: true,
+                composed: true,
+            });
+            Object.defineProperty(insideEvent, 'composedPath', {
+                value: () => [sectionButton, section, container, document.body],
+            });
+            document.body.dispatchEvent(insideEvent);
+        });
+
+        expect(
+            container.querySelector('.redhn-submit-section__menu'),
+        ).not.toBeNull();
+
+        const outsideButton = document.createElement('button');
+        document.body.append(outsideButton);
+
+        await act(async () => {
+            outsideButton.dispatchEvent(
+                new window.Event('pointerdown', { bubbles: true }),
+            );
+        });
+
+        expect(
+            container.querySelector('.redhn-submit-section__menu'),
+        ).toBeNull();
+
+        await act(async () => {
+            root.unmount();
+        });
+    });
 });

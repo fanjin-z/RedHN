@@ -4,6 +4,7 @@ import {
     BookmarkSimpleIcon,
     ChatCircleIcon,
     DotsThreeIcon,
+    EyeSlashIcon,
     ShareFatIcon,
 } from '@phosphor-icons/react';
 import type { ParsedStory } from '../hn/types';
@@ -139,6 +140,11 @@ export function StoryCard({
                                     href={story.actions.hide}
                                     onHnAction={onHnAction}
                                 >
+                                    <EyeSlashIcon
+                                        aria-hidden="true"
+                                        className="redhn-story__menu-item-icon"
+                                        weight="bold"
+                                    />
                                     Hide
                                 </HnActionLink>
                             ) : null}

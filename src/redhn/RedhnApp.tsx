@@ -70,7 +70,6 @@ type StoryFavoriteOverride = OptimisticStoryFavorite & {
 };
 
 export default function RedhnApp({ page }: RedhnAppProps) {
-    const [preferencesOpen, setPreferencesOpen] = useState(false);
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const [preferences, setPreferences] =
         useState<RedhnPreferences>(defaultPreferences);
@@ -183,14 +182,6 @@ export default function RedhnApp({ page }: RedhnAppProps) {
         setPreferences((current) => {
             const next = normalizePreferences({ ...current, ...patch });
             void preferencesItem.setValue(next);
-            return next;
-        });
-    };
-
-    const updateFilters = (patch: Partial<RedhnFilters>) => {
-        setFilters((current) => {
-            const next = normalizeFilters({ ...current, ...patch });
-            void filtersItem.setValue(next);
             return next;
         });
     };
@@ -500,16 +491,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
         <AppShell
             accountMenuOpen={accountMenuOpen}
             currentUser={currentUser}
-            filters={filters}
-            onFiltersChange={updateFilters}
             onMenuOpenChange={setAccountMenuOpen}
             onPreferencesChange={updatePreferences}
-            onPreferencesToggle={() => {
-                setPreferencesOpen((current) => !current);
-                setAccountMenuOpen(false);
-            }}
             preferences={preferences}
-            preferencesOpen={preferencesOpen}
             sourceUrl={page.sourceUrl}
             title={title}
         >

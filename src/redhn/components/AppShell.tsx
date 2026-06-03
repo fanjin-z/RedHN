@@ -14,7 +14,6 @@ import {
     DotsThreeIcon,
     FileTextIcon,
     FlameIcon,
-    GearSixIcon,
     InfoIcon,
     ListIcon,
     MegaphoneIcon,
@@ -26,11 +25,6 @@ import {
     TrendUpIcon,
 } from '@phosphor-icons/react';
 import type { ParsedCurrentUser } from '../hn/types';
-import {
-    termsFromInput,
-    termsToInput,
-    type RedhnFilters,
-} from '../state/filters';
 import type { RedhnPreferences } from '../state/preferences';
 import { isActivePath, redhnSortOptions } from '../view/sortOptions';
 import { hnLoginUrl } from '../view/urls';
@@ -41,15 +35,11 @@ type AppShellProps = {
     children: ReactNode;
     accountMenuOpen: boolean;
     currentUser?: ParsedCurrentUser;
-    filters: RedhnFilters;
     preferences: RedhnPreferences;
-    preferencesOpen: boolean;
     sourceUrl: string;
     title: string;
-    onFiltersChange: (patch: Partial<RedhnFilters>) => void;
     onMenuOpenChange: (open: boolean) => void;
     onPreferencesChange: (patch: Partial<RedhnPreferences>) => void;
-    onPreferencesToggle: () => void;
 };
 
 type SidebarItem = {
@@ -86,15 +76,11 @@ export function AppShell({
     children,
     accountMenuOpen,
     currentUser,
-    filters,
     preferences,
-    preferencesOpen,
     sourceUrl,
     title,
-    onFiltersChange,
     onMenuOpenChange,
     onPreferencesChange,
-    onPreferencesToggle,
 }: AppShellProps) {
     const sidebarSections = buildSidebarSections(sourceUrl);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -147,24 +133,14 @@ export function AppShell({
                         loginUrl={hnLoginUrl(sourceUrl, 'login')}
                         menuOpen={accountMenuOpen}
                         onMenuOpenChange={onMenuOpenChange}
-                        onPreferencesToggle={onPreferencesToggle}
                         onThemeChange={(theme) => {
                             onPreferencesChange({ theme });
                         }}
-                        preferencesOpen={preferencesOpen}
                         signupUrl={hnLoginUrl(sourceUrl, 'signup')}
                         theme={preferences.theme}
                     />
                 </div>
             </header>
-            {preferencesOpen ? (
-                <PreferencesPanel
-                    filters={filters}
-                    onFiltersChange={onFiltersChange}
-                    onPreferencesChange={onPreferencesChange}
-                    preferences={preferences}
-                />
-            ) : null}
             <div className="redhn-layout">
                 <aside
                     className="redhn-sidebar"
@@ -342,11 +318,9 @@ type TopbarActionsProps = {
     currentUser?: ParsedCurrentUser;
     loginUrl: string;
     menuOpen: boolean;
-    preferencesOpen: boolean;
     signupUrl: string;
     theme: RedhnPreferences['theme'];
     onMenuOpenChange: (open: boolean) => void;
-    onPreferencesToggle: () => void;
     onThemeChange: (theme: RedhnPreferences['theme']) => void;
 };
 
@@ -354,11 +328,9 @@ function TopbarActions({
     currentUser,
     loginUrl,
     menuOpen,
-    preferencesOpen,
     signupUrl,
     theme,
     onMenuOpenChange,
-    onPreferencesToggle,
     onThemeChange,
 }: TopbarActionsProps) {
     const menuId = 'redhn-account-menu';
@@ -429,9 +401,7 @@ function TopbarActions({
                 <AccountMenu
                     currentUser={currentUser}
                     id={menuId}
-                    onPreferencesToggle={onPreferencesToggle}
                     onThemeChange={onThemeChange}
-                    preferencesOpen={preferencesOpen}
                     theme={theme}
                 />
             ) : null}
@@ -442,18 +412,14 @@ function TopbarActions({
 type AccountMenuProps = {
     currentUser?: ParsedCurrentUser;
     id: string;
-    preferencesOpen: boolean;
     theme: RedhnPreferences['theme'];
-    onPreferencesToggle: () => void;
     onThemeChange: (theme: RedhnPreferences['theme']) => void;
 };
 
 function AccountMenu({
     currentUser,
     id,
-    preferencesOpen,
     theme,
-    onPreferencesToggle,
     onThemeChange,
 }: AccountMenuProps) {
     return (
@@ -492,15 +458,6 @@ function AccountMenu({
                     <option value="dark">Dark</option>
                 </select>
             </MenuRow>
-            <button
-                className="redhn-account-menu__item"
-                onClick={onPreferencesToggle}
-                role="menuitem"
-                type="button"
-            >
-                <GearSixIcon aria-hidden="true" weight="bold" />
-                <span>{preferencesOpen ? 'Hide Settings' : 'Settings'}</span>
-            </button>
             {currentUser?.logoutUrl ? (
                 <>
                     <div
@@ -536,114 +493,6 @@ function MenuRow({ children, icon, label }: MenuRowProps) {
             <span>{label}</span>
             {children}
         </div>
-    );
-}
-
-type PreferencesPanelProps = {
-    preferences: RedhnPreferences;
-    filters: RedhnFilters;
-    onPreferencesChange: (patch: Partial<RedhnPreferences>) => void;
-    onFiltersChange: (patch: Partial<RedhnFilters>) => void;
-};
-
-function PreferencesPanel({
-    preferences,
-    filters,
-    onPreferencesChange,
-    onFiltersChange,
-}: PreferencesPanelProps) {
-    return (
-        <section className="redhn-preferences" aria-label="Preferences">
-            <label className="redhn-field">
-                <span>Font</span>
-                <input
-                    max="20"
-                    min="12"
-                    onChange={(event) => {
-                        onPreferencesChange({
-                            fontSize: event.currentTarget.valueAsNumber,
-                        });
-                    }}
-                    type="range"
-                    value={preferences.fontSize}
-                />
-            </label>
-            <label className="redhn-field">
-                <span>Line</span>
-                <input
-                    max="1.9"
-                    min="1.2"
-                    onChange={(event) => {
-                        onPreferencesChange({
-                            lineHeight: event.currentTarget.valueAsNumber,
-                        });
-                    }}
-                    step="0.05"
-                    type="range"
-                    value={preferences.lineHeight}
-                />
-            </label>
-            <label className="redhn-field">
-                <span>Width</span>
-                <input
-                    max="1600"
-                    min="720"
-                    onChange={(event) => {
-                        onPreferencesChange({
-                            maxWidth: event.currentTarget.valueAsNumber,
-                        });
-                    }}
-                    step="40"
-                    type="range"
-                    value={preferences.maxWidth}
-                />
-            </label>
-            <label className="redhn-field redhn-field--wide">
-                <span>Keywords</span>
-                <input
-                    onChange={(event) => {
-                        onFiltersChange({
-                            mutedKeywords: termsFromInput(
-                                event.currentTarget.value,
-                            ),
-                        });
-                    }}
-                    placeholder="ai, crypto, launch"
-                    type="text"
-                    value={termsToInput(filters.mutedKeywords)}
-                />
-            </label>
-            <label className="redhn-field redhn-field--wide">
-                <span>Domains</span>
-                <input
-                    onChange={(event) => {
-                        onFiltersChange({
-                            mutedDomains: termsFromInput(
-                                event.currentTarget.value,
-                            ),
-                        });
-                    }}
-                    placeholder="example.com"
-                    type="text"
-                    value={termsToInput(filters.mutedDomains)}
-                />
-            </label>
-            <label className="redhn-field redhn-field--wide">
-                <span>Topics</span>
-                <input
-                    onChange={(event) => {
-                        onFiltersChange({
-                            mutedTopics: termsFromInput(
-                                event.currentTarget.value,
-                            ),
-                        });
-                    }}
-                    placeholder="ask hn, show hn"
-                    type="text"
-                    value={termsToInput(filters.mutedTopics)}
-                />
-            </label>
-        </section>
     );
 }
 

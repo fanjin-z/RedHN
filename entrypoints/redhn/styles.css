@@ -169,9 +169,9 @@
     );
     --redhn-type-ui-size: var(--redhn-type-body-size);
     --redhn-type-ui-line-height: calc(var(--redhn-type-ui-size) * 1.428571);
-    --redhn-type-story-title-size: calc(var(--redhn-type-body-size) * 1.142857);
+    --redhn-type-story-title-size: calc(var(--redhn-type-body-size) * 1.071429);
     --redhn-type-story-title-line-height: calc(
-        var(--redhn-type-story-title-size) * 1.25
+        var(--redhn-type-story-title-size) * 1.333333
     );
     --redhn-type-post-title-size: calc(var(--redhn-type-body-size) * 1.571429);
     --redhn-type-post-title-line-height: calc(
@@ -922,7 +922,7 @@
 
 .redhn-nav__section {
     display: grid;
-    gap: 8px;
+    gap: 6px;
 }
 
 .redhn-nav__section--divided {
@@ -952,20 +952,20 @@
 
 .redhn-nav__section-items {
     display: grid;
-    gap: 4px;
+    gap: 3px;
 }
 
 .redhn-nav__item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    min-height: 46px;
-    border-radius: 16px;
+    gap: 12px;
+    min-height: 42px;
+    border-radius: 14px;
     color: var(--redhn-text);
-    font-size: var(--redhn-type-ui-size);
+    font-size: calc(var(--redhn-type-body-size) * 0.928571);
     font-weight: 650;
     line-height: var(--redhn-type-ui-line-height);
-    padding: 0 14px;
+    padding: 0 12px;
     text-decoration: none;
 }
 
@@ -977,8 +977,8 @@
 .redhn-nav__icon {
     display: grid;
     flex: 0 0 auto;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     place-items: center;
     border-radius: 9999px;
     color: var(--redhn-text);
@@ -993,8 +993,8 @@
 }
 
 .redhn-nav__icon svg {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
 }
 
 .redhn-nav__label {
@@ -1021,7 +1021,7 @@
 
 .redhn-shell--sidebar-collapsed .redhn-nav__item {
     justify-content: center;
-    min-height: 44px;
+    min-height: 42px;
     gap: 0;
     border-radius: 9999px;
     padding: 0;
@@ -1040,22 +1040,22 @@
 .redhn-sort-menu {
     position: relative;
     width: max-content;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .redhn-sort-menu__button {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 40px;
+    gap: 7px;
+    min-height: 36px;
     border-radius: 9999px;
     background: var(--redhn-action-surface);
     color: var(--redhn-text);
-    font-size: var(--redhn-type-ui-size);
+    font-size: calc(var(--redhn-type-body-size) * 0.928571);
     font-weight: 800;
     line-height: var(--redhn-type-ui-line-height);
     list-style: none;
-    padding: 0 16px;
+    padding: 0 14px;
     cursor: pointer;
 }
 
@@ -1068,8 +1068,8 @@
 }
 
 .redhn-sort-menu__button svg {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
     transition: transform 160ms ease;
 }
 
@@ -1083,13 +1083,13 @@
     left: 0;
     z-index: 5;
     display: grid;
-    min-width: 13rem;
+    min-width: 12rem;
     overflow: hidden;
     border: 1px solid var(--redhn-outline);
     border-radius: var(--redhn-radius-lg);
     background: var(--redhn-surface-card);
     box-shadow: var(--redhn-shadow);
-    padding: 8px 0;
+    padding: 6px 0;
 }
 
 .redhn-sort-menu__title {
@@ -1098,20 +1098,20 @@
     font-size: var(--redhn-type-small-size);
     font-weight: 800;
     line-height: var(--redhn-type-small-line-height);
-    padding: 10px 16px;
+    padding: 8px 14px;
 }
 
 .redhn-sort-menu__item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 20px;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    min-height: 44px;
+    min-height: 40px;
     color: var(--redhn-text);
-    font-size: var(--redhn-type-ui-size);
+    font-size: calc(var(--redhn-type-body-size) * 0.928571);
     font-weight: 700;
     line-height: var(--redhn-type-ui-line-height);
-    padding: 0 16px;
+    padding: 0 14px;
     text-decoration: none;
 }
 
@@ -1369,7 +1369,7 @@
 .redhn-profile-activity {
     border-radius: var(--redhn-radius);
     background: var(--redhn-surface-card);
-    padding: 18px 22px;
+    padding: 16px 20px;
 }
 
 .redhn-profile-activity:hover,
@@ -1379,10 +1379,11 @@
 }
 
 .redhn-profile-activity__title {
-    margin: 12px 0 0;
-    font-size: calc(var(--redhn-type-body-size) * 1.285714);
-    font-weight: 750;
-    line-height: calc(var(--redhn-type-body-size) * 1.642857);
+    margin: 8px 0 0;
+    font-size: var(--redhn-type-story-title-size);
+    font-weight: 700;
+    line-height: var(--redhn-type-story-title-line-height);
+    overflow-wrap: anywhere;
 }
 
 .redhn-profile-activity__title a {
@@ -1581,16 +1582,16 @@
     position: relative;
     z-index: 2;
     min-width: 0;
-    padding: 10px 28px;
+    padding: 8px 20px;
     pointer-events: none;
 }
 
 .redhn-story__header {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
     justify-content: space-between;
-    min-height: 28px;
+    min-height: 26px;
 }
 
 .redhn-story__credit {
@@ -1608,8 +1609,8 @@
 .redhn-story__avatar {
     display: grid;
     flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     place-items: center;
     border: 1px solid color-mix(in srgb, var(--redhn-outline), #ffffff 32%);
     border-radius: 9999px;
@@ -1619,7 +1620,7 @@
         color-mix(in srgb, var(--redhn-surface-muted) 72%, #8bb6ff 28%)
     );
     color: var(--redhn-text);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 900;
     line-height: 1;
 }
@@ -1668,7 +1669,7 @@
     z-index: 3;
     display: inline-block;
     max-width: 100%;
-    margin-top: 6px;
+    margin-top: 4px;
     color: color-mix(in srgb, var(--redhn-text-muted) 82%, #5f84a2 18%);
     font-size: calc(var(--redhn-type-body-size) * 0.928571);
     font-weight: 700;
@@ -1685,11 +1686,12 @@
 }
 
 .redhn-story__title {
-    margin: 10px 0 0;
+    margin: 6px 0 0;
     color: var(--redhn-text);
-    font-size: calc(var(--redhn-type-body-size) * 1.285714);
-    font-weight: 750;
-    line-height: calc(var(--redhn-type-body-size) * 1.642857);
+    font-size: var(--redhn-type-story-title-size);
+    font-weight: 700;
+    line-height: var(--redhn-type-story-title-line-height);
+    overflow-wrap: anywhere;
 }
 
 .redhn-story__actions {
@@ -1697,8 +1699,8 @@
     z-index: 3;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 16px;
+    gap: 8px;
+    margin-top: 10px;
     pointer-events: auto;
 }
 
@@ -1722,12 +1724,12 @@
 }
 
 .redhn-story__actions--card .redhn-action {
-    gap: 7px;
-    min-height: 34px;
+    gap: 6px;
+    min-height: 31px;
     background: var(--redhn-action-surface);
     font-size: calc(var(--redhn-type-body-size) * 0.928571);
     line-height: 1;
-    padding: 0 14px;
+    padding: 0 12px;
 }
 
 .redhn-action__icon {
@@ -1737,8 +1739,8 @@
 }
 
 .redhn-story__actions--card .redhn-action__icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .redhn-action:hover,
@@ -1897,9 +1899,10 @@
     max-width: 68rem;
     margin: 14px 0 0;
     color: var(--redhn-text);
-    font-size: calc(var(--redhn-type-body-size) * 2.142857);
+    font-size: var(--redhn-type-post-title-size);
     font-weight: 780;
-    line-height: calc(var(--redhn-type-body-size) * 2.571429);
+    line-height: var(--redhn-type-post-title-line-height);
+    overflow-wrap: anywhere;
 }
 
 .redhn-post__link-preview {
@@ -1990,9 +1993,10 @@
 .redhn-submit-page__header h1 {
     margin: 0;
     color: var(--redhn-text);
-    font-size: calc(var(--redhn-type-body-size) * 2.142857);
+    font-size: var(--redhn-type-post-title-size);
     font-weight: 820;
-    line-height: calc(var(--redhn-type-body-size) * 2.571429);
+    line-height: var(--redhn-type-post-title-line-height);
+    overflow-wrap: anywhere;
 }
 
 .redhn-submit-section {
@@ -3014,10 +3018,10 @@
 
     .redhn-shell--sidebar-collapsed .redhn-nav__item {
         justify-content: flex-start;
-        gap: 14px;
-        min-height: 46px;
-        border-radius: 16px;
-        padding: 0 14px;
+        gap: 12px;
+        min-height: 42px;
+        border-radius: 14px;
+        padding: 0 12px;
     }
 
     .redhn-preferences {
@@ -3203,8 +3207,8 @@
     }
 
     .redhn-submit-page__header h1 {
-        font-size: calc(var(--redhn-type-body-size) * 1.714286);
-        line-height: calc(var(--redhn-type-body-size) * 2.142857);
+        font-size: var(--redhn-type-post-title-size);
+        line-height: var(--redhn-type-post-title-line-height);
     }
 
     .redhn-submit-section,

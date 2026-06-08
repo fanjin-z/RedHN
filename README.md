@@ -6,11 +6,9 @@ A browser extension that makes Hacker News feel more familiar, readable, and int
 
 **Get RedHN**
 
-| Browser | Availability                                                                                        |
-| ------- | --------------------------------------------------------------------------------------------------- |
-| Chrome  | [Chrome Web Store](https://chromewebstore.google.com/detail/redhn/deinobdjbeklfjandchchadookglpcnc) |
-| Firefox | Coming soon                                                                                         |
-| Edge    | Coming soon                                                                                         |
+| Chrome                                                                                              | Firefox                                                                  | Edge           |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------- |
+| [Chrome Web Store](https://chromewebstore.google.com/detail/redhn/deinobdjbeklfjandchchadookglpcnc) | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/redhn/) | Pending review |
 
 ## Motivation
 

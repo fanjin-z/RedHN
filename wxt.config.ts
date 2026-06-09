@@ -15,6 +15,7 @@ export default defineConfig({
                     required: ['none'],
                 },
             },
+            gecko_android: {},
         },
     },
     webExt: {

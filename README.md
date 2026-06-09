@@ -1,8 +1,8 @@
-# RedHN
-
-**RedHN: Browse Hacker News, Reddit-Style**
+# RedHN: A Reddit-style extension for Hacker News
 
 A browser extension that makes Hacker News feel more familiar, readable, and interactive while keeping the official site, links, and account actions intact.
+
+Follow [@FanjinTech on X](https://x.com/FanjinTech) for more projects like this.
 
 **Get RedHN**
 
@@ -12,7 +12,7 @@ A browser extension that makes Hacker News feel more familiar, readable, and int
 
 ## Motivation
 
-RedHN brings a Reddit-style UI and UX to Hacker News: card-based stories, clearer discussion threads, familiar actions, theme controls, and easier navigation, all while staying on HN. It is built for readers who love HN's content but prefer the comfort and flow of a more modern social-news interface.
+RedHN brings a Reddit-style UX to Hacker News: card-based stories, clearer discussion threads, familiar actions, theme controls, and easier navigation, all while staying on HN. It is built for readers who love HN's content but prefer the comfort and flow of a more modern social-news interface.
 
 ## Features
 

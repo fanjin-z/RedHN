@@ -21,9 +21,11 @@ type PostPageProps = {
     comments: ParsedComment[];
     isFavoritePending: boolean;
     isShared: boolean;
+    isVotePending: boolean;
     onFavorite: (story: ParsedStory) => void;
     onHnAction: (href: string) => void;
     onShare: (story: ParsedStory) => void;
+    onVote: (story: ParsedStory) => void;
 };
 
 export function PostPage({
@@ -31,9 +33,11 @@ export function PostPage({
     comments,
     isFavoritePending,
     isShared,
+    isVotePending,
     onFavorite,
     onHnAction,
     onShare,
+    onVote,
 }: PostPageProps) {
     const postReplyComposerRef = useRef<HTMLTextAreaElement>(null);
     const [collapsedCommentIds, setCollapsedCommentIds] = useState(
@@ -184,15 +188,19 @@ export function PostPage({
                 ) : null}
                 <div className="redhn-story__actions">
                     {voteHref ? (
-                        <HnActionLink
+                        <button
                             aria-label={isUpvoted ? 'Remove upvote' : 'Upvote'}
+                            aria-pressed={isUpvoted}
                             className={
                                 isUpvoted
                                     ? 'redhn-action redhn-action--vote redhn-action--active'
                                     : 'redhn-action redhn-action--vote'
                             }
-                            href={voteHref}
-                            onHnAction={onHnAction}
+                            disabled={isVotePending}
+                            onClick={() => {
+                                onVote(post);
+                            }}
+                            type="button"
                         >
                             <ArrowFatUpIcon
                                 aria-hidden="true"
@@ -200,7 +208,7 @@ export function PostPage({
                                 weight={isUpvoted ? 'fill' : 'bold'}
                             />
                             <span>{formatNumber(post.score)}</span>
-                        </HnActionLink>
+                        </button>
                     ) : (
                         <span className="redhn-action redhn-action--vote redhn-action--disabled">
                             <ArrowFatUpIcon

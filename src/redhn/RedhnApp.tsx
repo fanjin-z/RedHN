@@ -123,13 +123,14 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                   page.post,
                   apiItems[page.post.id],
               );
+              const voteOverride = storyVoteOverrides[page.post.id];
               const favoriteOverride = storyFavoriteOverrides[page.post.id];
-              return favoriteOverride
-                  ? applyOptimisticStoryFavorite(
-                        enrichedStory,
-                        favoriteOverride,
-                    )
+              const votedStory = voteOverride
+                  ? applyOptimisticStoryVote(enrichedStory, voteOverride)
                   : enrichedStory;
+              return favoriteOverride
+                  ? applyOptimisticStoryFavorite(votedStory, favoriteOverride)
+                  : votedStory;
           })()
         : undefined;
     const enrichedProfile = page.profile
@@ -507,9 +508,11 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                         enrichedPost.id,
                     )}
                     isShared={sharedStoryId === enrichedPost.id}
+                    isVotePending={pendingVoteStoryIds.has(enrichedPost.id)}
                     onFavorite={runStoryFavorite}
                     onHnAction={runHnAction}
                     onShare={shareStory}
+                    onVote={runStoryVote}
                     post={enrichedPost}
                 />
             ) : (

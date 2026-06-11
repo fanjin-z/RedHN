@@ -16,9 +16,7 @@ RedHN brings a Reddit-style UX to Hacker News: card-based stories, clearer discu
 
 ## Demo
 
-<video src="docs/readme-assets/redhn-demo.mp4" controls muted playsinline></video>
-
-[Watch the 30-second demo](docs/readme-assets/redhn-demo.mp4)
+[![Watch the 30-second RedHN demo](docs/readme-assets/redhn-demo-poster.png)](docs/readme-assets/redhn-demo.mp4)
 
 ## Features
 

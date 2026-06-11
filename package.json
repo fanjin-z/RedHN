@@ -1,7 +1,7 @@
 {
     "name": "redhn",
     "version": "1.0.0",
-    "description": "RedHN browser extension built with WXT",
+    "description": "RedHN: A Reddit-style extension for Hacker News",
     "homepage": "https://github.com/fanjin-z/RedHN#readme",
     "bugs": {
         "url": "https://github.com/fanjin-z/RedHN/issues"

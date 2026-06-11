@@ -5,7 +5,7 @@ export default defineConfig({
     manifestVersion: 3,
     manifest: {
         name: 'RedHN',
-        description: 'A Reddit-style reading interface for Hacker News.',
+        description: 'A Reddit-style extension for Hacker News',
         permissions: ['storage'],
         host_permissions: ['https://hacker-news.firebaseio.com/*'],
         browser_specific_settings: {

@@ -55,6 +55,7 @@ jobs:
               run: |
                   npm run zip
                   npm run zip:firefox
+                  npm run zip:safari
 
             - name: Verify build outputs
               run: |
@@ -63,6 +64,7 @@ jobs:
                   chrome_zips=(.output/*-chrome.zip)
                   firefox_zips=(.output/*-firefox.zip)
                   source_zips=(.output/*-sources.zip)
+                  safari_zips=(.output/*-safari.zip)
 
                   if [ ${#chrome_zips[@]} -eq 0 ]; then
                     echo "Missing: Chrome/Edge zip"
@@ -79,8 +81,13 @@ jobs:
                     exit 1
                   fi
 
+                  if [ ${#safari_zips[@]} -eq 0 ]; then
+                    echo "Missing: Safari zip"
+                    exit 1
+                  fi
+
                   echo "Packages ready:"
-                  printf '%s\n' "${chrome_zips[@]}" "${firefox_zips[@]}" "${source_zips[@]}"
+                  printf '%s\n' "${chrome_zips[@]}" "${firefox_zips[@]}" "${source_zips[@]}" "${safari_zips[@]}"
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2

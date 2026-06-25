@@ -1,7 +1,7 @@
 import { defineConfig } from 'wxt';
 
 export default defineConfig({
-    targetBrowsers: ['chrome', 'firefox'],
+    targetBrowsers: ['chrome', 'firefox', 'safari'],
     manifestVersion: 3,
     manifest: {
         name: 'RedHN',

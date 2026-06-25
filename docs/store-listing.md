@@ -1,4 +1,8 @@
-# Chrome Web Store Listing
+# Store Listing Copy
+
+Use this copy for Chrome Web Store, Firefox Add-ons, Edge Add-ons, and Safari
+App Store review fields. Keep store-specific publishing steps in
+`docs/store-publishing.md`.
 
 ## Description
 
@@ -29,16 +33,16 @@ not sent to a RedHN server.
 
 ### `https://news.ycombinator.com/*`
 
-RedHN runs only on Hacker News pages so it can read the current page markup,
-render the enhanced reading interface, and preserve Hacker News action links and
-forms for voting, replying, hiding, favoriting, and login flows.
+RedHN runs on supported Hacker News pages so it can read the current page
+markup, render the enhanced reading interface, and preserve Hacker News action
+links and forms for voting, replying, hiding, favoriting, and login flows.
 
 ### `https://hacker-news.firebaseio.com/*`
 
-RedHN uses the official read-only Hacker News Firebase API to fetch public story,
-comment, and user metadata such as scores, comment counts, item details, and
-profile details. This host access is limited to Hacker News API data needed to
-enrich the reading interface.
+RedHN uses the official read-only Hacker News Firebase API to fetch public
+story, comment, and user metadata such as scores, comment counts, item details,
+and profile details. This host access is limited to Hacker News API data needed
+to enrich the reading interface.
 
 ## Privacy Disclosure
 
@@ -49,17 +53,23 @@ supported Hacker News pages to render the enhanced interface, and requests
 public metadata from the official Hacker News Firebase API.
 
 Hacker News account actions remain interactions with Hacker News. If a user
-votes, replies, hides, favorites, or logs in, those actions are handled by Hacker
-News using Hacker News' own authenticated pages, links, and forms.
+votes, replies, hides, favorites, or logs in, those actions are handled by
+Hacker News using Hacker News' own authenticated pages, links, and forms.
 
 ## Privacy Policy URL
 
 `https://fanjin.org/blog/redhn-privacy-policy`
 
-## Test Instructions
+## Review Instructions
 
 No RedHN account or special setup is required. Install the extension, open
 `https://news.ycombinator.com/`, and the enhanced Reddit-style interface should
-load automatically. Core features to review include switching theme/settings,
-collapsing comment threads, muting topics or domains, and opening Hacker News
-links.
+load automatically.
+
+Core review checks:
+
+- Switch theme and display settings.
+- Collapse and expand comment threads.
+- Mute topics or domains.
+- Open Hacker News links.
+- Use the popup toggle to return to classic Hacker News.

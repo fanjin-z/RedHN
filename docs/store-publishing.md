@@ -65,6 +65,12 @@ Open `.output/safari-xcode/RedHN/RedHN.xcodeproj` in Xcode, configure signing
 for the app and extension targets, test in Safari, archive, and upload through
 Xcode or App Store Connect.
 
+#### Local Safari Testing
+
+1. In Safari, enable the Develop menu if needed (Settings > Advanced > check 'Show features for web developers'), then choose
+   `Develop > Allow Unsigned Extensions` and 'Add Temporary Extension'.
+2. In Safari, open `https://news.ycombinator.com` and grant RedHN website permissions.
+
 ## Public Repo Safety
 
 Do not commit or publish credentials or private account details, including:

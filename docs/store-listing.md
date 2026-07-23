@@ -58,7 +58,7 @@ Hacker News using Hacker News' own authenticated pages, links, and forms.
 
 ## Privacy Policy URL
 
-`https://fanjin.org/blog/redhn-privacy-policy`
+`https://fanjin-z.github.io/RedHN/privacy/`
 
 ## Review Instructions
 

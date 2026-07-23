@@ -1,4 +1,5 @@
 ---
+layout: default
 title: RedHN Privacy Policy
 permalink: /privacy/
 ---

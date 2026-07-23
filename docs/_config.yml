@@ -1,0 +1,7 @@
+title: RedHN
+description: A Reddit-style extension for Hacker News
+theme: jekyll-theme-cayman
+show_downloads: false
+google_analytics:
+url: https://fanjin-z.github.io
+baseurl: /RedHN

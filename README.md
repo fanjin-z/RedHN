@@ -92,7 +92,7 @@ RedHN stores settings and read state locally in browser extension storage. It do
 
 RedHN runs on supported `news.ycombinator.com` pages and requests public metadata from the official read-only Hacker News Firebase API at `https://hacker-news.firebaseio.com/`.
 
-Privacy policy: `https://fanjin.org/blog/redhn-privacy-policy`
+Privacy policy: `https://fanjin-z.github.io/RedHN/privacy/`
 
 ## License
 

@@ -1905,6 +1905,17 @@
     overflow-wrap: anywhere;
 }
 
+.redhn-post__context-link {
+    color: inherit;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.12em;
+}
+
+.redhn-post__context-link:hover,
+.redhn-post__context-link:focus-visible {
+    color: var(--redhn-text-muted);
+}
+
 .redhn-post__link-preview {
     display: grid;
     grid-template-columns: minmax(0, 1fr) max-content;

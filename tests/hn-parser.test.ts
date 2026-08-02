@@ -181,23 +181,108 @@ describe('HN DOM parser', () => {
         ).toEqual([3001, 3002]);
     });
 
+    it('parses a focused comment item and only its descendant tree', () => {
+        const page = parseHnPage(
+            fixture('comment-item.html'),
+            'https://news.ycombinator.com/item?id=9100',
+            654,
+        );
+
+        expect(page.kind).toBe('item');
+        expect(isRedhnSupportedPage(page)).toBe(true);
+        expect(page.stories).toEqual([]);
+        expect(page.post).toMatchObject({
+            id: 9100,
+            type: 'comment',
+            title: 'Synthetic parent story',
+            url: 'https://news.ycombinator.com/item?id=9001',
+            hnUrl: 'https://news.ycombinator.com/item?id=9100',
+            author: 'test_author',
+            age: '1 hour ago',
+            text: 'Focused synthetic comment. Second synthetic paragraph.',
+            commentCount: 4,
+        });
+        expect(page.post?.textHtml).toContain('Focused synthetic comment.');
+        expect(page.post?.textHtml).toContain('Second synthetic paragraph.');
+        expect(page.post?.actions.upvote).toBeUndefined();
+        expect(page.post?.actions.unvote).toBe(
+            'https://news.ycombinator.com/vote?id=9100&how=un&auth=test-vote&goto=item%3Fid%3D9100',
+        );
+        expect(page.post?.actions.favorite).toBe(
+            'https://news.ycombinator.com/fave?id=9100&auth=test-favorite',
+        );
+        expect(page.post?.actions.parent).toBe(
+            'https://news.ycombinator.com/item?id=9001',
+        );
+        expect(page.post?.actions.reply).toBe(
+            'https://news.ycombinator.com/reply?id=9100&goto=item%3Fid%3D9100',
+        );
+        expect(page.post?.actions.comments).toBe(
+            'https://news.ycombinator.com/item?id=9100',
+        );
+        expect(page.comments.map((comment) => comment.id)).toEqual([
+            9101, 9102,
+        ]);
+        expect(page.comments[1].children[0].id).toBe(9103);
+        expect(page.comments[1].children[0].children[0].id).toBe(9104);
+        expect(
+            flattenComments(page.comments).map((comment) => comment.id),
+        ).toEqual([9101, 9102, 9103, 9104]);
+        expect(
+            flattenComments(page.comments).some(
+                (comment) => comment.id === page.post?.id,
+            ),
+        ).toBe(false);
+    });
+
+    it('falls back to generic focused-comment context when onstory is absent', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="fatitem">
+                        <tr class="athing" id="7001">
+                            <td class="default">
+                                <a class="hnuser" href="user?id=fallback_author">fallback_author</a>
+                                <div class="commtext">Standalone comment.</div>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=7001',
+        );
+
+        expect(page.kind).toBe('item');
+        expect(page.post).toMatchObject({
+            id: 7001,
+            type: 'comment',
+            title: 'Comment',
+            url: 'https://news.ycombinator.com/item?id=7001',
+            hnUrl: 'https://news.ycombinator.com/item?id=7001',
+            commentCount: 0,
+        });
+    });
+
     it('parses an upvoted comment from its header unvote link', () => {
         const document = parseHTML(`
             <html>
                 <body>
                     <table class="comment-tree">
-                        <tr class="athing comtr" id="49139438">
+                        <tr class="athing comtr" id="9200">
                             <td class="ind" indent="0"><img src="s.gif" width="0"></td>
                             <td class="votelinks">
-                                <a class="nosee" href="vote?id=49139438&amp;how=up&amp;auth=abc&amp;goto=item%3Fid%3D49139102"></a>
+                                <a class="nosee" href="vote?id=9200&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9002"></a>
                             </td>
                             <td class="default">
                                 <div>
                                     <span class="comhead">
-                                        <a class="hnuser" href="user?id=jamestimmins">jamestimmins</a>
-                                        <span class="age"><a href="item?id=49139438">1 hour ago</a></span>
-                                        <span id="unv_49139438"> |
-                                            <a id="un_49139438" class="clicky" href="vote?id=49139438&amp;how=un&amp;auth=abc&amp;goto=item%3Fid%3D49139102">unvote</a>
+                                        <a class="hnuser" href="user?id=voted_user">voted_user</a>
+                                        <span class="age"><a href="item?id=9200">1 hour ago</a></span>
+                                        <span id="unv_9200"> |
+                                            <a id="un_9200" class="clicky" href="vote?id=9200&amp;how=un&amp;auth=test&amp;goto=item%3Fid%3D9002">unvote</a>
                                         </span>
                                     </span>
                                 </div>
@@ -211,12 +296,12 @@ describe('HN DOM parser', () => {
 
         const page = parseHnPage(
             document,
-            'https://news.ycombinator.com/item?id=49139102',
+            'https://news.ycombinator.com/item?id=9002',
         );
 
         expect(page.comments[0].actions.upvote).toBeUndefined();
         expect(page.comments[0].actions.unvote).toBe(
-            'https://news.ycombinator.com/vote?id=49139438&how=un&auth=abc&goto=item%3Fid%3D49139102',
+            'https://news.ycombinator.com/vote?id=9200&how=un&auth=test&goto=item%3Fid%3D9002',
         );
     });
 

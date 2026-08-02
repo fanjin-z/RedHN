@@ -27,7 +27,7 @@ export function parseHnPage(
     const submit = parseSubmitPage(document, sourceUrl);
     const post =
         !profile && !auth && !submit && isItemPage(sourceUrl, document)
-            ? enhancePostFromItemPage(document, stories[0], sourceUrl)
+            ? parseItemPost(document, stories[0], comments, sourceUrl)
             : undefined;
 
     return {
@@ -245,6 +245,73 @@ function enhancePostFromItemPage(
                 href(findLink(subtext, 'hide'), sourceUrl) ??
                 story.actions.hide,
             reply: replyUrl(story.id, sourceUrl),
+        },
+    };
+}
+
+function parseItemPost(
+    document: Document,
+    story: ParsedStory | undefined,
+    comments: ParsedComment[],
+    sourceUrl: string,
+): ParsedStory | undefined {
+    return (
+        enhancePostFromItemPage(document, story, sourceUrl) ??
+        parseFocusedCommentPost(document, comments, sourceUrl)
+    );
+}
+
+function parseFocusedCommentPost(
+    document: Document,
+    comments: ParsedComment[],
+    sourceUrl: string,
+): ParsedStory | undefined {
+    const source = safeUrl(sourceUrl, HN_ORIGIN);
+    const itemId = parseItemIdFromUrl(sourceUrl);
+    if (source?.pathname !== '/item' || !itemId) {
+        return undefined;
+    }
+
+    const row = Array.from(
+        document.querySelectorAll('table.fatitem tr.athing:not(.comtr)'),
+    ).find(
+        (candidate) =>
+            toNumber(candidate.getAttribute('id')) === itemId &&
+            candidate.querySelector('.commtext') !== null,
+    );
+    const comment = row ? parseCommentRow(row, sourceUrl) : undefined;
+    if (!row || !comment) {
+        return undefined;
+    }
+
+    const hnUrl = absoluteUrl(`item?id=${comment.id}`, sourceUrl);
+    const contextLink = row.querySelector<HTMLAnchorElement>('.onstory a');
+    const contextTitle =
+        contextLink?.getAttribute('title')?.trim() ||
+        text(contextLink) ||
+        'Comment';
+    const contextUrl = href(contextLink, sourceUrl) ?? hnUrl;
+    const favoriteActions = parseFavoriteActions(
+        row.querySelector('.default'),
+        sourceUrl,
+    );
+
+    return {
+        id: comment.id,
+        type: 'comment',
+        title: contextTitle,
+        url: contextUrl,
+        hnUrl,
+        author: comment.author,
+        age: comment.age,
+        commentCount: flattenComments(comments).length,
+        textHtml: comment.html,
+        text: comment.text,
+        actions: {
+            ...comment.actions,
+            ...favoriteActions,
+            reply: replyUrl(comment.id, sourceUrl),
+            comments: hnUrl,
         },
     };
 }

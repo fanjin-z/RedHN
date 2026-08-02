@@ -51,13 +51,15 @@ export function PostPage({
     const [expandedDeepThreadDepths, setExpandedDeepThreadDepths] = useState<
         Record<number, number>
     >({});
+    const isCommentPost = post.type === 'comment';
+    const hasStoryContext = isCommentPost && post.url !== post.hnUrl;
     const postReplyHref = post.actions.reply;
     const author = post.author ?? 'unknown';
     const isUpvoted = Boolean(post.actions.unvote);
     const voteHref = post.actions.unvote ?? post.actions.upvote;
     const isFavorited = Boolean(post.actions.unfavorite);
     const favoriteHref = post.actions.unfavorite ?? post.actions.favorite;
-    const postUrl = linkPreviewUrl(post);
+    const postUrl = isCommentPost ? undefined : linkPreviewUrl(post);
     const postUrlLabel = postUrl ? displayUrl(postUrl) : undefined;
     const commentsHref = post.actions.comments ?? post.hnUrl;
     const [postMenuOpen, setPostMenuOpen] = useState(false);
@@ -139,7 +141,11 @@ export function PostPage({
                         ref={postMenuRef}
                     >
                         <summary
-                            aria-label="More post actions"
+                            aria-label={
+                                isCommentPost
+                                    ? 'More comment actions'
+                                    : 'More post actions'
+                            }
                             onClick={(event) => {
                                 event.preventDefault();
                                 setPostMenuOpen((current) => !current);
@@ -165,12 +171,28 @@ export function PostPage({
                                 className="redhn-story__menu-item"
                                 href={post.hnUrl}
                             >
-                                Open on HN
+                                {isCommentPost
+                                    ? 'Open comment on HN'
+                                    : 'Open on HN'}
                             </a>
                         </div>
                     </details>
                 </div>
-                <h1 className="redhn-post__title">{post.title}</h1>
+                <h1 className="redhn-post__title">
+                    {hasStoryContext ? (
+                        <>
+                            Comment on{' '}
+                            <a
+                                className="redhn-post__context-link"
+                                href={post.url}
+                            >
+                                {post.title}
+                            </a>
+                        </>
+                    ) : (
+                        post.title
+                    )}
+                </h1>
                 {postUrl && postUrlLabel ? (
                     <div className="redhn-post__link-preview">
                         <a
@@ -193,7 +215,15 @@ export function PostPage({
                 <div className="redhn-story__actions">
                     {voteHref ? (
                         <button
-                            aria-label={isUpvoted ? 'Remove upvote' : 'Upvote'}
+                            aria-label={
+                                isCommentPost
+                                    ? isUpvoted
+                                        ? 'Remove comment upvote'
+                                        : 'Upvote comment'
+                                    : isUpvoted
+                                      ? 'Remove upvote'
+                                      : 'Upvote'
+                            }
                             aria-pressed={isUpvoted}
                             className={
                                 isUpvoted
@@ -211,7 +241,13 @@ export function PostPage({
                                 className="redhn-action__icon"
                                 weight={isUpvoted ? 'fill' : 'bold'}
                             />
-                            <span>{formatNumber(post.score)}</span>
+                            <span>
+                                {isCommentPost
+                                    ? isUpvoted
+                                        ? 'Upvoted'
+                                        : 'Upvote'
+                                    : formatNumber(post.score)}
+                            </span>
                         </button>
                     ) : (
                         <span className="redhn-action redhn-action--vote redhn-action--disabled">
@@ -220,11 +256,20 @@ export function PostPage({
                                 className="redhn-action__icon"
                                 weight="bold"
                             />
-                            <span>{formatNumber(post.score)}</span>
+                            <span>
+                                {isCommentPost
+                                    ? 'Upvote'
+                                    : formatNumber(post.score)}
+                            </span>
                         </span>
                     )}
                     {postReplyHref ? (
                         <button
+                            aria-label={
+                                isCommentPost
+                                    ? 'Reply to this comment'
+                                    : undefined
+                            }
                             className="redhn-action"
                             onClick={() => {
                                 postReplyComposerRef.current?.focus();
@@ -284,14 +329,26 @@ export function PostPage({
                 </div>
                 {postReplyHref ? (
                     <ReplyComposer
-                        label="Comment on this post"
+                        label={
+                            isCommentPost
+                                ? 'Reply to this comment'
+                                : 'Comment on this post'
+                        }
                         onSubmit={(text) => submitReply(postReplyHref, text)}
-                        placeholder="Join the conversation"
+                        placeholder={
+                            isCommentPost
+                                ? 'Write a reply'
+                                : 'Join the conversation'
+                        }
                         ref={postReplyComposerRef}
+                        submitLabel={isCommentPost ? 'Reply' : undefined}
                     />
                 ) : null}
             </header>
-            <section className="redhn-comments" aria-label="Comments">
+            <section
+                className="redhn-comments"
+                aria-label={isCommentPost ? 'Replies' : 'Comments'}
+            >
                 {comments.map((comment) => (
                     <CommentThread
                         activeReplyCommentId={activeReplyCommentId}
@@ -320,7 +377,7 @@ function linkPreviewUrl(post: ParsedStory): string | undefined {
         return post.url;
     }
 
-    return post.type === 'comment' ? post.hnUrl : undefined;
+    return undefined;
 }
 
 function displayUrl(value: string): string {

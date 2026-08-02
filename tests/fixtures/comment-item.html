@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Focused comment | Hacker News</title>
+    </head>
+    <body>
+        <table class="fatitem">
+            <tbody>
+                <tr class="athing" id="9100">
+                    <td class="votelinks">
+                        <a
+                            href="vote?id=9100&amp;how=up&amp;auth=test-vote&amp;goto=item%3Fid%3D9100"
+                            id="up_9100"
+                        ></a>
+                    </td>
+                    <td class="default">
+                        <div>
+                            <span class="comhead">
+                                <a class="hnuser" href="user?id=test_author"
+                                    >test_author</a
+                                >
+                                <span class="age"
+                                    ><a href="item?id=9100">1 hour ago</a></span
+                                >
+                                <span>
+                                    |<a
+                                        href="vote?id=9100&amp;how=un&amp;auth=test-vote&amp;goto=item%3Fid%3D9100"
+                                        >unvote</a
+                                    >
+                                </span>
+                                <span class="navs">
+                                    | <a href="item?id=9001">parent</a> |
+                                    <a href="item?id=9001#9100">context</a>
+                                    |
+                                    <a
+                                        href="fave?id=9100&amp;auth=test-favorite"
+                                        >favorite</a
+                                    >
+                                    <span class="onstory">
+                                        | on:
+                                        <a
+                                            href="item?id=9001"
+                                            title="Synthetic parent story"
+                                            >Synthetic parent story</a
+                                        >
+                                    </span>
+                                </span>
+                            </span>
+                        </div>
+                        <div class="comment">
+                            <div class="commtext c00">
+                                Focused synthetic comment.
+                                <p>Second synthetic paragraph.</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <form action="comment" method="post">
+                            <input name="parent" type="hidden" value="9100" />
+                            <input name="hmac" type="hidden" value="test" />
+                            <textarea name="text"></textarea>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="comment-tree">
+            <tbody>
+                <tr class="athing comtr" id="9101">
+                    <td class="ind"><img src="s.gif" width="0" /></td>
+                    <td class="votelinks">
+                        <a
+                            href="vote?id=9101&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                        ></a>
+                    </td>
+                    <td class="default">
+                        <a class="hnuser" href="user?id=first_replier"
+                            >first_replier</a
+                        >
+                        <span class="age"
+                            ><a href="item?id=9101">22 minutes ago</a></span
+                        >
+                        <div class="commtext c00">First root reply.</div>
+                        <a href="reply?id=9101&amp;goto=item%3Fid%3D9100"
+                            >reply</a
+                        >
+                    </td>
+                </tr>
+                <tr class="athing comtr" id="9102">
+                    <td class="ind"><img src="s.gif" width="0" /></td>
+                    <td class="votelinks">
+                        <a
+                            href="vote?id=9102&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                        ></a>
+                    </td>
+                    <td class="default">
+                        <a class="hnuser" href="user?id=second_replier"
+                            >second_replier</a
+                        >
+                        <span class="age"
+                            ><a href="item?id=9102">1 hour ago</a></span
+                        >
+                        <div class="commtext c00">Second root reply.</div>
+                        <a href="reply?id=9102&amp;goto=item%3Fid%3D9100"
+                            >reply</a
+                        >
+                    </td>
+                </tr>
+                <tr class="athing comtr" id="9103">
+                    <td class="ind"><img src="s.gif" width="40" /></td>
+                    <td class="votelinks">
+                        <a
+                            href="vote?id=9103&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                        ></a>
+                    </td>
+                    <td class="default">
+                        <a class="hnuser" href="user?id=nested_replier"
+                            >nested_replier</a
+                        >
+                        <span class="age"
+                            ><a href="item?id=9103">1 hour ago</a></span
+                        >
+                        <div class="commtext c00">Nested reply.</div>
+                        <a href="reply?id=9103&amp;goto=item%3Fid%3D9100"
+                            >reply</a
+                        >
+                    </td>
+                </tr>
+                <tr class="athing comtr" id="9104">
+                    <td class="ind"><img src="s.gif" width="80" /></td>
+                    <td class="votelinks">
+                        <a
+                            href="vote?id=9104&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                        ></a>
+                    </td>
+                    <td class="default">
+                        <a class="hnuser" href="user?id=deep_replier"
+                            >deep_replier</a
+                        >
+                        <span class="age"
+                            ><a href="item?id=9104">1 hour ago</a></span
+                        >
+                        <div class="commtext c00">Deep reply.</div>
+                        <a href="reply?id=9104&amp;goto=item%3Fid%3D9100"
+                            >reply</a
+                        >
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+</html>

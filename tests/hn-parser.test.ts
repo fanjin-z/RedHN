@@ -75,7 +75,7 @@ describe('HN DOM parser', () => {
             score: 428,
             commentCount: 156,
         });
-        expect(page.stories[0].actions.upvote).toContain('/vote?id=1001');
+        expect(page.stories[0]!.actions.upvote).toContain('/vote?id=1001');
         expect(page.stories[1]).toMatchObject({
             id: 1002,
             rank: 2,
@@ -131,10 +131,10 @@ describe('HN DOM parser', () => {
             domain: 'content.example',
             commentCount: 0,
         });
-        expect(page.stories[0].actions.upvote).toBe(
+        expect(page.stories[0]!.actions.upvote).toBe(
             'https://news.ycombinator.com/vote?id=41001&how=up&auth=fake-auth-token&goto=news',
         );
-        expect(page.stories[0].actions.comments).toBe(
+        expect(page.stories[0]!.actions.comments).toBe(
             'https://news.ycombinator.com/item?id=41001',
         );
     });
@@ -168,9 +168,9 @@ describe('HN DOM parser', () => {
             age: '3 hours ago',
             text: 'This looks really clean.',
         });
-        expect(page.comments[0].actions.upvote).toContain('/vote?id=3001');
-        expect(page.comments[0].actions.unvote).toBeUndefined();
-        expect(page.comments[0].children[0]).toMatchObject({
+        expect(page.comments[0]!.actions.upvote).toContain('/vote?id=3001');
+        expect(page.comments[0]!.actions.unvote).toBeUndefined();
+        expect(page.comments[0]!.children[0]).toMatchObject({
             id: 3002,
             depth: 1,
             author: 'story_author',
@@ -223,8 +223,8 @@ describe('HN DOM parser', () => {
         expect(page.comments.map((comment) => comment.id)).toEqual([
             9101, 9102,
         ]);
-        expect(page.comments[1].children[0].id).toBe(9103);
-        expect(page.comments[1].children[0].children[0].id).toBe(9104);
+        expect(page.comments[1]!.children[0]!.id).toBe(9103);
+        expect(page.comments[1]!.children[0]!.children[0]!.id).toBe(9104);
         expect(
             flattenComments(page.comments).map((comment) => comment.id),
         ).toEqual([9101, 9102, 9103, 9104]);

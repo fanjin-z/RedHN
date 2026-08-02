@@ -81,12 +81,12 @@ async function getCachedItems(ids: number[]) {
     const cached = await apiCacheItem.getValue();
     const now = Date.now();
     const freshEntries = Object.fromEntries(
-        ids
-            .map((id) => [id, cached[id]] as const)
-            .filter(
-                ([, entry]) => entry && now - entry.cachedAt < 5 * 60 * 1000,
-            )
-            .map(([id, entry]) => [id, entry.item]),
+        ids.flatMap((id) => {
+            const entry = cached[id];
+            return entry && now - entry.cachedAt < 5 * 60 * 1000
+                ? [[id, entry.item] as const]
+                : [];
+        }),
     );
     const missingIds = ids.filter((id) => !(id in freshEntries));
     const fetchedEntries =

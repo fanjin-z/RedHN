@@ -131,12 +131,12 @@ describe('HN action fallback', () => {
             kind: 'submitted',
             url: 'https://news.ycombinator.com/item?id=2001#3001',
         });
-        expect(calls[1].url).toBe('https://news.ycombinator.com/comment');
-        expect(calls[1].init).toMatchObject({
+        expect(calls[1]!.url).toBe('https://news.ycombinator.com/comment');
+        expect(calls[1]!.init).toMatchObject({
             credentials: 'include',
             method: 'post',
         });
-        expect(String(calls[1].init?.body)).toBe(
+        expect(String(calls[1]!.init?.body)).toBe(
             'parent=3001&goto=item%3Fid%3D2001%233001&text=Looks+good%21',
         );
     });

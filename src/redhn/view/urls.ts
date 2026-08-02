@@ -1,7 +1,7 @@
 import type { ParsedAuthMode } from '../hn/types';
 
 export function hnLoginUrl(sourceUrl: string, mode: ParsedAuthMode): string {
-    let goto = 'news';
+    let goto: string;
 
     try {
         const url = new URL(sourceUrl);

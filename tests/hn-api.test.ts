@@ -26,20 +26,20 @@ describe('HN API client', () => {
         ).resolves.toMatchObject({ id: 123, descendants: 3 });
 
         await expect(
-            fetchHnUser('PinkG', async (url) => {
+            fetchHnUser('profile_user', async (url) => {
                 expect(url).toBe(
-                    'https://hacker-news.firebaseio.com/v0/user/PinkG.json',
+                    'https://hacker-news.firebaseio.com/v0/user/profile_user.json',
                 );
                 return response({
-                    id: 'PinkG',
+                    id: 'profile_user',
                     karma: 55,
-                    submitted: [48323683],
+                    submitted: [41001],
                 });
             }),
         ).resolves.toMatchObject({
-            id: 'PinkG',
+            id: 'profile_user',
             karma: 55,
-            submitted: [48323683],
+            submitted: [41001],
         });
     });
 
@@ -73,7 +73,10 @@ describe('background message guards', () => {
             isRedhnBackgroundRequest({ type: 'redhn:getItems', ids: [1, 2] }),
         ).toBe(true);
         expect(
-            isRedhnBackgroundRequest({ type: 'redhn:getUser', id: 'PinkG' }),
+            isRedhnBackgroundRequest({
+                type: 'redhn:getUser',
+                id: 'profile_user',
+            }),
         ).toBe(true);
         expect(
             isRedhnBackgroundRequest({ type: 'redhn:getItem', id: '1' }),

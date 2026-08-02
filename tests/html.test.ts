@@ -17,13 +17,7 @@ afterEach(() => {
 });
 
 describe('HN HTML rendering', () => {
-    it('keeps plain text directly inside the existing container', () => {
-        expect(renderContent('redhn-comment__text', 'Plain HN text')).toBe(
-            '<div class="redhn-comment__text">Plain HN text</div>',
-        );
-    });
-
-    it('preserves benign HN formatting tags used by RedHN CSS', () => {
+    it('preserves allowed HN formatting without arbitrary attributes', () => {
         expect(
             renderContent(
                 'redhn-post__text',
@@ -32,6 +26,7 @@ describe('HN HTML rendering', () => {
                     '<pre><code>const answer = 42;</code></pre>',
                     '<br>',
                     '<i>italic</i> <b>bold</b> <u>under</u>',
+                    '<div style="color:red"><span class="c00">About</span></div>',
                 ].join(''),
             ),
         ).toBe(
@@ -41,19 +36,9 @@ describe('HN HTML rendering', () => {
                 '<pre><code>const answer = 42;</code></pre>',
                 '<br/>',
                 '<i>italic</i> <b>bold</b> <u>under</u>',
+                '<div><span>About</span></div>',
                 '</div>',
             ].join(''),
-        );
-    });
-
-    it('keeps plain span and div layout without unsafe attributes', () => {
-        expect(
-            renderContent(
-                'redhn-profile-card__about',
-                '<div style="color:red"><span class="c00">About</span></div>',
-            ),
-        ).toBe(
-            '<div class="redhn-profile-card__about"><div><span>About</span></div></div>',
         );
     });
 

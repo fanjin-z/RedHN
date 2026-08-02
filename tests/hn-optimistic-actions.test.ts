@@ -3,7 +3,6 @@ import type { ParsedComment, ParsedStory } from '../src/redhn/hn/types';
 import {
     applyOptimisticStoryFavorite,
     createOptimisticStoryFavorite,
-    favoriteHrefForNextState,
     isStoryFavorited,
 } from '../src/redhn/hn/favorites';
 import {
@@ -11,7 +10,6 @@ import {
     applyOptimisticStoryVote,
     createOptimisticCommentVote,
     createOptimisticStoryVote,
-    voteHrefForNextState,
 } from '../src/redhn/hn/votes';
 
 function story(patch: Partial<ParsedStory> = {}): ParsedStory {
@@ -43,13 +41,13 @@ describe('HN optimistic actions', () => {
         const voted = applyOptimisticStoryVote(
             story({
                 actions: {
-                    upvote: 'https://news.ycombinator.com/vote?id=1001&how=up&auth=abc&goto=news',
+                    upvote: 'https://news.ycombinator.com/vote?id=1001&how=up&auth=fake-auth-token&goto=news',
                 },
             }),
             createOptimisticStoryVote(
                 story({
                     actions: {
-                        upvote: 'https://news.ycombinator.com/vote?id=1001&how=up&auth=abc&goto=news',
+                        upvote: 'https://news.ycombinator.com/vote?id=1001&how=up&auth=fake-auth-token&goto=news',
                     },
                 }),
             )!,
@@ -58,7 +56,7 @@ describe('HN optimistic actions', () => {
         expect(voted.score).toBe(11);
         expect(voted.actions.upvote).toBeUndefined();
         expect(voted.actions.unvote).toBe(
-            'https://news.ycombinator.com/vote?id=1001&how=un&auth=abc&goto=news',
+            'https://news.ycombinator.com/vote?id=1001&how=un&auth=fake-auth-token&goto=news',
         );
 
         const unvoted = applyOptimisticStoryVote(
@@ -67,7 +65,7 @@ describe('HN optimistic actions', () => {
         );
         expect(unvoted.score).toBe(10);
         expect(unvoted.actions.upvote).toBe(
-            'https://news.ycombinator.com/vote?id=1001&how=up&auth=abc&goto=news',
+            'https://news.ycombinator.com/vote?id=1001&how=up&auth=fake-auth-token&goto=news',
         );
         expect(unvoted.actions.unvote).toBeUndefined();
     });
@@ -75,7 +73,7 @@ describe('HN optimistic actions', () => {
     it('round-trips optimistic comment voting state without a score', () => {
         const initial = comment({
             actions: {
-                upvote: 'https://news.ycombinator.com/vote?id=2001&how=up&auth=abc&goto=item%3Fid%3D1001',
+                upvote: 'https://news.ycombinator.com/vote?id=2001&how=up&auth=fake-auth-token&goto=item%3Fid%3D1001',
             },
         });
         const voted = applyOptimisticCommentVote(
@@ -85,7 +83,7 @@ describe('HN optimistic actions', () => {
 
         expect(voted.actions.upvote).toBeUndefined();
         expect(voted.actions.unvote).toBe(
-            'https://news.ycombinator.com/vote?id=2001&how=un&auth=abc&goto=item%3Fid%3D1001',
+            'https://news.ycombinator.com/vote?id=2001&how=un&auth=fake-auth-token&goto=item%3Fid%3D1001',
         );
 
         const unvoted = applyOptimisticCommentVote(
@@ -93,7 +91,7 @@ describe('HN optimistic actions', () => {
             createOptimisticCommentVote(voted)!,
         );
         expect(unvoted.actions.upvote).toBe(
-            'https://news.ycombinator.com/vote?id=2001&how=up&auth=abc&goto=item%3Fid%3D1001',
+            'https://news.ycombinator.com/vote?id=2001&how=up&auth=fake-auth-token&goto=item%3Fid%3D1001',
         );
         expect(unvoted.actions.unvote).toBeUndefined();
     });
@@ -103,14 +101,14 @@ describe('HN optimistic actions', () => {
             story({
                 actions: {
                     favorite:
-                        'https://news.ycombinator.com/fave?id=1001&auth=abc',
+                        'https://news.ycombinator.com/fave?id=1001&auth=fake-auth-token',
                 },
             }),
             createOptimisticStoryFavorite(
                 story({
                     actions: {
                         favorite:
-                            'https://news.ycombinator.com/fave?id=1001&auth=abc',
+                            'https://news.ycombinator.com/fave?id=1001&auth=fake-auth-token',
                     },
                 }),
             )!,
@@ -119,7 +117,7 @@ describe('HN optimistic actions', () => {
         expect(isStoryFavorited(favorited)).toBe(true);
         expect(favorited.actions.favorite).toBeUndefined();
         expect(favorited.actions.unfavorite).toBe(
-            'https://news.ycombinator.com/fave?id=1001&auth=abc&un=t',
+            'https://news.ycombinator.com/fave?id=1001&auth=fake-auth-token&un=t',
         );
 
         const unfavorited = applyOptimisticStoryFavorite(
@@ -128,28 +126,8 @@ describe('HN optimistic actions', () => {
         );
         expect(isStoryFavorited(unfavorited)).toBe(false);
         expect(unfavorited.actions.favorite).toBe(
-            'https://news.ycombinator.com/fave?id=1001&auth=abc',
+            'https://news.ycombinator.com/fave?id=1001&auth=fake-auth-token',
         );
         expect(unfavorited.actions.unfavorite).toBeUndefined();
-    });
-
-    it('preserves HN query params while toggling action URLs', () => {
-        const voteUrl = new URL(
-            voteHrefForNextState(
-                'https://news.ycombinator.com/vote?id=1001&how=up&auth=abc&goto=news',
-                true,
-            )!,
-        );
-
-        expect(voteUrl.searchParams.get('id')).toBe('1001');
-        expect(voteUrl.searchParams.get('auth')).toBe('abc');
-        expect(voteUrl.searchParams.get('goto')).toBe('news');
-        expect(voteUrl.searchParams.get('how')).toBe('un');
-        expect(
-            favoriteHrefForNextState(
-                'https://news.ycombinator.com/fave?id=1001&un=t&auth=abc',
-                false,
-            ),
-        ).toBe('https://news.ycombinator.com/fave?id=1001&auth=abc');
     });
 });

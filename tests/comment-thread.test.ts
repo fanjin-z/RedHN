@@ -78,6 +78,7 @@ function setupDom() {
     vi.stubGlobal('window', window);
     vi.stubGlobal('HTMLElement', window.HTMLElement);
     vi.stubGlobal('DOMParser', DOMParser);
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     return document;
 }
 
@@ -86,21 +87,17 @@ afterEach(() => {
 });
 
 describe('comment thread depth reveal', () => {
-    it('counts hidden replies and advances reveal depth in steps', () => {
+    it('counts, hides, and reveals deep descendants in steps', () => {
         const boundary = chain(5, 7);
-
-        expect(countHiddenReplies(boundary.children, 5)).toBe(2);
-        expect(countHiddenReplies(boundary.children, 8)).toBe(0);
-        expect(nextRevealDepth(5)).toBe(8);
-        expect(nextRevealDepth(8)).toBe(11);
-    });
-
-    it('hides and reveals deep descendants by branch depth', () => {
         const hiddenHtml = renderThread(chain(0, 7));
         const revealedHtml = renderThread(chain(0, 7), {
             expandedDeepThreadDepths: { 105: 8 },
         });
 
+        expect(countHiddenReplies(boundary.children, 5)).toBe(2);
+        expect(countHiddenReplies(boundary.children, 8)).toBe(0);
+        expect(nextRevealDepth(5)).toBe(8);
+        expect(nextRevealDepth(8)).toBe(11);
         expect(hiddenHtml).toContain('View 2 more replies');
         expect(hiddenHtml).toContain('user105');
         expect(hiddenHtml).not.toContain('user106');
@@ -146,7 +143,7 @@ describe('comment thread depth reveal', () => {
         expect(html).not.toContain('Share');
     });
 
-    it('renders an active comment vote and allows removing it', async () => {
+    it('renders active and pending comment votes and wires voting', async () => {
         const document = setupDom();
         const container = document.createElement('div');
         document.body.append(container);
@@ -181,25 +178,34 @@ describe('comment thread depth reveal', () => {
         voteButton?.click();
         expect(onVote).toHaveBeenCalledWith(votedComment);
 
-        await act(async () => {
-            root.unmount();
-        });
-    });
-
-    it('disables a comment vote while it is pending', () => {
-        const root = {
+        const pendingComment = {
             ...comment(1, 0),
             actions: {
                 upvote: 'https://news.ycombinator.com/vote?id=1&how=up',
             },
         };
-        const html = renderThread(root, {
-            pendingVoteCommentIds: new Set([1]),
+
+        await act(async () => {
+            root.render(
+                createElement(CommentThread, {
+                    collapsedCommentIds: new Set<number>(),
+                    comment: pendingComment,
+                    onToggle: () => undefined,
+                    onVote,
+                    pendingVoteCommentIds: new Set([1]),
+                }),
+            );
         });
 
-        expect(html).toContain('aria-label="Upvote comment"');
-        expect(html).toContain('aria-pressed="false"');
-        expect(html).toContain('disabled=""');
+        const pendingVoteButton = container.querySelector<HTMLButtonElement>(
+            '[aria-label="Upvote comment"]',
+        );
+        expect(pendingVoteButton?.getAttribute('aria-pressed')).toBe('false');
+        expect(pendingVoteButton?.disabled).toBe(true);
+
+        await act(async () => {
+            root.unmount();
+        });
     });
 
     it('connector controls toggle the parent comment', async () => {

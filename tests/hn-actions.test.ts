@@ -22,7 +22,10 @@ describe('HN action fallback', () => {
     it('fetches safe same-origin HN actions with credentials', async () => {
         const calls: Array<{ url: string; init?: RequestInit }> = [];
 
-        for (const href of ['vote?id=1&how=up', 'fave?id=1&auth=x']) {
+        for (const href of [
+            'vote?id=1&how=up',
+            'fave?id=1&auth=fake-auth-token',
+        ]) {
             await expect(
                 performHnAction(href, {
                     baseUrl: 'https://news.ycombinator.com/item?id=1',
@@ -43,7 +46,7 @@ describe('HN action fallback', () => {
             },
             {
                 init: { credentials: 'include' },
-                url: 'https://news.ycombinator.com/fave?id=1&auth=x',
+                url: 'https://news.ycombinator.com/fave?id=1&auth=fake-auth-token',
             },
         ]);
     });
@@ -68,7 +71,7 @@ describe('HN action fallback', () => {
         });
 
         await expect(
-            performHnAction('fave?id=1&auth=x', {
+            performHnAction('fave?id=1&auth=fake-auth-token', {
                 baseUrl: 'https://news.ycombinator.com/item?id=1',
                 fetcher: async () =>
                     response('https://news.ycombinator.com/login'),
@@ -76,11 +79,11 @@ describe('HN action fallback', () => {
         ).resolves.toMatchObject({ kind: 'navigate' });
 
         await expect(
-            performHnAction('fave?id=1&auth=x', {
+            performHnAction('fave?id=1&auth=fake-auth-token', {
                 baseUrl: 'https://news.ycombinator.com/item?id=1',
                 fetcher: async () =>
                     htmlResponse(
-                        'https://news.ycombinator.com/fave?id=1&auth=x',
+                        'https://news.ycombinator.com/fave?id=1&auth=fake-auth-token',
                         `
                             Please log in.
                             <form action="fave" method="post">
@@ -92,7 +95,7 @@ describe('HN action fallback', () => {
             }),
         ).resolves.toMatchObject({
             kind: 'navigate',
-            url: 'https://news.ycombinator.com/fave?id=1&auth=x',
+            url: 'https://news.ycombinator.com/fave?id=1&auth=fake-auth-token',
         });
     });
 

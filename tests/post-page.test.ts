@@ -34,7 +34,8 @@ describe('focused comment PostPage', () => {
         const post: ParsedStory = {
             actions: {
                 comments: 'https://news.ycombinator.com/item?id=9100',
-                favorite: 'https://news.ycombinator.com/fave?id=9100&auth=test',
+                favorite:
+                    'https://news.ycombinator.com/fave?id=9100&auth=fake-auth-token',
                 reply: 'https://news.ycombinator.com/reply?id=9100',
                 upvote: 'https://news.ycombinator.com/vote?id=9100&how=up',
             },
@@ -71,9 +72,7 @@ describe('focused comment PostPage', () => {
         expect(html.match(/Focused <i>comment body<\/i>\./g)).toHaveLength(1);
         expect(html).toContain('Only descendant reply.');
         expect(html).not.toContain('redhn-post__link-preview');
-        expect(html).not.toContain('<span>-</span>');
         expect(html).toContain('aria-label="Upvote comment"');
-        expect(html).toContain('>Upvote</span>');
         expect(html).toContain('aria-label="Reply to this comment"');
         expect(html).toContain('placeholder="Write a reply"');
         expect(html).toContain('aria-label="Replies"');

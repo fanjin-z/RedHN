@@ -29,18 +29,19 @@ function item(patch: Partial<HnApiItem> = {}): HnApiItem {
 
 function profile(patch: Partial<ParsedProfile> = {}): ParsedProfile {
     return {
-        id: 'PinkG',
+        id: 'profile_user',
         tab: 'overview',
         links: {
-            profile: 'https://news.ycombinator.com/user?id=PinkG',
-            submitted: 'https://news.ycombinator.com/submitted?id=PinkG',
-            comments: 'https://news.ycombinator.com/threads?id=PinkG',
-            favorites: 'https://news.ycombinator.com/favorites?id=PinkG',
-            upvotedSubmissions: 'https://news.ycombinator.com/upvoted?id=PinkG',
+            profile: 'https://news.ycombinator.com/user?id=profile_user',
+            submitted: 'https://news.ycombinator.com/submitted?id=profile_user',
+            comments: 'https://news.ycombinator.com/threads?id=profile_user',
+            favorites: 'https://news.ycombinator.com/favorites?id=profile_user',
+            upvotedSubmissions:
+                'https://news.ycombinator.com/upvoted?id=profile_user',
             upvotedComments:
-                'https://news.ycombinator.com/upvoted?id=PinkG&comments=t',
+                'https://news.ycombinator.com/upvoted?id=profile_user&comments=t',
             favoriteComments:
-                'https://news.ycombinator.com/favorites?id=PinkG&comments=t',
+                'https://news.ycombinator.com/favorites?id=profile_user&comments=t',
         },
         ...patch,
     };
@@ -48,7 +49,7 @@ function profile(patch: Partial<ParsedProfile> = {}): ParsedProfile {
 
 function user(patch: Partial<HnApiUser> = {}): HnApiUser {
     return {
-        id: 'PinkG',
+        id: 'profile_user',
         ...patch,
     };
 }
@@ -142,19 +143,19 @@ describe('API enrichment', () => {
                 profile({
                     about: 'Parsed about',
                     aboutHtml: '<p>Parsed about</p>',
-                    createdAt: 1780065601,
+                    createdAt: 1700000000,
                     karma: 42,
                 }),
                 user({
                     about: 'API <i>about</i>',
-                    created: 1780065602,
+                    created: 1700000001,
                     karma: 99,
                 }),
             ),
         ).toMatchObject({
             about: 'Parsed about',
             aboutHtml: '<p>Parsed about</p>',
-            createdAt: 1780065601,
+            createdAt: 1700000000,
             karma: 42,
         });
 
@@ -163,14 +164,14 @@ describe('API enrichment', () => {
                 profile(),
                 user({
                     about: 'API <i>about</i>',
-                    created: 1780065602,
+                    created: 1700000001,
                     karma: 99,
                 }),
             ),
         ).toMatchObject({
             about: 'API about',
             aboutHtml: 'API <i>about</i>',
-            createdAt: 1780065602,
+            createdAt: 1700000001,
             karma: 99,
         });
     });

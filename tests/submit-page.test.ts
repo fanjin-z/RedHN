@@ -1,7 +1,6 @@
 import { createElement } from 'react';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { parseHTML } from 'linkedom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SubmitPage } from '../src/redhn/pages/SubmitPage';
@@ -15,7 +14,7 @@ function submitPage(
         form: {
             action: 'https://news.ycombinator.com/r',
             hiddenFields: {
-                fnid: 'abc',
+                fnid: 'fake-form-id',
                 fnop: 'submit-page',
             },
             method: 'post',
@@ -35,6 +34,7 @@ function setupDom() {
     vi.stubGlobal('window', window);
     vi.stubGlobal('HTMLElement', window.HTMLElement);
     vi.stubGlobal('Event', window.Event);
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     return document;
 }
 
@@ -43,37 +43,7 @@ afterEach(() => {
 });
 
 describe('SubmitPage', () => {
-    it('hides the URL field for Ask HN and submits a blank hidden URL', () => {
-        const html = renderToStaticMarkup(
-            createElement(SubmitPage, {
-                submit: submitPage('Ask HN: Good question?'),
-            }),
-        );
-        const document = parseHTML(html).document;
-
-        expect(document.querySelector('input[type="url"]')).toBeNull();
-
-        const hiddenUrl = document.querySelector<HTMLInputElement>(
-            'input[type="hidden"][name="url"]',
-        );
-        expect(hiddenUrl?.value).toBe('');
-    });
-
-    it('keeps the URL field for Show HN', () => {
-        const html = renderToStaticMarkup(
-            createElement(SubmitPage, {
-                submit: submitPage('Show HN: My project'),
-            }),
-        );
-        const document = parseHTML(html).document;
-        const urlInput = document.querySelector<HTMLInputElement>(
-            'input[type="url"][name="url"]',
-        );
-
-        expect(urlInput?.value).toBe('https://example.com/project');
-    });
-
-    it('preserves the URL state when switching through Ask HN', async () => {
+    it('preserves form values while switching through submit sections', async () => {
         const document = setupDom();
         const container = document.createElement('div');
         document.body.append(container);
@@ -82,11 +52,16 @@ describe('SubmitPage', () => {
         await act(async () => {
             root.render(
                 createElement(SubmitPage, {
-                    submit: submitPage(),
+                    submit: submitPage('A sample submission'),
                 }),
             );
         });
 
+        expect(
+            container.querySelector<HTMLInputElement>(
+                'input[type="text"][name="title"]',
+            )?.value,
+        ).toBe('A sample submission');
         const urlInput = container.querySelector<HTMLInputElement>(
             'input[type="url"][name="url"]',
         );
@@ -109,6 +84,16 @@ describe('SubmitPage', () => {
         });
 
         expect(container.querySelector('input[type="url"]')).toBeNull();
+        expect(
+            container.querySelector<HTMLInputElement>(
+                'input[type="hidden"][name="url"]',
+            )?.value,
+        ).toBe('');
+        expect(
+            container.querySelector<HTMLInputElement>(
+                'input[type="hidden"][name="title"]',
+            )?.value,
+        ).toBe('Ask HN: A sample submission');
 
         await act(async () => {
             sectionButton!.click();
@@ -127,6 +112,11 @@ describe('SubmitPage', () => {
                 'input[type="url"][name="url"]',
             )?.value,
         ).toBe('https://example.com/project');
+        expect(
+            container.querySelector<HTMLInputElement>(
+                'input[type="hidden"][name="title"]',
+            )?.value,
+        ).toBe('Show HN: A sample submission');
 
         await act(async () => {
             root.unmount();

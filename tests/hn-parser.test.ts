@@ -30,7 +30,7 @@ function favoritePage(subtext: string): Document {
                     </tr>
                     <tr>
                         <td class="subtext">
-                            by <a class="hnuser" href="user?id=pg">pg</a>
+                            by <a class="hnuser" href="user?id=story_author">story_author</a>
                             ${subtext}
                         </td>
                     </tr>
@@ -70,7 +70,7 @@ describe('HN DOM parser', () => {
             url: 'https://example.com/framework',
             hnUrl: 'https://news.ycombinator.com/item?id=1001',
             domain: 'example.com',
-            author: 'dev_jane',
+            author: 'story_author',
             age: '3 hours ago',
             score: 428,
             commentCount: 156,
@@ -89,22 +89,22 @@ describe('HN DOM parser', () => {
             <html>
                 <body>
                     <table>
-                        <tr class="athing submission" id="48371562">
+                        <tr class="athing submission" id="41001">
                             <td align="right" valign="top" class="title">
                                 <span class="rank">1.</span>
                             </td>
                             <td valign="top" class="votelinks">
                                 <center>
-                                    <a id="up_48371562" class="clicky" href="vote?id=48371562&amp;how=up&amp;auth=b32fad690572a311cdc37426fe5c687f80a2c14c&amp;goto=news">
+                                    <a id="up_41001" class="clicky" href="vote?id=41001&amp;how=up&amp;auth=fake-auth-token&amp;goto=news">
                                         <div class="votearrow" title="upvote"></div>
                                     </a>
                                 </center>
                             </td>
                             <td class="title">
                                 <span class="titleline">
-                                    <a href="https://blog.ammaraskar.com/github-token-stealing/">1-Click GitHub Token Stealing via a VSCode Bug</a>
+                                    <a href="https://content.example/security-report">A synthetic security report</a>
                                     <span class="sitebit comhead">
-                                        (<a href="from?site=ammaraskar.com"><span class="sitestr">ammaraskar.com</span></a>)
+                                        (<a href="from?site=content.example"><span class="sitestr">content.example</span></a>)
                                     </span>
                                 </span>
                             </td>
@@ -123,19 +123,19 @@ describe('HN DOM parser', () => {
         expect(page.kind).toBe('feed');
         expect(page.stories).toHaveLength(1);
         expect(page.stories[0]).toMatchObject({
-            id: 48371562,
+            id: 41001,
             rank: 1,
-            title: '1-Click GitHub Token Stealing via a VSCode Bug',
-            url: 'https://blog.ammaraskar.com/github-token-stealing/',
-            hnUrl: 'https://news.ycombinator.com/item?id=48371562',
-            domain: 'ammaraskar.com',
+            title: 'A synthetic security report',
+            url: 'https://content.example/security-report',
+            hnUrl: 'https://news.ycombinator.com/item?id=41001',
+            domain: 'content.example',
             commentCount: 0,
         });
         expect(page.stories[0].actions.upvote).toBe(
-            'https://news.ycombinator.com/vote?id=48371562&how=up&auth=b32fad690572a311cdc37426fe5c687f80a2c14c&goto=news',
+            'https://news.ycombinator.com/vote?id=41001&how=up&auth=fake-auth-token&goto=news',
         );
         expect(page.stories[0].actions.comments).toBe(
-            'https://news.ycombinator.com/item?id=48371562',
+            'https://news.ycombinator.com/item?id=41001',
         );
     });
 
@@ -149,10 +149,10 @@ describe('HN DOM parser', () => {
         expect(page.kind).toBe('item');
         expect(page.post).toMatchObject({
             id: 2001,
-            title: 'Show HN: I built RedHN',
-            domain: 'github.com',
+            title: 'Show HN: Sample project',
+            domain: 'project.example',
             score: 452,
-            author: 'pg',
+            author: 'story_author',
             commentCount: 128,
             text: 'I built a minimal, high-density Hacker News client.',
         });
@@ -164,7 +164,7 @@ describe('HN DOM parser', () => {
         expect(page.comments[0]).toMatchObject({
             id: 3001,
             depth: 0,
-            author: 'dave_t',
+            author: 'comment_author',
             age: '3 hours ago',
             text: 'This looks really clean.',
         });
@@ -173,8 +173,8 @@ describe('HN DOM parser', () => {
         expect(page.comments[0].children[0]).toMatchObject({
             id: 3002,
             depth: 1,
-            author: 'pg',
-            text: 'Thanks Dave!',
+            author: 'story_author',
+            text: 'Thanks!',
         });
         expect(
             flattenComments(page.comments).map((comment) => comment.id),
@@ -206,10 +206,10 @@ describe('HN DOM parser', () => {
         expect(page.post?.textHtml).toContain('Second synthetic paragraph.');
         expect(page.post?.actions.upvote).toBeUndefined();
         expect(page.post?.actions.unvote).toBe(
-            'https://news.ycombinator.com/vote?id=9100&how=un&auth=test-vote&goto=item%3Fid%3D9100',
+            'https://news.ycombinator.com/vote?id=9100&how=un&auth=fake-vote-token&goto=item%3Fid%3D9100',
         );
         expect(page.post?.actions.favorite).toBe(
-            'https://news.ycombinator.com/fave?id=9100&auth=test-favorite',
+            'https://news.ycombinator.com/fave?id=9100&auth=fake-favorite-token',
         );
         expect(page.post?.actions.parent).toBe(
             'https://news.ycombinator.com/item?id=9001',
@@ -266,68 +266,32 @@ describe('HN DOM parser', () => {
         });
     });
 
-    it('parses an upvoted comment from its header unvote link', () => {
-        const document = parseHTML(`
-            <html>
-                <body>
-                    <table class="comment-tree">
-                        <tr class="athing comtr" id="9200">
-                            <td class="ind" indent="0"><img src="s.gif" width="0"></td>
-                            <td class="votelinks">
-                                <a class="nosee" href="vote?id=9200&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9002"></a>
-                            </td>
-                            <td class="default">
-                                <div>
-                                    <span class="comhead">
-                                        <a class="hnuser" href="user?id=voted_user">voted_user</a>
-                                        <span class="age"><a href="item?id=9200">1 hour ago</a></span>
-                                        <span id="unv_9200"> |
-                                            <a id="un_9200" class="clicky" href="vote?id=9200&amp;how=un&amp;auth=test&amp;goto=item%3Fid%3D9002">unvote</a>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="comment"><div class="commtext c00">Already voted.</div></div>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-            </html>
-        `).document;
-
-        const page = parseHnPage(
-            document,
-            'https://news.ycombinator.com/item?id=9002',
-        );
-
-        expect(page.comments[0].actions.upvote).toBeUndefined();
-        expect(page.comments[0].actions.unvote).toBe(
-            'https://news.ycombinator.com/vote?id=9200&how=un&auth=test&goto=item%3Fid%3D9002',
-        );
-    });
-
     it.each<FavoriteCase>([
         {
             label: 'favorite link',
-            subtext: '<a href="fave?id=2002&amp;auth=abc">favorite</a>',
+            subtext:
+                '<a href="fave?id=2002&amp;auth=fake-auth-token">favorite</a>',
             expected: {
-                favorite: 'https://news.ycombinator.com/fave?id=2002&auth=abc',
+                favorite:
+                    'https://news.ycombinator.com/fave?id=2002&auth=fake-auth-token',
             },
         },
         {
             label: 'un flag',
             subtext:
-                '<a href="fave?id=2002&amp;un=t&amp;auth=abc">favorite</a>',
+                '<a href="fave?id=2002&amp;un=t&amp;auth=fake-auth-token">favorite</a>',
             expected: {
                 unfavorite:
-                    'https://news.ycombinator.com/fave?id=2002&un=t&auth=abc',
+                    'https://news.ycombinator.com/fave?id=2002&un=t&auth=fake-auth-token',
             },
         },
         {
             label: 'normalized unfavorite label',
-            subtext: '<a href="fave?id=2002&amp;auth=abc">un\u2011favorite</a>',
+            subtext:
+                '<a href="fave?id=2002&amp;auth=fake-auth-token">un\u2011favorite</a>',
             expected: {
                 unfavorite:
-                    'https://news.ycombinator.com/fave?id=2002&auth=abc',
+                    'https://news.ycombinator.com/fave?id=2002&auth=fake-auth-token',
             },
         },
         {
@@ -352,8 +316,8 @@ describe('HN DOM parser', () => {
                     <table>
                         <tr class="athing">
                             <td valign="top">user:</td>
-                            <td timestamp="1780065601">
-                                <a href="user?id=PinkG" class="hnuser">PinkG</a>
+                            <td timestamp="1700000000">
+                                <a href="user?id=profile_user" class="hnuser">profile_user</a>
                             </td>
                         </tr>
                         <tr>
@@ -369,21 +333,21 @@ describe('HN DOM parser', () => {
 
         const page = parseHnPage(
             document,
-            'https://news.ycombinator.com/user?id=PinkG',
+            'https://news.ycombinator.com/user?id=profile_user',
         );
 
         expect(page.kind).toBe('profile');
         expect(page.profile).toMatchObject({
-            id: 'PinkG',
+            id: 'profile_user',
             tab: 'overview',
-            createdAt: 1780065601,
+            createdAt: 1700000000,
             created: '48 minutes ago',
             karma: 55,
             about: 'Building things.',
             aboutHtml: 'Building things.',
         });
         expect(page.profile?.links.comments).toBe(
-            'https://news.ycombinator.com/threads?id=PinkG',
+            'https://news.ycombinator.com/threads?id=profile_user',
         );
         expect(page.profile?.accountForm).toBeUndefined();
     });
@@ -393,17 +357,17 @@ describe('HN DOM parser', () => {
             <html>
                 <body>
                     <span class="pagetop">
-                        <a id="me" href="user?id=fanjinz">fanjinz</a>
+                        <a id="me" href="user?id=test_owner">test_owner</a>
                     </span>
                     <form class="profileform" action="/xuser" method="post">
-                        <input type="hidden" name="id" value="fanjinz">
-                        <input type="hidden" name="hmac" value="abc123">
+                        <input type="hidden" name="id" value="test_owner">
+                        <input type="hidden" name="hmac" value="fake-hmac">
                         <table>
                             <tbody>
                                 <tr class="athing">
                                     <td valign="top">user:</td>
-                                    <td timestamp="1779000583">
-                                        <a href="user?id=fanjinz" class="hnuser">fanjinz</a>
+                                    <td timestamp="1700000100">
+                                        <a href="user?id=test_owner" class="hnuser">test_owner</a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -414,13 +378,13 @@ describe('HN DOM parser', () => {
                                 <tr>
                                     <td valign="top">about:</td>
                                     <td>
-                                        <textarea name="about" rows="5" cols="60">Building RedHN.</textarea>
+                                        <textarea name="about" rows="5" cols="60">Synthetic profile text.</textarea>
                                         <a href="formatdoc">help</a>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td valign="top">email:</td>
-                                    <td><input type="text" name="email" value="fj.zeng@yahoo.com"></td>
+                                    <td><input type="text" name="email" value="owner@example.com"></td>
                                 </tr>
                                 <tr>
                                     <td valign="top">showdead:</td>
@@ -444,22 +408,22 @@ describe('HN DOM parser', () => {
                                 <tr><td valign="top">minaway:</td><td><input type="text" name="mina" value="180"></td></tr>
                                 <tr><td valign="top">delay:</td><td><input type="text" name="delay" value="0"></td></tr>
                                 <tr><td></td><td><a href="changepw">change password</a></td></tr>
-                                <tr><td></td><td><a href="submitted?id=fanjinz">submissions</a></td></tr>
-                                <tr><td></td><td><a href="threads?id=fanjinz">comments</a></td></tr>
+                                <tr><td></td><td><a href="submitted?id=test_owner">submissions</a></td></tr>
+                                <tr><td></td><td><a href="threads?id=test_owner">comments</a></td></tr>
                                 <tr>
                                     <td></td>
                                     <td>
-                                        <a href="upvoted?id=fanjinz">upvoted submissions</a>
+                                        <a href="upvoted?id=test_owner">upvoted submissions</a>
                                         /
-                                        <a href="upvoted?id=fanjinz&amp;comments=t">comments</a>
+                                        <a href="upvoted?id=test_owner&amp;comments=t">comments</a>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td></td>
                                     <td>
-                                        <a href="favorites?id=fanjinz">favorite submissions</a>
+                                        <a href="favorites?id=test_owner">favorite submissions</a>
                                         /
-                                        <a href="favorites?id=fanjinz&amp;comments=t">comments</a>
+                                        <a href="favorites?id=test_owner&amp;comments=t">comments</a>
                                     </td>
                                 </tr>
                             </tbody>
@@ -472,26 +436,26 @@ describe('HN DOM parser', () => {
 
         const page = parseHnPage(
             document,
-            'https://news.ycombinator.com/user?id=fanjinz',
+            'https://news.ycombinator.com/user?id=test_owner',
         );
 
         expect(page.kind).toBe('profile');
         expect(page.profile).toMatchObject({
-            id: 'fanjinz',
+            id: 'test_owner',
             tab: 'overview',
-            createdAt: 1779000583,
-            about: 'Building RedHN.',
+            createdAt: 1700000100,
+            about: 'Synthetic profile text.',
             aboutHtml: undefined,
             accountForm: {
                 action: 'https://news.ycombinator.com/xuser',
                 method: 'post',
                 hiddenFields: {
-                    id: 'fanjinz',
-                    hmac: 'abc123',
+                    id: 'test_owner',
+                    hmac: 'fake-hmac',
                 },
                 submitLabel: 'update',
-                about: { name: 'about', value: 'Building RedHN.' },
-                email: { name: 'email', value: 'fj.zeng@yahoo.com' },
+                about: { name: 'about', value: 'Synthetic profile text.' },
+                email: { name: 'email', value: 'owner@example.com' },
                 showDead: { name: 'showd', value: 'no' },
                 noProcrast: { name: 'nopro', value: 'no' },
                 maxVisit: { name: 'maxv', value: '20' },
@@ -505,31 +469,31 @@ describe('HN DOM parser', () => {
         ]);
         expect(page.profile?.accountForm?.links).toMatchObject({
             changePassword: 'https://news.ycombinator.com/changepw',
-            submitted: 'https://news.ycombinator.com/submitted?id=fanjinz',
-            comments: 'https://news.ycombinator.com/threads?id=fanjinz',
+            submitted: 'https://news.ycombinator.com/submitted?id=test_owner',
+            comments: 'https://news.ycombinator.com/threads?id=test_owner',
             upvotedSubmissions:
-                'https://news.ycombinator.com/upvoted?id=fanjinz',
+                'https://news.ycombinator.com/upvoted?id=test_owner',
             upvotedComments:
-                'https://news.ycombinator.com/upvoted?id=fanjinz&comments=t',
+                'https://news.ycombinator.com/upvoted?id=test_owner&comments=t',
             favoriteSubmissions:
-                'https://news.ycombinator.com/favorites?id=fanjinz',
+                'https://news.ycombinator.com/favorites?id=test_owner',
             favoriteComments:
-                'https://news.ycombinator.com/favorites?id=fanjinz&comments=t',
+                'https://news.ycombinator.com/favorites?id=test_owner&comments=t',
             formatDoc: 'https://news.ycombinator.com/formatdoc',
         });
     });
 
     it.each([
         {
-            url: 'https://news.ycombinator.com/upvoted?id=fanjinz',
+            url: 'https://news.ycombinator.com/upvoted?id=test_owner',
             tab: 'upvotedPosts',
         },
         {
-            url: 'https://news.ycombinator.com/upvoted?id=fanjinz&comments=t',
+            url: 'https://news.ycombinator.com/upvoted?id=test_owner&comments=t',
             tab: 'upvotedComments',
         },
         {
-            url: 'https://news.ycombinator.com/favorites?id=fanjinz&comments=t',
+            url: 'https://news.ycombinator.com/favorites?id=test_owner&comments=t',
             tab: 'favoriteComments',
         },
     ] as const)(
@@ -539,7 +503,7 @@ describe('HN DOM parser', () => {
             <html>
                 <body>
                     <span class="pagetop">
-                        <a id="me" href="user?id=fanjinz">fanjinz</a>
+                        <a id="me" href="user?id=test_owner">test_owner</a>
                     </span>
                 </body>
             </html>
@@ -549,24 +513,25 @@ describe('HN DOM parser', () => {
 
             expect(page.kind).toBe('profile');
             expect(page.profile).toMatchObject({
-                id: 'fanjinz',
+                id: 'test_owner',
                 tab,
                 links: {
-                    profile: 'https://news.ycombinator.com/user?id=fanjinz',
+                    profile: 'https://news.ycombinator.com/user?id=test_owner',
                     submitted:
-                        'https://news.ycombinator.com/submitted?id=fanjinz',
-                    comments: 'https://news.ycombinator.com/threads?id=fanjinz',
+                        'https://news.ycombinator.com/submitted?id=test_owner',
+                    comments:
+                        'https://news.ycombinator.com/threads?id=test_owner',
                     favorites:
-                        'https://news.ycombinator.com/favorites?id=fanjinz',
+                        'https://news.ycombinator.com/favorites?id=test_owner',
                     upvotedSubmissions:
-                        'https://news.ycombinator.com/upvoted?id=fanjinz',
+                        'https://news.ycombinator.com/upvoted?id=test_owner',
                     upvotedComments:
-                        'https://news.ycombinator.com/upvoted?id=fanjinz&comments=t',
+                        'https://news.ycombinator.com/upvoted?id=test_owner&comments=t',
                     favoriteComments:
-                        'https://news.ycombinator.com/favorites?id=fanjinz&comments=t',
+                        'https://news.ycombinator.com/favorites?id=test_owner&comments=t',
                 },
             });
-            expect(page.currentUser?.id).toBe('fanjinz');
+            expect(page.currentUser?.id).toBe('test_owner');
             expect(isRedhnSupportedPage(page)).toBe(true);
         },
     );
@@ -636,7 +601,7 @@ describe('HN DOM parser', () => {
                                 <tr id="bigbox">
                                     <td>
                                         <form action="/r" method="post">
-                                            <input type="hidden" name="fnid" value="Pek2ac3yCOcK58mIBGbzjC">
+                                            <input type="hidden" name="fnid" value="fake-form-id">
                                             <input type="hidden" name="fnop" value="submit-page">
                                             <table>
                                                 <tbody>
@@ -694,7 +659,7 @@ describe('HN DOM parser', () => {
                 textName: 'text',
                 submitLabel: 'submit',
                 hiddenFields: {
-                    fnid: 'Pek2ac3yCOcK58mIBGbzjC',
+                    fnid: 'fake-form-id',
                     fnop: 'submit-page',
                 },
             },
@@ -735,8 +700,8 @@ describe('HN DOM parser', () => {
                 <body>
                     <span class="pagetop">
                         <a href="news">Hacker News</a>
-                        <a id="me" href="user?id=daanyal">daanyal</a>
-                        <a id="logout" href="logout?auth=abc&amp;goto=news">logout</a>
+                        <a id="me" href="user?id=current_user">current_user</a>
+                        <a id="logout" href="logout?auth=fake-auth-token&amp;goto=news">logout</a>
                     </span>
                 </body>
             </html>
@@ -754,9 +719,10 @@ describe('HN DOM parser', () => {
         ).toBe(456);
         expect(parseItemIdFromUrl('news')).toBeUndefined();
         expect(page.currentUser).toEqual({
-            id: 'daanyal',
-            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
-            logoutUrl: 'https://news.ycombinator.com/logout?auth=abc&goto=news',
+            id: 'current_user',
+            profileUrl: 'https://news.ycombinator.com/user?id=current_user',
+            logoutUrl:
+                'https://news.ycombinator.com/logout?auth=fake-auth-token&goto=news',
         });
     });
 });

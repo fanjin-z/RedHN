@@ -9,7 +9,7 @@
                 <tr class="athing" id="9100">
                     <td class="votelinks">
                         <a
-                            href="vote?id=9100&amp;how=up&amp;auth=test-vote&amp;goto=item%3Fid%3D9100"
+                            href="vote?id=9100&amp;how=up&amp;auth=fake-vote-token&amp;goto=item%3Fid%3D9100"
                             id="up_9100"
                         ></a>
                     </td>
@@ -24,7 +24,7 @@
                                 >
                                 <span>
                                     |<a
-                                        href="vote?id=9100&amp;how=un&amp;auth=test-vote&amp;goto=item%3Fid%3D9100"
+                                        href="vote?id=9100&amp;how=un&amp;auth=fake-vote-token&amp;goto=item%3Fid%3D9100"
                                         >unvote</a
                                     >
                                 </span>
@@ -33,7 +33,7 @@
                                     <a href="item?id=9001#9100">context</a>
                                     |
                                     <a
-                                        href="fave?id=9100&amp;auth=test-favorite"
+                                        href="fave?id=9100&amp;auth=fake-favorite-token"
                                         >favorite</a
                                     >
                                     <span class="onstory">
@@ -60,7 +60,11 @@
                     <td>
                         <form action="comment" method="post">
                             <input name="parent" type="hidden" value="9100" />
-                            <input name="hmac" type="hidden" value="test" />
+                            <input
+                                name="hmac"
+                                type="hidden"
+                                value="fake-hmac"
+                            />
                             <textarea name="text"></textarea>
                         </form>
                     </td>
@@ -73,7 +77,7 @@
                     <td class="ind"><img src="s.gif" width="0" /></td>
                     <td class="votelinks">
                         <a
-                            href="vote?id=9101&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                            href="vote?id=9101&amp;how=up&amp;auth=fake-vote-token&amp;goto=item%3Fid%3D9100"
                         ></a>
                     </td>
                     <td class="default">
@@ -93,7 +97,7 @@
                     <td class="ind"><img src="s.gif" width="0" /></td>
                     <td class="votelinks">
                         <a
-                            href="vote?id=9102&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                            href="vote?id=9102&amp;how=up&amp;auth=fake-vote-token&amp;goto=item%3Fid%3D9100"
                         ></a>
                     </td>
                     <td class="default">
@@ -113,7 +117,7 @@
                     <td class="ind"><img src="s.gif" width="40" /></td>
                     <td class="votelinks">
                         <a
-                            href="vote?id=9103&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                            href="vote?id=9103&amp;how=up&amp;auth=fake-vote-token&amp;goto=item%3Fid%3D9100"
                         ></a>
                     </td>
                     <td class="default">
@@ -133,7 +137,7 @@
                     <td class="ind"><img src="s.gif" width="80" /></td>
                     <td class="votelinks">
                         <a
-                            href="vote?id=9104&amp;how=up&amp;auth=test&amp;goto=item%3Fid%3D9100"
+                            href="vote?id=9104&amp;how=up&amp;auth=fake-vote-token&amp;goto=item%3Fid%3D9100"
                         ></a>
                     </td>
                     <td class="default">

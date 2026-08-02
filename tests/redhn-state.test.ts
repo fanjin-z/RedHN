@@ -78,9 +78,9 @@ describe('RedHN state helpers', () => {
             }),
         ];
 
-        expect(termsFromInput('AI, ai,  github.com ,,')).toEqual([
+        expect(termsFromInput('AI, ai,  blocked.example ,,')).toEqual([
             'ai',
-            'github.com',
+            'blocked.example',
         ]);
         expect(
             applyStoryFilters(stories, {
@@ -137,16 +137,17 @@ describe('RedHN state helpers', () => {
     it('caches parsed current users without logout URLs', () => {
         const cached = toCachedCurrentUser(
             {
-                id: 'daanyal',
-                profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
-                logoutUrl: 'https://news.ycombinator.com/logout?auth=secret',
+                id: 'current_user',
+                profileUrl: 'https://news.ycombinator.com/user?id=current_user',
+                logoutUrl:
+                    'https://news.ycombinator.com/logout?auth=fake-auth-token',
             },
             100,
         );
 
         expect(cached).toEqual({
-            id: 'daanyal',
-            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+            id: 'current_user',
+            profileUrl: 'https://news.ycombinator.com/user?id=current_user',
             cachedAt: 100,
         });
         expect(cached).not.toHaveProperty('logoutUrl');
@@ -154,8 +155,8 @@ describe('RedHN state helpers', () => {
 
     it('uses only fresh cached users for submit pages without parsed identity', () => {
         const cached: CachedCurrentUser = {
-            id: 'daanyal',
-            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+            id: 'current_user',
+            profileUrl: 'https://news.ycombinator.com/user?id=current_user',
             cachedAt: 1000,
         };
         const submitPage = page({
@@ -164,8 +165,8 @@ describe('RedHN state helpers', () => {
         });
 
         expect(resolveCurrentUserForPage(submitPage, cached, 2000)).toEqual({
-            id: 'daanyal',
-            profileUrl: 'https://news.ycombinator.com/user?id=daanyal',
+            id: 'current_user',
+            profileUrl: 'https://news.ycombinator.com/user?id=current_user',
         });
         expect(
             resolveCurrentUserForPage(
@@ -188,9 +189,9 @@ describe('RedHN state helpers', () => {
             shouldClearCachedCurrentUser(
                 page({
                     currentUser: {
-                        id: 'daanyal',
+                        id: 'current_user',
                         profileUrl:
-                            'https://news.ycombinator.com/user?id=daanyal',
+                            'https://news.ycombinator.com/user?id=current_user',
                     },
                 }),
             ),

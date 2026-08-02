@@ -1,4 +1,4 @@
-import type { HnActionMap, ParsedStory } from './types';
+import type { HnActionMap, ParsedComment, ParsedStory } from './types';
 
 const HN_ORIGIN = 'https://news.ycombinator.com';
 
@@ -6,6 +6,13 @@ export type OptimisticStoryVote = {
     href: string;
     upvoted: boolean;
     score: ParsedStory['score'];
+    upvote?: string;
+    unvote?: string;
+};
+
+export type OptimisticCommentVote = {
+    href: string;
+    upvoted: boolean;
     upvote?: string;
     unvote?: string;
 };
@@ -58,6 +65,50 @@ export function applyOptimisticStoryVote(
         ...story,
         actions,
         score: vote.score,
+    };
+}
+
+export function isCommentUpvoted(comment: ParsedComment): boolean {
+    return Boolean(comment.actions.unvote);
+}
+
+export function getCommentVoteHref(comment: ParsedComment): string | undefined {
+    return comment.actions.unvote ?? comment.actions.upvote;
+}
+
+export function createOptimisticCommentVote(
+    comment: ParsedComment,
+): OptimisticCommentVote | undefined {
+    const href = getCommentVoteHref(comment);
+    if (!href) {
+        return undefined;
+    }
+
+    const upvoted = !isCommentUpvoted(comment);
+    const oppositeHref = voteHrefForNextState(href, upvoted);
+    if (!oppositeHref) {
+        return undefined;
+    }
+
+    return {
+        href,
+        upvote: upvoted ? undefined : oppositeHref,
+        unvote: upvoted ? oppositeHref : undefined,
+        upvoted,
+    };
+}
+
+export function applyOptimisticCommentVote(
+    comment: ParsedComment,
+    vote: OptimisticCommentVote,
+): ParsedComment {
+    return {
+        ...comment,
+        actions: {
+            ...comment.actions,
+            upvote: vote.upvote,
+            unvote: vote.unvote,
+        },
     };
 }
 

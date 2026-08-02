@@ -8,7 +8,6 @@ import type { HnReplyResult } from '../hn/actions';
 import type { ParsedComment } from '../hn/types';
 import { formatNumber } from '../view/format';
 import { renderHnHtml } from '../view/html';
-import { HnActionLink } from './HnActionLink';
 import { ReplyComposer } from './ReplyComposer';
 import { userInitials } from './UserAvatar';
 
@@ -20,13 +19,14 @@ type CommentThreadProps = {
     collapsedCommentIds: Set<number>;
     activeReplyCommentId?: number;
     expandedDeepThreadDepths?: Record<number, number>;
+    pendingVoteCommentIds: Set<number>;
     visibleDepthLimit?: number;
-    onHnAction: (href: string) => void;
     onRevealMore?: (commentId: number, depthLimit: number) => void;
     onReplyCancel?: () => void;
     onReplyOpen?: (commentId: number) => void;
     onSubmitReply?: (href: string, text: string) => Promise<HnReplyResult>;
     onToggle: (commentId: number) => void;
+    onVote: (comment: ParsedComment) => void;
 };
 
 export function CommentThread({
@@ -34,18 +34,22 @@ export function CommentThread({
     collapsedCommentIds,
     activeReplyCommentId,
     expandedDeepThreadDepths = {},
+    pendingVoteCommentIds,
     visibleDepthLimit = DEFAULT_VISIBLE_COMMENT_DEPTH,
-    onHnAction,
     onRevealMore,
     onReplyCancel,
     onReplyOpen,
     onSubmitReply,
     onToggle,
+    onVote,
 }: CommentThreadProps) {
     const collapsed = collapsedCommentIds.has(comment.id);
     const replies = countComments(comment.children);
     const author = comment.author ?? 'unknown';
     const replyHref = comment.actions.reply;
+    const isUpvoted = Boolean(comment.actions.unvote);
+    const voteHref = comment.actions.unvote ?? comment.actions.upvote;
+    const isVotePending = pendingVoteCommentIds.has(comment.id);
     const childDepthLimit =
         expandedDeepThreadDepths[comment.id] ?? visibleDepthLimit;
     const visibleChildren = comment.children.filter(
@@ -163,18 +167,30 @@ export function CommentThread({
                                 {renderHnHtml(comment.html)}
                             </div>
                             <div className="redhn-comment__actions">
-                                {comment.actions.upvote ? (
-                                    <HnActionLink
-                                        aria-label="Upvote comment"
-                                        className="redhn-comment-action"
-                                        href={comment.actions.upvote}
-                                        onHnAction={onHnAction}
+                                {voteHref ? (
+                                    <button
+                                        aria-label={
+                                            isUpvoted
+                                                ? 'Remove comment upvote'
+                                                : 'Upvote comment'
+                                        }
+                                        aria-pressed={isUpvoted}
+                                        className={
+                                            isUpvoted
+                                                ? 'redhn-comment-action redhn-comment-action--active'
+                                                : 'redhn-comment-action'
+                                        }
+                                        disabled={isVotePending}
+                                        onClick={() => {
+                                            onVote(comment);
+                                        }}
+                                        type="button"
                                     >
                                         <ArrowFatUpIcon
                                             aria-hidden="true"
-                                            weight="bold"
+                                            weight={isUpvoted ? 'fill' : 'bold'}
                                         />
-                                    </HnActionLink>
+                                    </button>
                                 ) : null}
                                 {replyHref && onReplyOpen && onSubmitReply ? (
                                     <button
@@ -245,12 +261,15 @@ export function CommentThread({
                                             expandedDeepThreadDepths={
                                                 expandedDeepThreadDepths
                                             }
-                                            onHnAction={onHnAction}
+                                            pendingVoteCommentIds={
+                                                pendingVoteCommentIds
+                                            }
                                             onRevealMore={onRevealMore}
                                             onReplyCancel={onReplyCancel}
                                             onReplyOpen={onReplyOpen}
                                             onSubmitReply={onSubmitReply}
                                             onToggle={onToggle}
+                                            onVote={onVote}
                                             visibleDepthLimit={childDepthLimit}
                                         />
                                     </div>

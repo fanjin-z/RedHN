@@ -10,11 +10,15 @@ import {
     getStoryFavoriteHref,
     type OptimisticStoryFavorite,
 } from './hn/favorites';
-import type { ParsedPage, ParsedStory } from './hn/types';
+import type { ParsedComment, ParsedPage, ParsedStory } from './hn/types';
 import {
+    applyOptimisticCommentVote,
     applyOptimisticStoryVote,
+    createOptimisticCommentVote,
     createOptimisticStoryVote,
+    getCommentVoteHref,
     getStoryVoteHref,
+    type OptimisticCommentVote,
     type OptimisticStoryVote,
 } from './hn/votes';
 import { AuthPage } from './pages/AuthPage';
@@ -64,6 +68,10 @@ type StoryVoteOverride = OptimisticStoryVote & {
     pending: boolean;
 };
 
+type CommentVoteOverride = OptimisticCommentVote & {
+    pending: boolean;
+};
+
 type StoryFavoriteOverride = OptimisticStoryFavorite & {
     pending: boolean;
 };
@@ -79,6 +87,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     const [sharedStoryId, setSharedStoryId] = useState<number>();
     const [storyVoteOverrides, setStoryVoteOverrides] = useState<
         Record<number, StoryVoteOverride>
+    >({});
+    const [commentVoteOverrides, setCommentVoteOverrides] = useState<
+        Record<number, CommentVoteOverride>
     >({});
     const [storyFavoriteOverrides, setStoryFavoriteOverrides] = useState<
         Record<number, StoryFavoriteOverride>
@@ -133,6 +144,10 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                   : votedStory;
           })()
         : undefined;
+    const enrichedComments = useMemo(
+        () => applyCommentVoteOverrides(page.comments, commentVoteOverrides),
+        [commentVoteOverrides, page.comments],
+    );
     const enrichedProfile = page.profile
         ? enrichProfileWithApiUser(page.profile, apiUser)
         : undefined;
@@ -162,6 +177,15 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                     .map(([storyId]) => Number(storyId)),
             ),
         [storyVoteOverrides],
+    );
+    const pendingVoteCommentIds = useMemo(
+        () =>
+            new Set(
+                Object.entries(commentVoteOverrides)
+                    .filter(([, vote]) => vote.pending)
+                    .map(([commentId]) => Number(commentId)),
+            ),
+        [commentVoteOverrides],
     );
     const pendingFavoriteStoryIds = useMemo(
         () =>
@@ -254,6 +278,59 @@ export default function RedhnApp({ page }: RedhnAppProps) {
 
                 const next = { ...current };
                 delete next[story.id];
+                return next;
+            });
+            window.location.assign(result.url);
+        });
+    };
+
+    const runCommentVote = (comment: ParsedComment) => {
+        const vote = createOptimisticCommentVote(comment);
+        const href = vote?.href ?? getCommentVoteHref(comment);
+
+        if (!href) {
+            return;
+        }
+
+        if (!vote) {
+            runHnAction(href);
+            return;
+        }
+
+        setCommentVoteOverrides((current) => ({
+            ...current,
+            [comment.id]: {
+                ...vote,
+                pending: true,
+            },
+        }));
+
+        void performHnAction(href).then((result) => {
+            if (result.kind === 'performed') {
+                setCommentVoteOverrides((current) => {
+                    const currentVote = current[comment.id];
+                    if (!currentVote || currentVote.href !== href) {
+                        return current;
+                    }
+
+                    return {
+                        ...current,
+                        [comment.id]: {
+                            ...currentVote,
+                            pending: false,
+                        },
+                    };
+                });
+                return;
+            }
+
+            setCommentVoteOverrides((current) => {
+                if (current[comment.id]?.href !== href) {
+                    return current;
+                }
+
+                const next = { ...current };
+                delete next[comment.id];
                 return next;
             });
             window.location.assign(result.url);
@@ -482,14 +559,16 @@ export default function RedhnApp({ page }: RedhnAppProps) {
             {page.kind === 'profile' && enrichedProfile ? (
                 <ProfilePage
                     apiUser={apiUser}
-                    comments={page.comments}
+                    comments={enrichedComments}
                     hiddenStoryCount={hiddenStoryCount}
+                    onCommentVote={runCommentVote}
                     onHnAction={runHnAction}
                     onShare={shareStory}
                     onStoryView={markViewed}
                     onVote={runStoryVote}
                     overviewItems={profileOverviewItems}
                     overviewLoading={profileOverviewLoading}
+                    pendingVoteCommentIds={pendingVoteCommentIds}
                     pendingVoteStoryIds={pendingVoteStoryIds}
                     page={page}
                     profile={enrichedProfile}
@@ -503,16 +582,18 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                 <SubmitPage submit={page.submit} />
             ) : page.kind === 'item' && enrichedPost ? (
                 <PostPage
-                    comments={page.comments}
+                    comments={enrichedComments}
                     isFavoritePending={pendingFavoriteStoryIds.has(
                         enrichedPost.id,
                     )}
                     isShared={sharedStoryId === enrichedPost.id}
                     isVotePending={pendingVoteStoryIds.has(enrichedPost.id)}
+                    onCommentVote={runCommentVote}
                     onFavorite={runStoryFavorite}
                     onHnAction={runHnAction}
                     onShare={shareStory}
                     onVote={runStoryVote}
+                    pendingVoteCommentIds={pendingVoteCommentIds}
                     post={enrichedPost}
                 />
             ) : (
@@ -531,4 +612,21 @@ export default function RedhnApp({ page }: RedhnAppProps) {
             )}
         </AppShell>
     );
+}
+
+function applyCommentVoteOverrides(
+    comments: ParsedComment[],
+    overrides: Record<number, CommentVoteOverride>,
+): ParsedComment[] {
+    return comments.map((comment) => {
+        const override = overrides[comment.id];
+        const votedComment = override
+            ? applyOptimisticCommentVote(comment, override)
+            : comment;
+
+        return {
+            ...votedComment,
+            children: applyCommentVoteOverrides(comment.children, overrides),
+        };
+    });
 }

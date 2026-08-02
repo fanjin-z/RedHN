@@ -38,7 +38,9 @@ type ProfilePageProps = {
     hiddenStoryCount: number;
     readState: RedhnReadState;
     sharedStoryId?: number;
+    pendingVoteCommentIds: Set<number>;
     pendingVoteStoryIds: Set<number>;
+    onCommentVote: (comment: ParsedComment) => void;
     onShare: (story: ParsedStory) => void;
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
@@ -74,7 +76,9 @@ export function ProfilePage({
     hiddenStoryCount,
     readState,
     sharedStoryId,
+    pendingVoteCommentIds,
     pendingVoteStoryIds,
+    onCommentVote,
     onShare,
     onStoryView,
     onHnAction,
@@ -220,7 +224,8 @@ export function ProfilePage({
                 {activeTab === 'comments' ? (
                     <ProfileCommentsList
                         comments={comments}
-                        onHnAction={onHnAction}
+                        onCommentVote={onCommentVote}
+                        pendingVoteCommentIds={pendingVoteCommentIds}
                     />
                 ) : null}
                 {activeTab === 'favorites' ? (
@@ -262,13 +267,15 @@ export function ProfilePage({
                 {activeTab === 'upvotedComments' ? (
                     <ProfileCommentsList
                         comments={comments}
-                        onHnAction={onHnAction}
+                        onCommentVote={onCommentVote}
+                        pendingVoteCommentIds={pendingVoteCommentIds}
                     />
                 ) : null}
                 {activeTab === 'favoriteComments' ? (
                     <ProfileCommentsList
                         comments={comments}
-                        onHnAction={onHnAction}
+                        onCommentVote={onCommentVote}
+                        pendingVoteCommentIds={pendingVoteCommentIds}
                     />
                 ) : null}
                 {activeTab === 'account' && profile.accountForm ? (
@@ -712,10 +719,12 @@ function ProfileActivityCard({
 
 function ProfileCommentsList({
     comments,
-    onHnAction,
+    onCommentVote,
+    pendingVoteCommentIds,
 }: {
     comments: ParsedComment[];
-    onHnAction: (href: string) => void;
+    onCommentVote: (comment: ParsedComment) => void;
+    pendingVoteCommentIds: Set<number>;
 }) {
     const [collapsedCommentIds, setCollapsedCommentIds] = useState(
         () => new Set<number>(),
@@ -755,9 +764,10 @@ function ProfileCommentsList({
                     comment={comment}
                     expandedDeepThreadDepths={expandedDeepThreadDepths}
                     key={comment.id}
-                    onHnAction={onHnAction}
+                    pendingVoteCommentIds={pendingVoteCommentIds}
                     onRevealMore={revealMoreReplies}
                     onToggle={toggleComment}
+                    onVote={onCommentVote}
                 />
             ))}
         </section>

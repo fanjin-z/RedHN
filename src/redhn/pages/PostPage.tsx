@@ -22,6 +22,8 @@ type PostPageProps = {
     isFavoritePending: boolean;
     isShared: boolean;
     isVotePending: boolean;
+    pendingVoteCommentIds: Set<number>;
+    onCommentVote: (comment: ParsedComment) => void;
     onFavorite: (story: ParsedStory) => void;
     onHnAction: (href: string) => void;
     onShare: (story: ParsedStory) => void;
@@ -34,6 +36,8 @@ export function PostPage({
     isFavoritePending,
     isShared,
     isVotePending,
+    pendingVoteCommentIds,
+    onCommentVote,
     onFavorite,
     onHnAction,
     onShare,
@@ -295,7 +299,7 @@ export function PostPage({
                         comment={comment}
                         expandedDeepThreadDepths={expandedDeepThreadDepths}
                         key={comment.id}
-                        onHnAction={onHnAction}
+                        pendingVoteCommentIds={pendingVoteCommentIds}
                         onRevealMore={revealMoreReplies}
                         onReplyCancel={() => {
                             setActiveReplyCommentId(undefined);
@@ -303,6 +307,7 @@ export function PostPage({
                         onReplyOpen={setActiveReplyCommentId}
                         onSubmitReply={submitReply}
                         onToggle={toggleComment}
+                        onVote={onCommentVote}
                     />
                 ))}
             </section>

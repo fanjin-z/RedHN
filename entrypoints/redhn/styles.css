@@ -2591,6 +2591,16 @@
     color: var(--redhn-text);
 }
 
+.redhn-comment-action--active,
+.redhn-comment-action--active:hover {
+    color: var(--redhn-primary);
+}
+
+.redhn-comment-action:disabled {
+    cursor: progress;
+    opacity: 0.72;
+}
+
 .redhn-comment__children {
     position: relative;
     display: grid;

@@ -168,6 +168,8 @@ describe('HN DOM parser', () => {
             age: '3 hours ago',
             text: 'This looks really clean.',
         });
+        expect(page.comments[0].actions.upvote).toContain('/vote?id=3001');
+        expect(page.comments[0].actions.unvote).toBeUndefined();
         expect(page.comments[0].children[0]).toMatchObject({
             id: 3002,
             depth: 1,
@@ -177,6 +179,45 @@ describe('HN DOM parser', () => {
         expect(
             flattenComments(page.comments).map((comment) => comment.id),
         ).toEqual([3001, 3002]);
+    });
+
+    it('parses an upvoted comment from its header unvote link', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="comment-tree">
+                        <tr class="athing comtr" id="49139438">
+                            <td class="ind" indent="0"><img src="s.gif" width="0"></td>
+                            <td class="votelinks">
+                                <a class="nosee" href="vote?id=49139438&amp;how=up&amp;auth=abc&amp;goto=item%3Fid%3D49139102"></a>
+                            </td>
+                            <td class="default">
+                                <div>
+                                    <span class="comhead">
+                                        <a class="hnuser" href="user?id=jamestimmins">jamestimmins</a>
+                                        <span class="age"><a href="item?id=49139438">1 hour ago</a></span>
+                                        <span id="unv_49139438"> |
+                                            <a id="un_49139438" class="clicky" href="vote?id=49139438&amp;how=un&amp;auth=abc&amp;goto=item%3Fid%3D49139102">unvote</a>
+                                        </span>
+                                    </span>
+                                </div>
+                                <div class="comment"><div class="commtext c00">Already voted.</div></div>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=49139102',
+        );
+
+        expect(page.comments[0].actions.upvote).toBeUndefined();
+        expect(page.comments[0].actions.unvote).toBe(
+            'https://news.ycombinator.com/vote?id=49139438&how=un&auth=abc&goto=item%3Fid%3D49139102',
+        );
     });
 
     it.each<FavoriteCase>([

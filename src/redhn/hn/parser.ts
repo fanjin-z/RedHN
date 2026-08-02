@@ -193,6 +193,13 @@ function parseCommentRow(
 
     const defaultCell = row.querySelector('.default');
     const links = row.querySelectorAll<HTMLAnchorElement>('a');
+    const unvote = href(
+        findLinkByExactText(
+            defaultCell?.querySelectorAll<HTMLAnchorElement>('a') ?? [],
+            'unvote',
+        ),
+        sourceUrl,
+    );
 
     return {
         id,
@@ -202,7 +209,10 @@ function parseCommentRow(
         text: text(commentBody),
         html: commentBody.innerHTML.trim(),
         actions: {
-            upvote: href(row.querySelector('.votelinks a'), sourceUrl),
+            upvote: unvote
+                ? undefined
+                : href(row.querySelector('.votelinks a'), sourceUrl),
+            unvote,
             reply: href(findLink(defaultCell, 'reply'), sourceUrl),
             parent: href(findLinkByExactText(links, 'parent'), sourceUrl),
             next: href(findLinkByExactText(links, 'next'), sourceUrl),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ParsedStory } from '../src/redhn/hn/types';
+import type { ParsedComment, ParsedStory } from '../src/redhn/hn/types';
 import {
     applyOptimisticStoryFavorite,
     createOptimisticStoryFavorite,
@@ -7,7 +7,9 @@ import {
     isStoryFavorited,
 } from '../src/redhn/hn/favorites';
 import {
+    applyOptimisticCommentVote,
     applyOptimisticStoryVote,
+    createOptimisticCommentVote,
     createOptimisticStoryVote,
     voteHrefForNextState,
 } from '../src/redhn/hn/votes';
@@ -24,7 +26,19 @@ function story(patch: Partial<ParsedStory> = {}): ParsedStory {
     };
 }
 
-describe('HN optimistic story actions', () => {
+function comment(patch: Partial<ParsedComment> = {}): ParsedComment {
+    return {
+        actions: {},
+        children: [],
+        depth: 0,
+        html: 'A comment',
+        id: 2001,
+        text: 'A comment',
+        ...patch,
+    };
+}
+
+describe('HN optimistic actions', () => {
     it('round-trips optimistic voting state and score', () => {
         const voted = applyOptimisticStoryVote(
             story({
@@ -54,6 +68,32 @@ describe('HN optimistic story actions', () => {
         expect(unvoted.score).toBe(10);
         expect(unvoted.actions.upvote).toBe(
             'https://news.ycombinator.com/vote?id=1001&how=up&auth=abc&goto=news',
+        );
+        expect(unvoted.actions.unvote).toBeUndefined();
+    });
+
+    it('round-trips optimistic comment voting state without a score', () => {
+        const initial = comment({
+            actions: {
+                upvote: 'https://news.ycombinator.com/vote?id=2001&how=up&auth=abc&goto=item%3Fid%3D1001',
+            },
+        });
+        const voted = applyOptimisticCommentVote(
+            initial,
+            createOptimisticCommentVote(initial)!,
+        );
+
+        expect(voted.actions.upvote).toBeUndefined();
+        expect(voted.actions.unvote).toBe(
+            'https://news.ycombinator.com/vote?id=2001&how=un&auth=abc&goto=item%3Fid%3D1001',
+        );
+
+        const unvoted = applyOptimisticCommentVote(
+            voted,
+            createOptimisticCommentVote(voted)!,
+        );
+        expect(unvoted.actions.upvote).toBe(
+            'https://news.ycombinator.com/vote?id=2001&how=up&auth=abc&goto=item%3Fid%3D1001',
         );
         expect(unvoted.actions.unvote).toBeUndefined();
     });

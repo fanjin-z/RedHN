@@ -43,10 +43,12 @@ function renderThread(
         activeReplyCommentId?: number;
         collapsedCommentIds?: Set<number>;
         expandedDeepThreadDepths?: Record<number, number>;
+        pendingVoteCommentIds?: Set<number>;
         onReplyCancel?: () => void;
         onReplyOpen?: (commentId: number) => void;
         onSubmitReply?: (href: string, text: string) => Promise<HnReplyResult>;
         onRevealMore?: (commentId: number, depthLimit: number) => void;
+        onVote?: (comment: ParsedComment) => void;
     } = {},
 ): string {
     vi.stubGlobal('document', parseHTML('<html><body></body></html>').document);
@@ -58,12 +60,14 @@ function renderThread(
             collapsedCommentIds: options.collapsedCommentIds ?? new Set(),
             comment: root,
             expandedDeepThreadDepths: options.expandedDeepThreadDepths,
-            onHnAction: () => undefined,
+            pendingVoteCommentIds:
+                options.pendingVoteCommentIds ?? new Set<number>(),
             onReplyCancel: options.onReplyCancel,
             onReplyOpen: options.onReplyOpen,
             onSubmitReply: options.onSubmitReply,
             onRevealMore: options.onRevealMore ?? (() => undefined),
             onToggle: () => undefined,
+            onVote: options.onVote ?? (() => undefined),
         }),
     );
 }
@@ -142,6 +146,62 @@ describe('comment thread depth reveal', () => {
         expect(html).not.toContain('Share');
     });
 
+    it('renders an active comment vote and allows removing it', async () => {
+        const document = setupDom();
+        const container = document.createElement('div');
+        document.body.append(container);
+        const onVote = vi.fn();
+        const root = createRoot(container);
+        const votedComment = {
+            ...comment(1, 0),
+            actions: {
+                unvote: 'https://news.ycombinator.com/vote?id=1&how=un',
+            },
+        };
+
+        await act(async () => {
+            root.render(
+                createElement(CommentThread, {
+                    collapsedCommentIds: new Set<number>(),
+                    comment: votedComment,
+                    onToggle: () => undefined,
+                    onVote,
+                    pendingVoteCommentIds: new Set<number>(),
+                }),
+            );
+        });
+
+        const voteButton = container.querySelector<HTMLButtonElement>(
+            '[aria-label="Remove comment upvote"]',
+        );
+        expect(voteButton?.getAttribute('aria-pressed')).toBe('true');
+        expect(
+            voteButton?.classList.contains('redhn-comment-action--active'),
+        ).toBe(true);
+        voteButton?.click();
+        expect(onVote).toHaveBeenCalledWith(votedComment);
+
+        await act(async () => {
+            root.unmount();
+        });
+    });
+
+    it('disables a comment vote while it is pending', () => {
+        const root = {
+            ...comment(1, 0),
+            actions: {
+                upvote: 'https://news.ycombinator.com/vote?id=1&how=up',
+            },
+        };
+        const html = renderThread(root, {
+            pendingVoteCommentIds: new Set([1]),
+        });
+
+        expect(html).toContain('aria-label="Upvote comment"');
+        expect(html).toContain('aria-pressed="false"');
+        expect(html).toContain('disabled=""');
+    });
+
     it('connector controls toggle the parent comment', async () => {
         const document = setupDom();
         const container = document.createElement('div');
@@ -154,9 +214,10 @@ describe('comment thread depth reveal', () => {
                 createElement(CommentThread, {
                     collapsedCommentIds: new Set<number>(),
                     comment: comment(1, 0, [comment(2, 1), comment(3, 1)]),
-                    onHnAction: () => undefined,
                     onRevealMore: () => undefined,
                     onToggle,
+                    onVote: () => undefined,
+                    pendingVoteCommentIds: new Set<number>(),
                 }),
             );
         });

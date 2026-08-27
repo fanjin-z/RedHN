@@ -250,6 +250,15 @@
     backdrop-filter: blur(12px);
 }
 
+.redhn-topbar__identity {
+    display: contents;
+}
+
+.redhn-icon-button.redhn-mobile-nav-toggle,
+.redhn-account-menu__item.redhn-account-menu__signup {
+    display: none;
+}
+
 .redhn-brand {
     display: inline-flex;
     align-items: center;
@@ -1005,26 +1014,109 @@
     white-space: nowrap;
 }
 
-.redhn-shell--sidebar-collapsed .redhn-nav__section {
+.redhn-shell--sidebar-collapsed .redhn-sidebar .redhn-nav__section {
     gap: 6px;
 }
 
-.redhn-shell--sidebar-collapsed .redhn-nav__section--divided {
+.redhn-shell--sidebar-collapsed .redhn-sidebar .redhn-nav__section--divided {
     margin-top: 12px;
     padding-top: 12px;
 }
 
-.redhn-shell--sidebar-collapsed .redhn-nav__section-header,
-.redhn-shell--sidebar-collapsed .redhn-nav__label {
+.redhn-shell--sidebar-collapsed .redhn-sidebar .redhn-nav__section-header,
+.redhn-shell--sidebar-collapsed .redhn-sidebar .redhn-nav__label {
     display: none;
 }
 
-.redhn-shell--sidebar-collapsed .redhn-nav__item {
+.redhn-shell--sidebar-collapsed .redhn-sidebar .redhn-nav__item {
     justify-content: center;
     min-height: 42px;
     gap: 0;
     border-radius: 9999px;
     padding: 0;
+}
+
+.redhn-mobile-nav {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(320px, 86vw);
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    border-right: 1px solid var(--redhn-outline);
+    background: var(--redhn-surface-card);
+    color: var(--redhn-text);
+    font-family: var(--redhn-font-sans);
+    padding: max(12px, env(safe-area-inset-top)) 12px
+        max(12px, env(safe-area-inset-bottom))
+        max(12px, env(safe-area-inset-left));
+    overflow: hidden;
+}
+
+.redhn-mobile-nav[open] {
+    display: flex;
+    flex-direction: column;
+    animation: redhn-drawer-enter 180ms ease-out;
+}
+
+.redhn-mobile-nav::backdrop {
+    background: rgb(0 0 0 / 40%);
+}
+
+.redhn-mobile-nav__header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--redhn-outline);
+    padding-bottom: 12px;
+}
+
+.redhn-mobile-nav__header .redhn-brand {
+    font-size: 22px;
+}
+
+.redhn-icon-button.redhn-mobile-nav-toggle,
+.redhn-icon-button.redhn-mobile-nav__close {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+}
+
+.redhn-mobile-nav__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-top: 12px;
+}
+
+.redhn-mobile-nav .redhn-nav__item {
+    min-height: 44px;
+}
+
+.redhn-mobile-nav .redhn-nav__label {
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+@keyframes redhn-drawer-enter {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .redhn-mobile-nav[open] {
+        animation: none;
+    }
 }
 
 .redhn-main {
@@ -2974,8 +3066,31 @@
 
 @media (max-width: 900px) {
     .redhn-topbar {
-        grid-template-columns: auto minmax(0, 1fr) max-content;
+        grid-template-columns: max-content minmax(0, 1fr) max-content;
         gap: 12px;
+    }
+
+    .redhn-search {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .redhn-topbar__actions {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .redhn-icon-button.redhn-mobile-nav-toggle {
+        display: inline-flex;
+    }
+
+    .redhn-auth-button--signup,
+    .redhn-sidebar {
+        display: none;
+    }
+
+    .redhn-account-menu__item.redhn-account-menu__signup {
+        display: grid;
     }
 
     .redhn-layout,
@@ -2983,78 +3098,8 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .redhn-sidebar,
-    .redhn-sidebar__scroll,
-    .redhn-nav {
-        min-width: 0;
-        max-width: 100%;
-    }
-
-    .redhn-sidebar {
-        position: static;
-        height: auto;
-        min-height: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--redhn-outline);
-        overflow: visible;
-    }
-
-    .redhn-sidebar__scroll {
-        overflow: visible;
-    }
-
-    .redhn-sidebar-toggle {
-        display: none;
-    }
-
-    .redhn-nav {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-    }
-
-    .redhn-nav__section {
-        display: contents;
-    }
-
-    .redhn-nav__section--divided {
-        margin-top: 0;
-        border-top: 0;
-        padding-top: 0;
-    }
-
-    .redhn-nav__section-header {
-        display: none;
-    }
-
-    .redhn-nav__section-items {
-        display: flex;
-        gap: 8px;
-    }
-
-    .redhn-nav__item {
-        flex: 0 0 auto;
-    }
-
     .redhn-story__source-link {
         display: block;
-    }
-
-    .redhn-shell--sidebar-collapsed .redhn-nav__section-header {
-        display: none;
-    }
-
-    .redhn-shell--sidebar-collapsed .redhn-nav__label {
-        display: inline;
-    }
-
-    .redhn-shell--sidebar-collapsed .redhn-nav__item {
-        justify-content: flex-start;
-        gap: 12px;
-        min-height: 42px;
-        border-radius: 14px;
-        padding: 0 12px;
     }
 
     .redhn-preferences {
@@ -3085,9 +3130,7 @@
 }
 
 @media (max-width: 620px) {
-    .redhn-topbar,
-    .redhn-main,
-    .redhn-sidebar {
+    .redhn-main {
         padding-right: 12px;
         padding-left: 12px;
     }
@@ -3095,6 +3138,15 @@
     .redhn-topbar {
         display: flex;
         flex-wrap: wrap;
+        gap: 8px;
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    .redhn-topbar__identity {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .redhn-search {
@@ -3105,6 +3157,7 @@
     .redhn-topbar__actions {
         position: static;
         flex-wrap: wrap;
+        gap: 4px;
         min-width: 0;
         margin-left: auto;
     }
@@ -3115,7 +3168,7 @@
 
     .redhn-auth-button {
         min-height: 36px;
-        padding: 0 14px;
+        padding: 0 10px;
     }
 
     .redhn-auth-page {
@@ -3353,5 +3406,11 @@
 
     .redhn-reply-composer__actions {
         justify-content: flex-end;
+    }
+}
+
+@media (max-width: 360px) {
+    .redhn-topbar__identity .redhn-brand {
+        font-size: 18px;
     }
 }

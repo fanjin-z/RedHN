@@ -1,5 +1,7 @@
 import {
     useCallback,
+    useEffect,
+    useRef,
     useState,
     type CSSProperties,
     type ReactNode,
@@ -23,6 +25,7 @@ import {
     QuestionIcon,
     SignOutIcon,
     TrendUpIcon,
+    UserPlusIcon,
 } from '@phosphor-icons/react';
 import type { ParsedCurrentUser } from '../hn/types';
 import type { RedhnPreferences } from '../state/preferences';
@@ -30,6 +33,7 @@ import { isActivePath, redhnSortOptions } from '../view/sortOptions';
 import { hnLoginUrl } from '../view/urls';
 import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
 import { UserAvatar } from './UserAvatar';
+import { MobileNavigationDrawer } from './MobileNavigationDrawer';
 
 type AppShellProps = {
     children: ReactNode;
@@ -84,6 +88,12 @@ export function AppShell({
 }: AppShellProps) {
     const sidebarSections = buildSidebarSections(sourceUrl);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isMobileNavigationOpen, setIsMobileNavigationOpen] = useState(false);
+    const mobileNavigationTriggerRef = useRef<HTMLButtonElement>(null);
+    const closeMobileNavigation = useCallback(() => {
+        setIsMobileNavigationOpen(false);
+    }, []);
+    useEffect(closeMobileNavigation, [sourceUrl, closeMobileNavigation]);
     const closeAccountMenu = useCallback(() => {
         onMenuOpenChange(false);
     }, [onMenuOpenChange]);
@@ -102,13 +112,30 @@ export function AppShell({
     return (
         <div className={shellClassName} style={preferencesStyle(preferences)}>
             <header className="redhn-topbar">
-                <a
-                    aria-label="Hacker News home"
-                    className="redhn-brand"
-                    href="https://news.ycombinator.com/news"
-                >
-                    Hacker News
-                </a>
+                <div className="redhn-topbar__identity">
+                    <button
+                        aria-controls="redhn-mobile-navigation"
+                        aria-expanded={isMobileNavigationOpen}
+                        aria-haspopup="dialog"
+                        aria-label="Open navigation"
+                        className="redhn-icon-button redhn-mobile-nav-toggle"
+                        onClick={() => {
+                            closeAccountMenu();
+                            setIsMobileNavigationOpen(true);
+                        }}
+                        ref={mobileNavigationTriggerRef}
+                        type="button"
+                    >
+                        <ListIcon aria-hidden="true" weight="bold" />
+                    </button>
+                    <a
+                        aria-label="Hacker News home"
+                        className="redhn-brand"
+                        href="https://news.ycombinator.com/news"
+                    >
+                        Hacker News
+                    </a>
+                </div>
                 <form
                     className="redhn-search"
                     action="https://hn.algolia.com/"
@@ -141,6 +168,22 @@ export function AppShell({
                     />
                 </div>
             </header>
+            <MobileNavigationDrawer
+                open={isMobileNavigationOpen}
+                onClose={closeMobileNavigation}
+                triggerRef={mobileNavigationTriggerRef}
+            >
+                <nav className="redhn-nav" aria-label="Primary">
+                    {sidebarSections.map((section, index) => (
+                        <SidebarSectionNav
+                            key={section.title ?? 'main'}
+                            onNavigate={closeMobileNavigation}
+                            section={section}
+                            showDivider={index > 0}
+                        />
+                    ))}
+                </nav>
+            </MobileNavigationDrawer>
             <div className="redhn-layout">
                 <aside
                     className="redhn-sidebar"
@@ -187,9 +230,11 @@ export function AppShell({
 }
 
 function SidebarSectionNav({
+    onNavigate,
     section,
     showDivider,
 }: {
+    onNavigate?: () => void;
     section: SidebarSection;
     showDivider: boolean;
 }) {
@@ -214,6 +259,7 @@ function SidebarSectionNav({
             <div className="redhn-nav__section-items">
                 {section.items.map((item) => (
                     <a
+                        aria-current={item.active ? 'page' : undefined}
                         className={
                             item.active
                                 ? 'redhn-nav__item redhn-nav__item--active'
@@ -221,6 +267,7 @@ function SidebarSectionNav({
                         }
                         href={item.href}
                         key={item.href}
+                        onClick={onNavigate}
                         title={item.label}
                     >
                         <span className="redhn-nav__icon" aria-hidden="true">
@@ -353,6 +400,7 @@ function TopbarActions({
                         <ChatCircleIcon aria-hidden="true" weight="bold" />
                     </a>
                     <a
+                        aria-label="Create a post"
                         className="redhn-create-button"
                         href="https://news.ycombinator.com/submit"
                     >
@@ -374,7 +422,10 @@ function TopbarActions({
                 </>
             ) : (
                 <>
-                    <a className="redhn-auth-button" href={signupUrl}>
+                    <a
+                        className="redhn-auth-button redhn-auth-button--signup"
+                        href={signupUrl}
+                    >
                         Sign Up
                     </a>
                     <a
@@ -402,6 +453,7 @@ function TopbarActions({
                     currentUser={currentUser}
                     id={menuId}
                     onThemeChange={onThemeChange}
+                    signupUrl={signupUrl}
                     theme={theme}
                 />
             ) : null}
@@ -412,6 +464,7 @@ function TopbarActions({
 type AccountMenuProps = {
     currentUser?: ParsedCurrentUser;
     id: string;
+    signupUrl: string;
     theme: RedhnPreferences['theme'];
     onThemeChange: (theme: RedhnPreferences['theme']) => void;
 };
@@ -419,6 +472,7 @@ type AccountMenuProps = {
 function AccountMenu({
     currentUser,
     id,
+    signupUrl,
     theme,
     onThemeChange,
 }: AccountMenuProps) {
@@ -441,7 +495,16 @@ function AccountMenu({
                         <span>u/{currentUser.id}</span>
                     </span>
                 </a>
-            ) : null}
+            ) : (
+                <a
+                    className="redhn-account-menu__item redhn-account-menu__signup"
+                    href={signupUrl}
+                    role="menuitem"
+                >
+                    <UserPlusIcon aria-hidden="true" weight="bold" />
+                    <span>Sign Up</span>
+                </a>
+            )}
             <MenuRow icon={<MonitorIcon weight="bold" />} label="Display Mode">
                 <select
                     aria-label="Display mode"

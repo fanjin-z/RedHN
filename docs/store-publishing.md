@@ -51,25 +51,32 @@ npm run zip:safari
 
 ### Safari App Store
 
-GitHub Releases provide an unsigned Safari MV3 extension zip:
-`.output/*-safari.zip`.
-
-Safari App Store publication must be packaged, signed, archived, and uploaded
-locally with the publisher's Apple Developer account:
+After editing the WXT source:
 
 ```sh
-SAFARI_BUNDLE_ID=[your.bundle.id] npm run package:safari
+npm run package:safari
 ```
 
-Open `.output/safari-xcode/RedHN/RedHN.xcodeproj` in Xcode, configure signing
-for the app and extension targets, test in Safari, archive, and upload through
-Xcode or App Store Connect.
+This builds Safari and updates Xcode's web resources, preserving native code,
+signing, bundle IDs, and version/build numbers. It creates a project if missing.
 
-#### Local Safari Testing
+1. Open `.output/safari-xcode/RedHN/RedHN.xcodeproj`. On first setup, configure
+   signing and versions for the app and extension targets.
+2. Select **RedHN (iOS)** and a simulator/device, or **RedHN (macOS)**, then
+   **Cmd+R**. Enable RedHN, allow Hacker News access, and reload the page.
+3. For release, archive and upload through Xcode/App Store Connect.
 
-1. In Safari, enable the Develop menu if needed (Settings > Advanced > check 'Show features for web developers'), then choose
-   `Develop > Allow Unsigned Extensions` and 'Add Temporary Extension'.
-2. In Safari, open `https://news.ycombinator.com` and grant RedHN website permissions.
+To regenerate (**may overwrite custom settings**):
+
+```sh
+npm run package:safari -- --regenerate
+```
+
+Back up first: `.output` is Git-ignored. New or removed top-level web assets may
+require resource-reference changes in both Xcode extension targets.
+
+Overrides: `SAFARI_PROJECT_LOCATION`, `SAFARI_APP_NAME`, and `SAFARI_BUNDLE_ID`
+(bundle ID applies only on creation/regeneration).
 
 ## Public Repo Safety
 

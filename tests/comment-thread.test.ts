@@ -11,6 +11,8 @@ import {
 } from '../src/redhn/components/CommentThread';
 import type { HnReplyResult } from '../src/redhn/hn/actions';
 import type { ParsedComment } from '../src/redhn/hn/types';
+import { ReplyComposer } from '../src/redhn/components/ReplyComposer';
+import { readReplyDraft, saveReplyDraft } from '../src/redhn/state/replyDraft';
 
 function comment(
     id: number,
@@ -87,6 +89,91 @@ afterEach(() => {
 });
 
 describe('comment thread depth reveal', () => {
+    it('restores reply drafts through login and clears them on send or cancel', async () => {
+        const document = setupDom();
+        const sourceUrl = 'https://news.ycombinator.com/item?id=2001';
+        vi.stubGlobal('location', { href: sourceUrl });
+        const drafts = new Map<string, string>();
+        vi.stubGlobal('sessionStorage', {
+            getItem: (key: string) => drafts.get(key) ?? null,
+            setItem: (key: string, value: string) => drafts.set(key, value),
+            removeItem: (key: string) => drafts.delete(key),
+        });
+        saveReplyDraft(3001, 'Draft to restore.');
+        saveReplyDraft(3002, 'Other comment draft.');
+        expect(readReplyDraft(3001)).toBe('Draft to restore.');
+        const onSubmit = vi
+            .fn<() => Promise<HnReplyResult>>()
+            .mockResolvedValueOnce({
+                kind: 'loginRequired',
+                url: 'https://news.ycombinator.com/reply?id=3001',
+            })
+            .mockResolvedValueOnce({ kind: 'submitted', url: sourceUrl });
+        const onCancel = vi.fn();
+        const container = document.createElement('div');
+        document.body.append(container);
+        let root = createRoot(container);
+        const render = (parentId = 3001) =>
+            act(async () => {
+                root.render(
+                    createElement(ReplyComposer, {
+                        key: parentId,
+                        parentId,
+                        label: 'Reply',
+                        placeholder: 'Write a reply',
+                        onSubmit,
+                        onCancel,
+                    }),
+                );
+            });
+        const submit = () =>
+            act(async () => {
+                container.querySelector('form')!.dispatchEvent(
+                    new window.Event('submit', {
+                        bubbles: true,
+                        cancelable: true,
+                    }),
+                );
+            });
+
+        try {
+            await render();
+            // Linkedom does not synchronize textarea defaultValue to value on mount.
+            expect(container.querySelector('textarea')?.defaultValue).toBe(
+                'Draft to restore.',
+            );
+            await submit();
+            expect(onSubmit).toHaveBeenCalledWith('Draft to restore.');
+            expect(container.querySelector('a')?.getAttribute('href')).toBe(
+                'https://news.ycombinator.com/login?goto=item%3Fid%3D2001#login',
+            );
+            expect(readReplyDraft(3001)).toBe('Draft to restore.');
+
+            await act(async () => root.unmount());
+            root = createRoot(container);
+            await render();
+            expect(container.querySelector('textarea')?.defaultValue).toBe(
+                'Draft to restore.',
+            );
+            await submit();
+            expect(readReplyDraft(3001)).toBe('');
+            expect(readReplyDraft(3002)).toBe('Other comment draft.');
+
+            await render(3002);
+            await act(async () => {
+                container
+                    .querySelector<HTMLButtonElement>(
+                        '[aria-label="Cancel reply"]',
+                    )!
+                    .click();
+            });
+            expect(onCancel).toHaveBeenCalledOnce();
+            expect(readReplyDraft(3002)).toBe('');
+        } finally {
+            await act(async () => root.unmount());
+        }
+    });
+
     it('counts, hides, and reveals deep descendants in steps', () => {
         const boundary = chain(5, 7);
         const hiddenHtml = renderThread(chain(0, 7));

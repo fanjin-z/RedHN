@@ -22,19 +22,19 @@ export function parseHnPage(
 ): ParsedPage {
     const stories = parseStories(document, sourceUrl);
     const comments = parseComments(document, sourceUrl);
-    const profile = parseProfile(document, sourceUrl);
     const auth = parseAuthPage(document, sourceUrl);
-    const submit = parseSubmitPage(document, sourceUrl);
+    const profile = auth ? undefined : parseProfile(document, sourceUrl);
+    const submit = auth ? undefined : parseSubmitPage(document, sourceUrl);
     const post =
         !profile && !auth && !submit && isItemPage(sourceUrl, document)
             ? parseItemPost(document, stories[0], comments, sourceUrl)
             : undefined;
 
     return {
-        kind: profile
-            ? 'profile'
-            : auth
-              ? 'auth'
+        kind: auth
+            ? 'auth'
+            : profile
+              ? 'profile'
               : submit
                 ? 'submit'
                 : post
@@ -353,12 +353,12 @@ function parseCurrentUser(
     };
 }
 
-function parseAuthPage(
+export function parseAuthPage(
     document: Document,
     sourceUrl: string,
 ): ParsedAuthPage | undefined {
     const url = safeUrl(sourceUrl, HN_ORIGIN);
-    if (url?.pathname !== '/login') {
+    if (!url || url.origin !== HN_ORIGIN) {
         return undefined;
     }
 
@@ -372,11 +372,14 @@ function parseAuthPage(
         return undefined;
     }
 
+    const itemId = ['/vote', '/fave', '/hide', '/reply'].includes(url.pathname)
+        ? parseItemIdFromUrl(sourceUrl)
+        : undefined;
     const goto =
         login.hiddenFields.goto ??
         signup?.hiddenFields.goto ??
         url.searchParams.get('goto') ??
-        'news';
+        (itemId ? `item?id=${itemId}` : 'news');
 
     return {
         initialMode: url.hash === '#signup' ? 'signup' : 'login',
@@ -392,10 +395,10 @@ function parseAuthForm(
     sourceUrl: string,
 ): ParsedAuthForm | undefined {
     const usernameInput = form.querySelector<HTMLInputElement>(
-        'input[name]:not([type="hidden"]):not([type="password"])',
+        'input[name="acct"]:not([type="hidden"])',
     );
     const passwordInput = form.querySelector<HTMLInputElement>(
-        'input[type="password"][name]',
+        'input[type="password"][name="pw"]',
     );
     const submit = form.querySelector<HTMLInputElement>('input[type="submit"]');
 

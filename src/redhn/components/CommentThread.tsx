@@ -224,6 +224,7 @@ export function CommentThread({
                     replyHref &&
                     onSubmitReply ? (
                         <ReplyComposer
+                            parentId={comment.id}
                             autoFocus
                             compact
                             label={`Reply to ${author}`}

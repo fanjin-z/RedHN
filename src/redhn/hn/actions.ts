@@ -1,4 +1,5 @@
 import { hasVoteAuth } from './votes';
+import { parseAuthPage } from './parser';
 
 const HN_ORIGIN = 'https://news.ycombinator.com';
 const FETCH_ACTION_PATHS = new Set(['/vote', '/hide', '/fave']);
@@ -16,6 +17,7 @@ export type HnReplyResult =
 export async function performHnAction(
     href: string,
     options: {
+        isLoggedIn?: boolean;
         fetcher?: typeof fetch;
         baseUrl?: string;
     } = {},
@@ -25,7 +27,7 @@ export async function performHnAction(
         return { kind: 'failed', url: href, error: 'Invalid HN action URL' };
     }
 
-    if (!isFetchableHnAction(url)) {
+    if (options.isLoggedIn === false || !isFetchableHnAction(url)) {
         return { kind: 'navigate', url: url.href };
     }
 
@@ -53,13 +55,9 @@ export async function performHnAction(
 }
 
 async function isLoginResponse(response: Response): Promise<boolean> {
-    if (response.url.includes('/login')) {
-        return true;
-    }
-
     try {
         const html = await response.clone().text();
-        return hasAuthForm(parseHnDocument(html, undefined));
+        return Boolean(parseAuthPage(parseHnDocument(html), response.url));
     } catch {
         return false;
     }
@@ -104,7 +102,7 @@ export async function submitHnReply(
         const form = findCommentForm(document);
 
         if (!form) {
-            return hasAuthForm(document)
+            return parseAuthPage(document, replyResponse.url || url.href)
                 ? { kind: 'loginRequired', url: url.href }
                 : {
                       kind: 'failed',
@@ -169,17 +167,17 @@ export async function submitHnReply(
 
         const submitUrl = submitResponse.url || action.href;
         const submittedUrl = toUrl(submitUrl, action.href);
+        const submitHtml = await submitResponse.text();
+        const submitDocument = parseHnDocument(submitHtml, options.parseHtml);
+        if (parseAuthPage(submitDocument, submitUrl)) {
+            return { kind: 'loginRequired', url: url.href };
+        }
+
         if (
             submittedUrl?.origin === HN_ORIGIN &&
             submittedUrl.pathname === '/item'
         ) {
             return { kind: 'submitted', url: submittedUrl.href };
-        }
-
-        const submitHtml = await submitResponse.text();
-        const submitDocument = parseHnDocument(submitHtml, options.parseHtml);
-        if (hasAuthForm(submitDocument)) {
-            return { kind: 'loginRequired', url: url.href };
         }
 
         return {
@@ -219,7 +217,7 @@ function toUrl(value: string, baseUrl: string): URL | undefined {
 
 function parseHnDocument(
     html: string,
-    parseHtml: ((html: string) => Document) | undefined,
+    parseHtml?: (html: string) => Document,
 ): Document {
     if (parseHtml) {
         return parseHtml(html);
@@ -231,14 +229,6 @@ function parseHnDocument(
 function findCommentForm(document: Document): HTMLFormElement | undefined {
     return Array.from(document.querySelectorAll<HTMLFormElement>('form')).find(
         (form) => form.querySelector('textarea[name]') !== null,
-    );
-}
-
-function hasAuthForm(document: Document): boolean {
-    return Array.from(document.querySelectorAll<HTMLFormElement>('form')).some(
-        (form) =>
-            form.querySelector('input[type="password"][name]') !== null &&
-            form.querySelector('input[name]:not([type="hidden"])') !== null,
     );
 }
 

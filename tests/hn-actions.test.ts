@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { DOMParser, parseHTML } from 'linkedom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { performHnAction, submitHnReply } from '../src/redhn/hn/actions';
@@ -17,6 +18,10 @@ const htmlResponse = (url: string, html: string, ok = true): Response =>
     }) as Response;
 
 const parseHtml = (html: string): Document => parseHTML(html).document;
+const authHtml = readFileSync(
+    new URL('./fixtures/auth.html', import.meta.url),
+    'utf8',
+);
 
 beforeEach(() => {
     vi.stubGlobal('DOMParser', DOMParser);
@@ -78,6 +83,26 @@ describe('HN action fallback', () => {
         },
     );
 
+    it.each([
+        'vote?id=1&how=up&auth=cached-token&goto=item%3Fid%3D1',
+        'fave?id=1',
+        'fave?id=1&un=t',
+        'hide?id=1&goto=item%3Fid%3D1',
+    ])('navigates guest actions without fetching: %s', async (href) => {
+        const fetcher = vi.fn<typeof fetch>();
+        await expect(
+            performHnAction(href, {
+                baseUrl: 'https://news.ycombinator.com/item?id=1',
+                isLoggedIn: false,
+                fetcher,
+            }),
+        ).resolves.toEqual({
+            kind: 'navigate',
+            url: `https://news.ycombinator.com/${href}`,
+        });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
     it('navigates for non-fetchable actions and login-required responses', async () => {
         await expect(
             performHnAction('reply?id=1', {
@@ -101,7 +126,10 @@ describe('HN action fallback', () => {
             performHnAction('fave?id=1&auth=fake-auth-token', {
                 baseUrl: 'https://news.ycombinator.com/item?id=1',
                 fetcher: async () =>
-                    response('https://news.ycombinator.com/login'),
+                    htmlResponse(
+                        'https://news.ycombinator.com/login',
+                        authHtml,
+                    ),
             }),
         ).resolves.toMatchObject({ kind: 'navigate' });
 
@@ -185,30 +213,33 @@ describe('HN action fallback', () => {
         );
     });
 
-    it('keeps inline reply drafts when HN requires login', async () => {
-        await expect(
-            submitHnReply('reply?id=3001', 'Draft text', {
-                baseUrl: 'https://news.ycombinator.com/item?id=2001',
-                parseHtml,
-                fetcher: async (url) =>
-                    htmlResponse(
-                        String(url),
-                        `
-                            You have to be logged in to reply.
-                            <form action="reply" method="post">
-                                <input type="hidden" name="id" value="3001">
-                                <input name="acct">
-                                <input type="password" name="pw">
-                                <input type="submit" value="login">
-                            </form>
-                        `,
-                    ),
-            }),
-        ).resolves.toMatchObject({
-            kind: 'loginRequired',
-            url: 'https://news.ycombinator.com/reply?id=3001',
-        });
-    });
+    it.each(['load', 'post'])(
+        'reports login required during reply %s',
+        async (stage) => {
+            let calls = 0;
+            await expect(
+                submitHnReply('reply?id=3001', 'Draft text', {
+                    baseUrl: 'https://news.ycombinator.com/item?id=2001',
+                    parseHtml,
+                    fetcher: async (url) => {
+                        if (stage === 'post' && calls++ === 0) {
+                            return htmlResponse(
+                                String(url),
+                                '<form action="comment" method="post"><input name="parent" type="hidden" value="3001"><textarea name="text"></textarea></form>',
+                            );
+                        }
+                        return htmlResponse(
+                            'https://news.ycombinator.com/item?id=2001',
+                            authHtml,
+                        );
+                    },
+                }),
+            ).resolves.toMatchObject({
+                kind: 'loginRequired',
+                url: 'https://news.ycombinator.com/reply?id=3001',
+            });
+        },
+    );
 
     it('reports reply form load failures', async () => {
         await expect(

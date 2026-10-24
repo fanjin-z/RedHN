@@ -610,6 +610,67 @@ describe('HN DOM parser', () => {
         });
     });
 
+    it.each([
+        { path: 'login?goto=item%3Fid%3D2001', close: 'item?id=2001' },
+        {
+            path: 'vote?id=2001&how=up&goto=item%3Fid%3D2001',
+            close: 'item?id=2001',
+        },
+        { path: 'fave?id=2001', close: 'item?id=2001' },
+        { path: 'fave?id=2001&un=t', close: 'item?id=2001' },
+        { path: 'hide?id=2001&goto=item%3Fid%3D2001', close: 'item?id=2001' },
+        { path: 'reply?id=2001&goto=item%3Fid%3D2001', close: 'item?id=2001' },
+        { path: 'submit', close: 'news' },
+        { path: 'upvoted?id=test_owner', close: 'news' },
+        { path: 'upvoted?id=test_owner&comments=t', close: 'news' },
+        { path: 'changepw', close: 'news' },
+    ])(
+        'recognizes native self-submitting login forms at $path',
+        ({ path, close }) => {
+            const sourceUrl = `https://news.ycombinator.com/${path}`;
+            const page = parseHnPage(fixture('auth.html'), sourceUrl);
+
+            expect(page.kind).toBe('auth');
+            expect(isRedhnSupportedPage(page)).toBe(true);
+            expect(page.profile).toBeUndefined();
+            expect(page.submit).toBeUndefined();
+            expect(page.auth).toMatchObject({
+                initialMode: 'login',
+                gotoUrl: `https://news.ycombinator.com/${close}`,
+                login: {
+                    action: sourceUrl,
+                    method: 'post',
+                    usernameName: 'acct',
+                    passwordName: 'pw',
+                    hiddenFields: {},
+                },
+                signup: {
+                    action: sourceUrl,
+                    method: 'post',
+                    hiddenFields: { creating: 't' },
+                },
+            });
+        },
+    );
+
+    it.each([
+        { path: 'forgot', fields: '<input name="s">' },
+        {
+            path: 'changepw',
+            fields: '<input name="acct"><input type="password" name="oldpw"><input type="password" name="newpw">',
+        },
+    ])('leaves unrelated password forms at $path to HN', ({ path, fields }) => {
+        const page = parseHnPage(
+            parseHTML(
+                `<html><body><form method="post">${fields}</form></body></html>`,
+            ).document,
+            `https://news.ycombinator.com/${path}`,
+        );
+
+        expect(page.kind).toBe('unknown');
+        expect(page.auth).toBeUndefined();
+    });
+
     it('parses the HN submit form contract', () => {
         const document = parseHTML(`
             <html>

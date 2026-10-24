@@ -227,8 +227,11 @@ export default function RedhnApp({ page }: RedhnAppProps) {
         });
     };
 
+    const performAction = (href: string) =>
+        performHnAction(href, { isLoggedIn: Boolean(page.currentUser) });
+
     const runHnAction = (href: string) => {
-        void performHnAction(href).then((result) => {
+        void performAction(href).then((result) => {
             if (result.kind === 'navigate' || result.kind === 'failed') {
                 window.location.assign(result.url);
             }
@@ -236,7 +239,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     };
 
     const runStoryVote = (story: ParsedStory) => {
-        const vote = createOptimisticStoryVote(story);
+        const vote = page.currentUser
+            ? createOptimisticStoryVote(story)
+            : undefined;
         const href = vote?.href ?? getStoryVoteHref(story);
 
         if (!href) {
@@ -256,7 +261,7 @@ export default function RedhnApp({ page }: RedhnAppProps) {
             },
         }));
 
-        void performHnAction(href).then((result) => {
+        void performAction(href).then((result) => {
             if (result.kind === 'performed') {
                 setStoryVoteOverrides((current) => {
                     const currentVote = current[story.id];
@@ -289,7 +294,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     };
 
     const runCommentVote = (comment: ParsedComment) => {
-        const vote = createOptimisticCommentVote(comment);
+        const vote = page.currentUser
+            ? createOptimisticCommentVote(comment)
+            : undefined;
         const href = vote?.href ?? getCommentVoteHref(comment);
 
         if (!href) {
@@ -309,7 +316,7 @@ export default function RedhnApp({ page }: RedhnAppProps) {
             },
         }));
 
-        void performHnAction(href).then((result) => {
+        void performAction(href).then((result) => {
             if (result.kind === 'performed') {
                 setCommentVoteOverrides((current) => {
                     const currentVote = current[comment.id];
@@ -342,7 +349,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     };
 
     const runStoryFavorite = (story: ParsedStory) => {
-        const favorite = createOptimisticStoryFavorite(story);
+        const favorite = page.currentUser
+            ? createOptimisticStoryFavorite(story)
+            : undefined;
         const href = favorite?.href ?? getStoryFavoriteHref(story);
 
         if (!href) {
@@ -362,7 +371,7 @@ export default function RedhnApp({ page }: RedhnAppProps) {
             },
         }));
 
-        void performHnAction(href).then((result) => {
+        void performAction(href).then((result) => {
             if (result.kind === 'performed') {
                 setStoryFavoriteOverrides((current) => {
                     const currentFavorite = current[story.id];

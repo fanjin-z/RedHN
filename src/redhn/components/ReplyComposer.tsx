@@ -1,8 +1,11 @@
 import { forwardRef, useState, type FormEvent } from 'react';
 import { PaperPlaneTiltIcon, XIcon } from '@phosphor-icons/react';
 import type { HnReplyResult } from '../hn/actions';
+import { readReplyDraft, saveReplyDraft } from '../state/replyDraft';
+import { hnLoginUrl } from '../view/urls';
 
 type ReplyComposerProps = {
+    parentId: number;
     label: string;
     placeholder: string;
     submitLabel?: string;
@@ -17,6 +20,7 @@ export const ReplyComposer = forwardRef<
     ReplyComposerProps
 >(function ReplyComposer(
     {
+        parentId,
         label,
         placeholder,
         submitLabel = 'Comment',
@@ -27,8 +31,8 @@ export const ReplyComposer = forwardRef<
     },
     ref,
 ) {
-    const [text, setText] = useState('');
-    const [expanded, setExpanded] = useState(autoFocus);
+    const [text, setText] = useState(() => readReplyDraft(parentId));
+    const [expanded, setExpanded] = useState(autoFocus || Boolean(text));
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string>();
     const [loginUrl, setLoginUrl] = useState<string>();
@@ -48,8 +52,12 @@ export const ReplyComposer = forwardRef<
             setSubmitting(false);
 
             if (result.kind === 'loginRequired') {
-                setLoginUrl(result.url);
+                setLoginUrl(hnLoginUrl(window.location.href, 'login'));
                 return;
+            }
+
+            if (result.kind === 'submitted') {
+                saveReplyDraft(parentId, '');
             }
 
             if (result.kind === 'failed') {
@@ -73,6 +81,7 @@ export const ReplyComposer = forwardRef<
                 className="auto-grow"
                 onChange={(event) => {
                     setText(event.target.value);
+                    saveReplyDraft(parentId, event.target.value);
                     setError(undefined);
                     setLoginUrl(undefined);
                 }}
@@ -105,7 +114,10 @@ export const ReplyComposer = forwardRef<
                             <button
                                 aria-label="Cancel reply"
                                 className="redhn-icon-action"
-                                onClick={onCancel}
+                                onClick={() => {
+                                    saveReplyDraft(parentId, '');
+                                    onCancel();
+                                }}
                                 type="button"
                             >
                                 <XIcon aria-hidden="true" weight="bold" />

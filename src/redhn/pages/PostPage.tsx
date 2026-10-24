@@ -338,6 +338,7 @@ export function PostPage({
                 </div>
                 {postReplyHref ? (
                     <ReplyComposer
+                        parentId={post.id}
                         label={
                             isCommentPost
                                 ? 'Reply to this comment'

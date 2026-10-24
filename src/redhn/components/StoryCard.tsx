@@ -7,6 +7,7 @@ import {
     ShareFatIcon,
 } from '@phosphor-icons/react';
 import type { ParsedStory } from '../hn/types';
+import { hasVoteAuth } from '../hn/votes';
 import { formatNumber } from '../view/format';
 import { HnActionLink } from './HnActionLink';
 import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
@@ -38,6 +39,7 @@ export function StoryCard({
     const creditAuthor = story.author ?? 'unknown';
     const isUpvoted = Boolean(story.actions.unvote);
     const voteHref = story.actions.unvote ?? story.actions.upvote;
+    const voteRequiresLogin = Boolean(voteHref && !hasVoteAuth(voteHref));
     const [menuOpen, setMenuOpen] = useState(false);
     const closeMenu = useCallback(() => {
         setMenuOpen(false);
@@ -147,7 +149,13 @@ export function StoryCard({
                 <div className="redhn-story__actions redhn-story__actions--card">
                     {voteHref ? (
                         <button
-                            aria-label={isUpvoted ? 'Remove upvote' : 'Upvote'}
+                            aria-label={
+                                voteRequiresLogin
+                                    ? 'Log in to upvote'
+                                    : isUpvoted
+                                      ? 'Remove upvote'
+                                      : 'Upvote'
+                            }
                             aria-pressed={isUpvoted}
                             className={
                                 isUpvoted
@@ -158,6 +166,11 @@ export function StoryCard({
                             onClick={() => {
                                 onVote(story);
                             }}
+                            title={
+                                voteRequiresLogin
+                                    ? 'Log in to upvote'
+                                    : undefined
+                            }
                             type="button"
                         >
                             <ArrowFatUpIcon

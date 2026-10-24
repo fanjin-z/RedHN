@@ -238,7 +238,7 @@ describe('infinite story feed', () => {
             await act(async () =>
                 ui.container
                     .querySelector<HTMLButtonElement>(
-                        '[data-story-id="3"] button[aria-label="Upvote"]',
+                        '[data-story-id="3"] button[aria-label="Log in to upvote"]',
                     )!
                     .click(),
             );

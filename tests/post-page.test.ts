@@ -72,7 +72,7 @@ describe('focused comment PostPage', () => {
         expect(html.match(/Focused <i>comment body<\/i>\./g)).toHaveLength(1);
         expect(html).toContain('Only descendant reply.');
         expect(html).not.toContain('redhn-post__link-preview');
-        expect(html).toContain('aria-label="Upvote comment"');
+        expect(html).toContain('aria-label="Log in to upvote"');
         expect(html).toContain('aria-label="Reply to this comment"');
         expect(html).toContain('placeholder="Write a reply"');
         expect(html).toContain('aria-label="Replies"');

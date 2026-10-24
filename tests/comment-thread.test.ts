@@ -136,7 +136,7 @@ describe('comment thread depth reveal', () => {
             }),
         });
 
-        expect(html).toContain('Upvote comment');
+        expect(html).toContain('Log in to upvote');
         expect(html).toContain('Reply');
         expect(html).not.toContain('Downvote comment');
         expect(html).not.toContain('Award');
@@ -152,7 +152,7 @@ describe('comment thread depth reveal', () => {
         const votedComment = {
             ...comment(1, 0),
             actions: {
-                unvote: 'https://news.ycombinator.com/vote?id=1&how=un',
+                unvote: 'https://news.ycombinator.com/vote?id=1&how=un&auth=fake-auth-token',
             },
         };
 
@@ -181,7 +181,7 @@ describe('comment thread depth reveal', () => {
         const pendingComment = {
             ...comment(1, 0),
             actions: {
-                upvote: 'https://news.ycombinator.com/vote?id=1&how=up',
+                upvote: 'https://news.ycombinator.com/vote?id=1&how=up&auth=fake-auth-token',
             },
         };
 

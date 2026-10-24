@@ -37,6 +37,20 @@ function comment(patch: Partial<ParsedComment> = {}): ParsedComment {
 }
 
 describe('HN optimistic actions', () => {
+    it.each(['', '&auth='])(
+        'does not optimistically vote with a missing or empty auth token (%s)',
+        (auth) => {
+            const upvote = `https://news.ycombinator.com/vote?id=1001&how=up${auth}&goto=item%3Fid%3D1001`;
+
+            expect(
+                createOptimisticStoryVote(story({ actions: { upvote } })),
+            ).toBeUndefined();
+            expect(
+                createOptimisticCommentVote(comment({ actions: { upvote } })),
+            ).toBeUndefined();
+        },
+    );
+
     it('round-trips optimistic voting state and score', () => {
         const voted = applyOptimisticStoryVote(
             story({

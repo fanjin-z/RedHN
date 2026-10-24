@@ -6,6 +6,7 @@ import {
 } from '@phosphor-icons/react';
 import type { HnReplyResult } from '../hn/actions';
 import type { ParsedComment } from '../hn/types';
+import { hasVoteAuth } from '../hn/votes';
 import { formatNumber } from '../view/format';
 import { renderHnHtml } from '../view/html';
 import { ReplyComposer } from './ReplyComposer';
@@ -49,6 +50,7 @@ export function CommentThread({
     const replyHref = comment.actions.reply;
     const isUpvoted = Boolean(comment.actions.unvote);
     const voteHref = comment.actions.unvote ?? comment.actions.upvote;
+    const voteRequiresLogin = Boolean(voteHref && !hasVoteAuth(voteHref));
     const isVotePending = pendingVoteCommentIds.has(comment.id);
     const childDepthLimit =
         expandedDeepThreadDepths[comment.id] ?? visibleDepthLimit;
@@ -170,9 +172,11 @@ export function CommentThread({
                                 {voteHref ? (
                                     <button
                                         aria-label={
-                                            isUpvoted
-                                                ? 'Remove comment upvote'
-                                                : 'Upvote comment'
+                                            voteRequiresLogin
+                                                ? 'Log in to upvote'
+                                                : isUpvoted
+                                                  ? 'Remove comment upvote'
+                                                  : 'Upvote comment'
                                         }
                                         aria-pressed={isUpvoted}
                                         className={
@@ -184,6 +188,11 @@ export function CommentThread({
                                         onClick={() => {
                                             onVote(comment);
                                         }}
+                                        title={
+                                            voteRequiresLogin
+                                                ? 'Log in to upvote'
+                                                : undefined
+                                        }
                                         type="button"
                                     >
                                         <ArrowFatUpIcon

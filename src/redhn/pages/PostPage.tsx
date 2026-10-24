@@ -7,6 +7,7 @@ import {
     ShareFatIcon,
 } from '@phosphor-icons/react';
 import type { ParsedComment, ParsedStory } from '../hn/types';
+import { hasVoteAuth } from '../hn/votes';
 import { CommentThread } from '../components/CommentThread';
 import { HnActionLink } from '../components/HnActionLink';
 import { ReplyComposer } from '../components/ReplyComposer';
@@ -57,6 +58,7 @@ export function PostPage({
     const author = post.author ?? 'unknown';
     const isUpvoted = Boolean(post.actions.unvote);
     const voteHref = post.actions.unvote ?? post.actions.upvote;
+    const voteRequiresLogin = Boolean(voteHref && !hasVoteAuth(voteHref));
     const isFavorited = Boolean(post.actions.unfavorite);
     const favoriteHref = post.actions.unfavorite ?? post.actions.favorite;
     const postUrl = isCommentPost ? undefined : linkPreviewUrl(post);
@@ -216,13 +218,15 @@ export function PostPage({
                     {voteHref ? (
                         <button
                             aria-label={
-                                isCommentPost
-                                    ? isUpvoted
-                                        ? 'Remove comment upvote'
-                                        : 'Upvote comment'
-                                    : isUpvoted
-                                      ? 'Remove upvote'
-                                      : 'Upvote'
+                                voteRequiresLogin
+                                    ? 'Log in to upvote'
+                                    : isCommentPost
+                                      ? isUpvoted
+                                          ? 'Remove comment upvote'
+                                          : 'Upvote comment'
+                                      : isUpvoted
+                                        ? 'Remove upvote'
+                                        : 'Upvote'
                             }
                             aria-pressed={isUpvoted}
                             className={
@@ -234,6 +238,11 @@ export function PostPage({
                             onClick={() => {
                                 onVote(post);
                             }}
+                            title={
+                                voteRequiresLogin
+                                    ? 'Log in to upvote'
+                                    : undefined
+                            }
                             type="button"
                         >
                             <ArrowFatUpIcon

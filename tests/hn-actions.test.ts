@@ -1,5 +1,5 @@
-import { parseHTML } from 'linkedom';
-import { describe, expect, it } from 'vitest';
+import { DOMParser, parseHTML } from 'linkedom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { performHnAction, submitHnReply } from '../src/redhn/hn/actions';
 
 const response = (url: string, ok = true): Response =>
@@ -18,12 +18,20 @@ const htmlResponse = (url: string, html: string, ok = true): Response =>
 
 const parseHtml = (html: string): Document => parseHTML(html).document;
 
+beforeEach(() => {
+    vi.stubGlobal('DOMParser', DOMParser);
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
+
 describe('HN action fallback', () => {
     it('fetches safe same-origin HN actions with credentials', async () => {
         const calls: Array<{ url: string; init?: RequestInit }> = [];
 
         for (const href of [
-            'vote?id=1&how=up',
+            'vote?id=1&how=up&auth=fake-auth-token',
             'fave?id=1&auth=fake-auth-token',
         ]) {
             await expect(
@@ -42,7 +50,7 @@ describe('HN action fallback', () => {
         expect(calls).toMatchObject([
             {
                 init: { credentials: 'include' },
-                url: 'https://news.ycombinator.com/vote?id=1&how=up',
+                url: 'https://news.ycombinator.com/vote?id=1&how=up&auth=fake-auth-token',
             },
             {
                 init: { credentials: 'include' },
@@ -50,6 +58,25 @@ describe('HN action fallback', () => {
             },
         ]);
     });
+
+    it.each(['', '&auth='])(
+        'navigates logged-out votes through HN without fetching or losing the return URL (%s)',
+        async (auth) => {
+            const href = `vote?id=1&how=up${auth}&goto=item%3Fid%3D1`;
+            const fetcher = vi.fn<typeof fetch>();
+
+            await expect(
+                performHnAction(href, {
+                    baseUrl: 'https://news.ycombinator.com/item?id=1',
+                    fetcher,
+                }),
+            ).resolves.toEqual({
+                kind: 'navigate',
+                url: `https://news.ycombinator.com/${href}`,
+            });
+            expect(fetcher).not.toHaveBeenCalled();
+        },
+    );
 
     it('navigates for non-fetchable actions and login-required responses', async () => {
         await expect(
@@ -97,6 +124,23 @@ describe('HN action fallback', () => {
             kind: 'navigate',
             url: 'https://news.ycombinator.com/fave?id=1&auth=fake-auth-token',
         });
+
+        await expect(
+            performHnAction('vote?id=1&how=up&auth=expired-token', {
+                baseUrl: 'https://news.ycombinator.com/item?id=1',
+                fetcher: async (url) =>
+                    htmlResponse(
+                        String(url),
+                        `
+                            You have to be logged in to vote.
+                            <form action='vote' method='post'>
+                                <input name='acct'>
+                                <input type='password' name='pw'>
+                            </form>
+                        `,
+                    ),
+            }),
+        ).resolves.toMatchObject({ kind: 'navigate' });
     });
 
     it('submits inline replies through the HN reply form', async () => {

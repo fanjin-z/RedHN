@@ -17,6 +17,10 @@ export type OptimisticCommentVote = {
     unvote?: string;
 };
 
+export function hasVoteAuth(href: string): boolean {
+    return Boolean(toHnVoteUrl(href)?.searchParams.get('auth'));
+}
+
 export function isStoryUpvoted(story: ParsedStory): boolean {
     return Boolean(story.actions.unvote);
 }
@@ -117,7 +121,7 @@ export function voteHrefForNextState(
     upvoted: boolean,
 ): string | undefined {
     const url = toHnVoteUrl(href);
-    if (!url) {
+    if (!url || !url.searchParams.get('auth')) {
         return undefined;
     }
 

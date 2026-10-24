@@ -1,3 +1,5 @@
+import { hasVoteAuth } from './votes';
+
 const HN_ORIGIN = 'https://news.ycombinator.com';
 const FETCH_ACTION_PATHS = new Set(['/vote', '/hide', '/fave']);
 
@@ -57,12 +59,7 @@ async function isLoginResponse(response: Response): Promise<boolean> {
 
     try {
         const html = await response.clone().text();
-        const normalized = html.toLowerCase();
-        return (
-            normalized.includes('please log in') &&
-            normalized.includes('name="acct"') &&
-            normalized.includes('name="pw"')
-        );
+        return hasAuthForm(parseHnDocument(html, undefined));
     } catch {
         return false;
     }
@@ -205,7 +202,11 @@ export async function submitHnReply(
 }
 
 function isFetchableHnAction(url: URL): boolean {
-    return url.origin === HN_ORIGIN && FETCH_ACTION_PATHS.has(url.pathname);
+    return (
+        url.origin === HN_ORIGIN &&
+        FETCH_ACTION_PATHS.has(url.pathname) &&
+        (url.pathname !== '/vote' || hasVoteAuth(url.href))
+    );
 }
 
 function toUrl(value: string, baseUrl: string): URL | undefined {

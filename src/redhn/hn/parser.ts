@@ -244,7 +244,7 @@ function enhancePostFromItemPage(
             hide:
                 href(findLink(subtext, 'hide'), sourceUrl) ??
                 story.actions.hide,
-            reply: replyUrl(story.id, sourceUrl),
+            reply: parsePostReplyUrl(document, story.id, sourceUrl),
         },
     };
 }
@@ -310,7 +310,9 @@ function parseFocusedCommentPost(
         actions: {
             ...comment.actions,
             ...favoriteActions,
-            reply: replyUrl(comment.id, sourceUrl),
+            reply:
+                comment.actions.reply ??
+                parsePostReplyUrl(document, comment.id, sourceUrl),
             comments: hnUrl,
         },
     };
@@ -913,7 +915,18 @@ function absoluteUrl(value: string, sourceUrl: string): string {
     return safeUrl(value, sourceUrl)?.href ?? value;
 }
 
-function replyUrl(itemId: number, sourceUrl: string): string {
+function parsePostReplyUrl(
+    document: Document,
+    itemId: number,
+    sourceUrl: string,
+): string | undefined {
+    const parent = document.querySelector(
+        `form input[name="parent"][value="${itemId}"]`,
+    );
+    if (!parent?.closest('form')?.querySelector('textarea[name="text"]')) {
+        return undefined;
+    }
+
     const params = new URLSearchParams({
         id: String(itemId),
         goto: `item?id=${itemId}`,

@@ -235,6 +235,25 @@ describe('HN DOM parser', () => {
         ).toBe(false);
     });
 
+    it.each([
+        { name: 'story', file: 'item.html', id: 2001 },
+        { name: 'focused comment', file: 'comment-item.html', id: 9100 },
+    ])(
+        'omits the $name reply action when HN has no comment form',
+        ({ file, id }) => {
+            const document = fixture(file);
+            document.querySelector('form')?.remove();
+
+            const page = parseHnPage(
+                document,
+                `https://news.ycombinator.com/item?id=${id}`,
+            );
+
+            expect(page.post?.id).toBe(id);
+            expect(page.post?.actions.reply).toBeUndefined();
+        },
+    );
+
     it('falls back to generic focused-comment context when onstory is absent', () => {
         const document = parseHTML(`
             <html>

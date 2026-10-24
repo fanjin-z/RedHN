@@ -1950,8 +1950,20 @@
 
 .redhn-feed__more {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     padding: 28px 0 0;
+}
+
+.redhn-feed__status {
+    margin: 0;
+    color: var(--redhn-text-muted);
+    font-size: var(--redhn-type-small-size);
+}
+
+.redhn-feed__status:empty {
+    display: none;
 }
 
 .redhn-post {

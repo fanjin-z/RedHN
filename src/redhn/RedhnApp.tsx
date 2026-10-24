@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { sendRedhnMessage } from './api/backgroundClient';
 import type { HnApiItem, HnApiUser } from './api/hnApi';
 import { AppShell, AuthShell } from './components/AppShell';
 import { StoryFeed } from './components/StoryFeed';
+import { useStoryFeed } from './components/useStoryFeed';
 import { performHnAction } from './hn/actions';
 import {
     applyOptimisticStoryFavorite,
@@ -100,6 +101,9 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     const [apiUser, setApiUser] = useState<HnApiUser | null>();
     const [cachedCurrentUser, setCachedCurrentUser] =
         useState<CachedCurrentUser | null>();
+    const feed = useStoryFeed(page, stateLoaded);
+    const apiRequestPending = useRef(false);
+    const apiActive = useRef(true);
     const title = useMemo(
         () =>
             page.post?.title ??
@@ -111,8 +115,8 @@ export default function RedhnApp({ page }: RedhnAppProps) {
         [page.post?.title, page.profile, page.submit],
     );
     const visibleStories = useMemo(
-        () => applyStoryFilters(page.stories, filters),
-        [filters, page.stories],
+        () => applyStoryFilters(feed.data.stories, filters),
+        [filters, feed.data.stories],
     );
     const enrichedStories = useMemo(
         () =>
@@ -168,7 +172,7 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     const profileOverviewLoading =
         apiUser === undefined ||
         profileOverviewItemIds.some((id) => !(id in apiItems));
-    const hiddenStoryCount = page.stories.length - visibleStories.length;
+    const hiddenStoryCount = feed.data.stories.length - visibleStories.length;
     const pendingVoteStoryIds = useMemo(
         () =>
             new Set(
@@ -452,18 +456,44 @@ export default function RedhnApp({ page }: RedhnAppProps) {
     }, [page, stateLoaded]);
 
     useEffect(() => {
-        const ids = page.post
+        // Preserve confirmed votes and API enrichment when returning to the feed.
+        feed.rememberStories(
+            feed.data.stories.map((story) => {
+                const enriched = enrichStoryWithApiItem(
+                    story,
+                    apiItems[story.id],
+                );
+                const vote = storyVoteOverrides[story.id];
+                return vote && !vote.pending
+                    ? applyOptimisticStoryVote(enriched, vote)
+                    : enriched;
+            }),
+        );
+    }, [apiItems, feed.data.stories, feed.rememberStories, storyVoteOverrides]);
+
+    useEffect(() => {
+        apiActive.current = true;
+        return () => {
+            apiActive.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (apiRequestPending.current) return;
+        const candidates = page.post
             ? [page.post.id]
-            : visibleStories.slice(0, 30).map((story) => story.id);
+            : visibleStories.map((story) => story.id);
+        const ids = candidates.filter((id) => !(id in apiItems)).slice(0, 30);
 
         if (ids.length === 0) {
             return;
         }
 
-        let active = true;
-        void sendRedhnMessage({ type: 'redhn:getItems', ids }).then(
-            (response) => {
-                if (!active || !response.ok) {
+        apiRequestPending.current = true;
+        void sendRedhnMessage({ type: 'redhn:getItems', ids })
+            .then((response) => {
+                apiRequestPending.current = false;
+                if (!apiActive.current || !response.ok) {
                     return;
                 }
 
@@ -471,13 +501,11 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                     ...current,
                     ...response.data,
                 }));
-            },
-        );
-
-        return () => {
-            active = false;
-        };
-    }, [page.post, visibleStories]);
+            })
+            .catch(() => {
+                apiRequestPending.current = false;
+            });
+    }, [apiItems, page.post, visibleStories]);
 
     useEffect(() => {
         if (!page.profile) {
@@ -598,7 +626,12 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                 />
             ) : (
                 <StoryFeed
+                    feedRef={feed.feedRef}
                     hiddenStoryCount={hiddenStoryCount}
+                    loadError={feed.error}
+                    loading={feed.loading}
+                    more={feed.data.more}
+                    onLoadMore={feed.loadMore}
                     onHnAction={runHnAction}
                     onShare={shareStory}
                     onStoryView={markViewed}
@@ -606,6 +639,7 @@ export default function RedhnApp({ page }: RedhnAppProps) {
                     page={page}
                     pendingVoteStoryIds={pendingVoteStoryIds}
                     readState={readState}
+                    ready={stateLoaded && !feed.restoring}
                     sharedStoryId={sharedStoryId}
                     stories={enrichedStories}
                 />

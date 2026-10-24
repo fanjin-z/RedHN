@@ -49,6 +49,7 @@ export function StoryCard({
 
     return (
         <article
+            data-story-id={story.id}
             className={
                 isViewed ? 'redhn-story redhn-story--viewed' : 'redhn-story'
             }

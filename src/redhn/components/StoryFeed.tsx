@@ -1,4 +1,10 @@
-import { useCallback, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type RefObject,
+} from 'react';
 import { CaretDownIcon, CheckIcon } from '@phosphor-icons/react';
 import type { ParsedPage, ParsedStory } from '../hn/types';
 import type { RedhnReadState } from '../state/readState';
@@ -22,6 +28,12 @@ type StoryFeedProps = {
     onStoryView: (storyId: number) => void;
     onHnAction: (href: string) => void;
     onVote: (story: ParsedStory) => void;
+    feedRef?: RefObject<HTMLElement | null>;
+    loading?: boolean;
+    loadError?: string;
+    more?: string;
+    ready?: boolean;
+    onLoadMore?: () => Promise<void>;
 };
 
 export function StoryFeed({
@@ -35,9 +47,64 @@ export function StoryFeed({
     onStoryView,
     onHnAction,
     onVote,
+    feedRef,
+    loading = false,
+    loadError,
+    more: nextUrl,
+    ready = false,
+    onLoadMore,
 }: StoryFeedProps) {
+    const more = onLoadMore ? nextUrl : page.pagination.more;
+    const moreRef = useRef<HTMLDivElement>(null);
+    const progress = useRef({ more, visible: stories.length, empty: 0 });
+
+    useEffect(() => {
+        if (progress.current.more !== more) {
+            progress.current = {
+                more,
+                visible: stories.length,
+                empty:
+                    stories.length > progress.current.visible
+                        ? 0
+                        : progress.current.empty + 1,
+            };
+        } else if (stories.length !== progress.current.visible) {
+            progress.current.visible = stories.length;
+            progress.current.empty = 0;
+        }
+    }, [more, stories.length]);
+
+    useEffect(() => {
+        const target = moreRef.current;
+        if (
+            !target ||
+            !ready ||
+            !onLoadMore ||
+            !more ||
+            loading ||
+            loadError ||
+            progress.current.empty >= 3 ||
+            typeof IntersectionObserver === 'undefined'
+        )
+            return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    void onLoadMore();
+                }
+            },
+            { rootMargin: '600px 0px' },
+        );
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [ready, more, loading, loadError, onLoadMore, stories.length]);
+
     return (
-        <section className="redhn-feed" aria-label="Hacker News stories">
+        <section
+            className="redhn-feed"
+            aria-label="Hacker News stories"
+            ref={feedRef}
+        >
             <SortMenu sourceUrl={page.sourceUrl} />
             {hiddenStoryCount > 0 ? (
                 <p className="redhn-feed__muted">
@@ -57,11 +124,35 @@ export function StoryFeed({
                     story={story}
                 />
             ))}
-            {page.pagination.more ? (
+            {onLoadMore ? (
+                <div className="redhn-feed__more" ref={moreRef}>
+                    <p className="redhn-feed__status" role="status">
+                        {loading
+                            ? 'Loading more stories…'
+                            : (loadError ?? (more ? '' : 'No more stories.'))}
+                    </p>
+                    {more ? (
+                        <button
+                            className="redhn-button redhn-button--primary"
+                            disabled={loading || !ready}
+                            onClick={() => {
+                                progress.current.empty = 0;
+                                void onLoadMore();
+                            }}
+                            type="button"
+                        >
+                            {loadError ? 'Try again' : 'Load more'}
+                        </button>
+                    ) : null}
+                    {loadError && more ? (
+                        <a href={more}>Open next page</a>
+                    ) : null}
+                </div>
+            ) : more ? (
                 <div className="redhn-feed__more">
                     <a
                         className="redhn-button redhn-button--primary"
-                        href={page.pagination.more}
+                        href={more}
                     >
                         View More
                     </a>

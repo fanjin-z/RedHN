@@ -167,7 +167,7 @@ function parseStoryRow(
             text(row.querySelector('.sitestr')) ||
             domainFromUrl(storyUrl) ||
             undefined,
-        author: text(subtext?.querySelector('.hnuser')) || undefined,
+        author: parseAuthorName(subtext),
         age: text(subtext?.querySelector('.age')) || undefined,
         score: parseScore(text(subtext?.querySelector('.score'))),
         commentCount: parseCommentCount(text(commentsLink)),
@@ -178,6 +178,27 @@ function parseStoryRow(
             comments: href(commentsLink, sourceUrl) ?? hnUrl,
         },
     };
+}
+
+/**
+ * Reads the username of the author of a story, comment, or profile.
+ *
+ * Live HN renders the author as a bare profile link (`user?id=NAME`) and no
+ * longer adds the legacy `hnuser` class. Prefer `.hnuser` when present so
+ * older markup keeps working, otherwise use the first profile link inside
+ * the container. Callers must pass a container that holds only the byline
+ * (for example the comment header) so body links cannot match.
+ *
+ * @param {ParentNode | null | undefined} container - Element holding the byline.
+ * @returns {string | undefined} The username, or undefined when not found.
+ */
+function parseAuthorName(
+    container: ParentNode | null | undefined,
+): string | undefined {
+    const authorLink =
+        container?.querySelector('.hnuser') ??
+        container?.querySelector('a[href^="user?id="]');
+    return text(authorLink) || undefined;
 }
 
 function parseCommentRow(
@@ -204,7 +225,7 @@ function parseCommentRow(
     return {
         id,
         depth: parseCommentDepth(row),
-        author: text(row.querySelector('.hnuser')) || undefined,
+        author: parseAuthorName(row.querySelector('.comhead')),
         age: text(row.querySelector('.age')) || undefined,
         text: text(commentBody),
         html: commentBody.innerHTML.trim(),
@@ -529,7 +550,7 @@ function parseProfile(
     const createdCell = createdRow?.children.item(1);
     const karmaCell = karmaRow?.children.item(1);
     const aboutCell = aboutRow?.children.item(1) as HTMLElement | null;
-    const id = text(userCell?.querySelector('.hnuser')) || route.id;
+    const id = parseAuthorName(userCell) || route.id;
     const accountForm = parseProfileAccountForm(document, sourceUrl);
 
     return {

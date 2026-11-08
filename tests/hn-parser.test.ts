@@ -328,6 +328,110 @@ describe('HN DOM parser', () => {
         expect(page.post?.actions.unfavorite).toBe(expected.unfavorite);
     });
 
+    it('parses live HN item markup without the hnuser class', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table class="fatitem">
+                        <tr class="athing submission" id="50415628">
+                            <td class="title">
+                                <span class="titleline">
+                                    <a href="https://example.com/story">Live story title</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="subtext">
+                                <span class="subline">
+                                    <span class="score" id="score_50415628">460 points</span>
+                                    by <a href="user?id=TheWiggles">TheWiggles</a>
+                                    <span class="age" title="2026-11-08T18:16:07">
+                                        <a href="item?id=50415628">3 hours ago</a>
+                                    </span>
+                                    | <a href="item?id=50415628">281&nbsp;comments</a>
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="toptext">Story text.</div>
+                    <table class="comment-tree">
+                        <tr class="athing comtr" id="50416595">
+                            <td>
+                                <table border="0">
+                                    <tr>
+                                        <td class="ind" indent="0"></td>
+                                        <td class="default">
+                                            <div>
+                                                <span class="comhead">
+                                                    <a href="user?id=lukebuehler">lukebuehler</a>
+                                                    <span class="age" title="2026-11-08T20:03:11">
+                                                        <a href="item?id=50416595">2 hours ago</a>
+                                                    </span>
+                                                    <span class="navs">
+                                                        | <a class="togg clicky" id="50416595" n="63" href="javascript:void(0)">[–]</a>
+                                                    </span>
+                                                </span>
+                                            </div>
+                                            <br>
+                                            <div class="comment">
+                                                <div class="commtext c00">
+                                                    Quoting <a href="user?id=body_link">body_link</a> here.
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr class="athing comtr" id="50417020">
+                            <td>
+                                <table border="0">
+                                    <tr>
+                                        <td class="ind" indent="1"></td>
+                                        <td class="default">
+                                            <div>
+                                                <span class="comhead">
+                                                    [deleted-looking header]
+                                                </span>
+                                            </div>
+                                            <br>
+                                            <div class="comment">
+                                                <div class="commtext c00">
+                                                    Only <a href="user?id=body_only">body_only</a> is linked.
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=50415628',
+        );
+
+        expect(page.kind).toBe('post');
+        expect(page.post).toMatchObject({
+            id: 50415628,
+            author: 'TheWiggles',
+        });
+        expect(page.comments).toHaveLength(2);
+        expect(page.comments[0]).toMatchObject({
+            id: 50416595,
+            author: 'lukebuehler',
+        });
+        expect(page.comments[1]).toMatchObject({
+            id: 50417020,
+            author: undefined,
+            text: 'Only body_only is linked.',
+        });
+    });
+
     it('parses HN user profile fields', () => {
         const document = parseHTML(`
             <html>
@@ -369,6 +473,36 @@ describe('HN DOM parser', () => {
             'https://news.ycombinator.com/threads?id=profile_user',
         );
         expect(page.profile?.accountForm).toBeUndefined();
+    });
+
+    it('parses an HN user profile id from a bare profile link', () => {
+        const document = parseHTML(`
+            <html>
+                <body>
+                    <table>
+                        <tr class="athing">
+                            <td valign="top">user:</td>
+                            <td timestamp="1700000000">
+                                <a href="user?id=bare_user">bare_user</a>
+                            </td>
+                        </tr>
+                        <tr><td valign="top">karma:</td><td>7</td></tr>
+                    </table>
+                </body>
+            </html>
+        `).document;
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/user?id=bare_user',
+        );
+
+        expect(page.kind).toBe('profile');
+        expect(page.profile).toMatchObject({
+            id: 'bare_user',
+            createdAt: 1700000000,
+            karma: 7,
+        });
     });
 
     it('parses editable HN account settings from an own profile page', () => {

@@ -236,6 +236,116 @@ describe('HN DOM parser', () => {
     });
 
     it.each([
+        {
+            name: 'feed',
+            file: 'feed.html',
+            path: 'news',
+            storyAuthors: ['story_author', 'discussion_author'],
+            postAuthor: undefined,
+            commentAuthors: [],
+        },
+        {
+            name: 'story item',
+            file: 'item.html',
+            path: 'item?id=2001',
+            storyAuthors: [],
+            postAuthor: 'story_author',
+            commentAuthors: ['comment_author', 'story_author'],
+        },
+        {
+            name: 'focused comment item',
+            file: 'comment-item.html',
+            path: 'item?id=9100',
+            storyAuthors: [],
+            postAuthor: 'test_author',
+            commentAuthors: [
+                'first_replier',
+                'second_replier',
+                'nested_replier',
+                'deep_replier',
+            ],
+        },
+    ])(
+        'parses $name authors when HN omits the hnuser class',
+        ({ file, path, storyAuthors, postAuthor, commentAuthors }) => {
+            const document = fixture(file);
+            // HN now renders author links as plain <a href="user?id=...">.
+            for (const link of document.querySelectorAll('.hnuser')) {
+                link.removeAttribute('class');
+            }
+
+            const page = parseHnPage(
+                document,
+                `https://news.ycombinator.com/${path}`,
+            );
+
+            expect(page.stories.map((story) => story.author)).toEqual(
+                storyAuthors,
+            );
+            expect(page.post?.author).toBe(postAuthor);
+            expect(
+                flattenComments(page.comments).map((comment) => comment.author),
+            ).toEqual(commentAuthors);
+        },
+    );
+
+    it.each([
+        'user?id=comment_author',
+        '/user?id=comment_author',
+        'https://news.ycombinator.com/user?id=comment_author',
+    ])('recognizes a classless author profile link at %s', (href) => {
+        const document = fixture('item.html');
+        const link = document.querySelector('#3001 .hnuser')!;
+        link.removeAttribute('class');
+        link.setAttribute('href', href);
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2001',
+        );
+
+        expect(page.comments[0]?.author).toBe('comment_author');
+    });
+
+    it.each([true, false])(
+        'does not attribute authorless comments to profile links in their body (header present: %s)',
+        (withHeader) => {
+            const document = fixture('item.html');
+            document.querySelector('#3001 .hnuser')!.remove();
+            if (!withHeader) {
+                document.querySelector('#3001 .comhead')!.remove();
+            }
+            document.querySelector('#3001 .commtext')!.innerHTML =
+                '<a href="user?id=mentioned_user">mentioned_user</a>';
+
+            const page = parseHnPage(
+                document,
+                'https://news.ycombinator.com/item?id=2001',
+            );
+
+            expect(page.comments[0]?.author).toBeUndefined();
+        },
+    );
+
+    it.each([
+        'https://example.com/user?id=comment_author',
+        'user?id=',
+        'item?id=3001',
+    ])('does not treat %s as an author profile link', (href) => {
+        const document = fixture('item.html');
+        const link = document.querySelector('#3001 .hnuser')!;
+        link.removeAttribute('class');
+        link.setAttribute('href', href);
+
+        const page = parseHnPage(
+            document,
+            'https://news.ycombinator.com/item?id=2001',
+        );
+
+        expect(page.comments[0]?.author).toBeUndefined();
+    });
+
+    it.each([
         { name: 'story', file: 'item.html', id: 2001 },
         { name: 'focused comment', file: 'comment-item.html', id: 9100 },
     ])(

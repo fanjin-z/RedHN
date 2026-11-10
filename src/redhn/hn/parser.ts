@@ -167,7 +167,7 @@ function parseStoryRow(
             text(row.querySelector('.sitestr')) ||
             domainFromUrl(storyUrl) ||
             undefined,
-        author: text(subtext?.querySelector('.hnuser')) || undefined,
+        author: parseAuthor(subtext, sourceUrl),
         age: text(subtext?.querySelector('.age')) || undefined,
         score: parseScore(text(subtext?.querySelector('.score'))),
         commentCount: parseCommentCount(text(commentsLink)),
@@ -204,7 +204,10 @@ function parseCommentRow(
     return {
         id,
         depth: parseCommentDepth(row),
-        author: text(row.querySelector('.hnuser')) || undefined,
+        author: parseAuthor(
+            row.querySelector('.comhead') ?? defaultCell,
+            sourceUrl,
+        ),
         age: text(row.querySelector('.age')) || undefined,
         text: text(commentBody),
         html: commentBody.innerHTML.trim(),
@@ -759,6 +762,29 @@ function profileLinks(id: string, sourceUrl: string): ParsedProfile['links'] {
             sourceUrl,
         ),
     };
+}
+
+function parseAuthor(
+    root: ParentNode | null | undefined,
+    sourceUrl: string,
+): string | undefined {
+    // HN author links no longer consistently include the hnuser class.
+    const authorLink = Array.from(
+        root?.querySelectorAll<HTMLAnchorElement>('a[href]') ?? [],
+    ).find((link) => {
+        if (link.closest('.commtext, .reply')) {
+            return false;
+        }
+
+        const url = safeUrl(link.getAttribute('href') ?? '', sourceUrl);
+        return (
+            url?.origin === HN_ORIGIN &&
+            url.pathname === '/user' &&
+            Boolean(url.searchParams.get('id')?.trim())
+        );
+    });
+
+    return text(authorLink) || undefined;
 }
 
 function parseCommentDepth(row: Element): number {

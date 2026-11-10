@@ -8,6 +8,7 @@ Follow [@FanjinTech on X](https://x.com/FanjinTech) for more projects like this.
 
 | Chrome                                                                                              | Firefox                                                                  | Edge                                                                                                     | Safari                                                        |
 | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Desktop                                                                                             | Desktop + Android                                                        | Desktop                                                                                                  | macOS + iOS                                                   |
 | [Chrome Web Store](https://chromewebstore.google.com/detail/redhn/deinobdjbeklfjandchchadookglpcnc) | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/redhn/) | [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/redhn/oaabfmmjfglddlcbdpeodcefmnahcchl) | [App Store](https://apps.apple.com/us/app/redhn/id6784152095) |
 
 ## Motivation

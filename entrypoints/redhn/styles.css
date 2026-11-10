@@ -3416,6 +3416,14 @@
         flex-direction: column;
     }
 
+    .redhn-reply-composer__status {
+        flex: 0 1 auto;
+    }
+
+    .redhn-reply-composer__status:empty {
+        display: none;
+    }
+
     .redhn-reply-composer__actions {
         justify-content: flex-end;
     }
